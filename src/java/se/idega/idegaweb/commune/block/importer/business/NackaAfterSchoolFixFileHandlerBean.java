@@ -1,5 +1,5 @@
 /*
- * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.2 2003/12/16 09:39:28 anders Exp $
+ * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.3 2003/12/16 09:58:49 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -60,10 +60,10 @@ import com.idega.util.Timer;
  * Note that the "10" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/16 09:39:28 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/16 09:58:49 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implements NackaAfterSchoolFixFileHandler, ImportFileHandler {
 
@@ -545,7 +545,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 					stId = scm.getSchoolTypeId();	
 				} catch (Exception e) {}
 				
-				if ((stId == 4) || (stId == 5) || (stId == 28) || (stId == -1)) {
+				if ((stId == 4) || (stId == 5) || (stId == 28)) {
 					// Elementary school, forskoleklass and null placements should not have contracts
 					Collection placements = sClassMemberHome.findByStudent(child);
 					Iterator iter2 = placements.iterator();
