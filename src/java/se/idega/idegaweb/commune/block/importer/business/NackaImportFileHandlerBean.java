@@ -1053,7 +1053,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					actions[counter][3] = action;
 				} catch (Exception e) {
 					e.printStackTrace(System.err);
-					logError("NackaImportFileHandler - Exception caught, comtinuing");
+					logError("NackaImportFileHandler - Exception caught, continuing");
 				}
 				++counter;
 			}
@@ -1368,7 +1368,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String actionType = getUserProperty(ACTION_TYPE_COLUMN);
 		String[][] actions = new String[0][0];
 		if (actionType != null) {
-			parseAction(actionType);
+			actions = parseAction(actionType);
 		}
 		//HashMap actionTypeMap = parseAction(actionType);
 		//List actionTypes = TextSoap.FindAllWithSeparator(actionType, ",");
