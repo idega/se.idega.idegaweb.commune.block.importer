@@ -35,7 +35,8 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
       ImportFileHandler handler = getHandlerForImportFile(file.getClass().getName());
       handler.setImportFile(file);
       /**@todo temporary workaround**/
-      //((NackaImportFileHandler)handler).setOnlyImportRelations(true);
+      ((NackaImportFileHandler)handler).setOnlyImportRelations(true);
+      //((NackaImportFileHandler)handler).setStartRecord(52000);
       status = handler.handleRecords();
 
       /*Collection col = file.getRecords();

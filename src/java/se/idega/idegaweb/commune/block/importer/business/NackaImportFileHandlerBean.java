@@ -1,4 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import com.idega.util.idegaTimestamp;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import javax.transaction.*;
 import se.idega.idegaweb.commune.block.importer.data.ImportFile;
@@ -45,7 +46,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private UserTransaction transaction2;
 
   private boolean onlyImportRelations = false;
-  private boolean test = true;
+  private int startRecord = 0;
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
   private final String RELATIONAL_SECTION_ENDS = "02999";
@@ -71,7 +72,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   public boolean handleRecords() throws RemoteException{
 
-    transaction =  this.getSessionContext().getUserTransaction();
+    //transaction =  this.getSessionContext().getUserTransaction();
     transaction2 =  this.getSessionContext().getUserTransaction();
 
     Timer clock = new Timer();
@@ -81,7 +82,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //initialize business beans and data homes
       biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
       relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
-      //home = biz.getUserHome();
+      home = biz.getUserHome();
       comUserBiz = (CommuneUserBusiness)IBOLookup.getServiceInstance(this.getIWApplicationContext(),CommuneUserBusiness.class);
 
       //comUserBiz.getRootCitizenGroup();
@@ -90,7 +91,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //groupHome = biz.getGroupHome();
 
       //if the transaction failes all the users and their relations are removed
-      transaction.begin();
+      //transaction.begin();
 
       //iterate through the records and process them
       String item;
@@ -98,15 +99,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       int count = 0;
       while ( !(item=(String)file.getNextRecord()).equals("") ) {
         count++;
-        processRecord(item);
 
-        /**if(test && count == 100){
-          System.out.println(" TEST DONE 100 users");
-          break;
-        }*/
+        if( count>startRecord ){
+          processRecord(item);
+        }
 
-        if( (count % 1000) == 0 ){
-          System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
+        if( (count % 500) == 0 ){
+          System.out.println("NackaImportFileHandler processing RECORD ["+count+"] time: "+idegaTimestamp.getTimestampRightNow().toString());
         }
         item = null;
       }
@@ -116,7 +115,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
       // System.gc();
       //success commit changes
-      transaction.commit();
+      //transaction.commit();
 
 
       //store family relations
@@ -127,12 +126,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     catch (Exception ex) {
      ex.printStackTrace();
 
-     try {
+     /*try {
       transaction.rollback();
      }
      catch (SystemException e) {
        e.printStackTrace();
-     }
+     }*/
 
      return false;
     }
@@ -174,6 +173,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 
     userPropertiesMap = null;
+    record=null;
 
     return true;
   }
@@ -307,6 +307,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //nackaGroup.addUser(user);
 
     //finished with this user
+    user = null;
     return true;
   }
 
@@ -326,6 +327,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     Timer clock = new Timer();
     clock.start();
+    int count = 0;
 
     if( relationsMap != null ){
       Iterator iter = relationsMap.keySet().iterator();
@@ -340,6 +342,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         transaction2.begin();
 
         while (iter.hasNext()) {
+          ++count;
+          if( (count % 500) == 0 ){
+            System.out.println("NackaImportFileHandler storing relations ["+count+"] time: "+idegaTimestamp.getTimestampRightNow().toString());
+          }
 
           PIN = (String) iter.next();
           user = null;
@@ -452,6 +458,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   public void setOnlyImportRelations(boolean onlyImportRelations){
     this.onlyImportRelations = onlyImportRelations;
+  }
+
+  public void setStartRecord(int startRecord){
+    this.startRecord = startRecord;
   }
 
   }
