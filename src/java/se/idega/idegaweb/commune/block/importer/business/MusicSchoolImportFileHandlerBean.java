@@ -232,12 +232,15 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			Integer studentID = (Integer) studentUser.getPrimaryKey();
 			PhoneHome phHome = userBiz.getPhoneHome();
 			try {
-				studentPhone = phHome.create();
-				studentPhone.setNumber(studentTelNr);
-				studentPhone.store();
-				
-				studentUser.addPhone(studentPhone);
-				studentUser.store();
+				if(studentTelNr != null && !studentTelNr.equals("")) {
+					studentPhone = phHome.create();
+					studentPhone.setNumber(studentTelNr);
+					studentPhone.store();
+					
+					studentUser.addPhone(studentPhone);
+					studentUser.store();
+					
+				}
 				
 				Integer musicSchoolID = (Integer) musicSchool.getPrimaryKey();
 				try {
