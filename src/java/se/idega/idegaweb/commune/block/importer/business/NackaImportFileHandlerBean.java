@@ -508,36 +508,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //get rid of test data
 		if( fix ){
 			citizenIds.add(user.getPrimaryKey());
-			try {
+			
+			/*try {
 				user.removeAllEmails();
 				user.removeAllPhones();
 				
-				/*
-				 this needs to be implemented generally.
-				 getall the case codes (types)
-				 get the handler for each
-				 call getAllcasesforuser(code) or getAllcasesforuser
-				 remove the cases
-				 
-				Collection cases = caseBiz.getAllCasesForUser(user);
-				
-				if( cases!=null && !cases.isEmpty()){
-					Iterator iter = cases.iterator();
-					
-					while (iter.hasNext()) {
-						Case myCase = (Case) iter.next();
-						myCase.remove();
-					}
-					
-				}
-				*/
-				
+
 				
 			}
 			catch (Exception ex) {
 				ex.printStackTrace();
 			}
-			
+	*/		
 		}
     
 
