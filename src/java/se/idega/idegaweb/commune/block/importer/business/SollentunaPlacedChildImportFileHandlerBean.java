@@ -398,7 +398,6 @@ implements ImportFileHandler
 		User parent = biz.getCustodianForChild(child);
 		if (parent == null) {
 			notFoundParent.add(PIN + ": " + childName);
-			return false;
 		}
 		
 		IWContext iwc;
@@ -408,6 +407,10 @@ implements ImportFileHandler
 				performer = iwc.getCurrentUser();
 			if (locale == null)
 				locale = iwc.getCurrentLocale();
+			
+			if (parent == null) {
+				parent = performer;
+			}
 				
 			int schoolID = Integer.parseInt(school.getPrimaryKey().toString());
 			int classID = Integer.parseInt(sClass.getPrimaryKey().toString());
