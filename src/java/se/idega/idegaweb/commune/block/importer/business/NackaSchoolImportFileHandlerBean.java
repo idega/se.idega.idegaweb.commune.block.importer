@@ -82,7 +82,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
   private final int COLUMN_CARETAKER_NAME = 6; 
   private final int COLUMN_CARETAKER_ADDRESS = 7; 
   private final int COLUMN_CARETAKER_POSTAL_NAME = 8; 
-  private final int COLUMN_CARETAKER_PIN = 9; 
+  //private final int COLUMN_CARETAKER_PIN = 9; 
   private final int COLUMN_CARETAKER_POSTAL_CODE = 10;  
   private final int COLUMN_CARETAKER_PHONE = 11;
   

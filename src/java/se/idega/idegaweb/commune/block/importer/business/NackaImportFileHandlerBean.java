@@ -4,10 +4,6 @@ import is.idega.idegaweb.member.business.MemberFamilyLogic;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.rmi.RemoteException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,22 +30,14 @@ import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
 import com.idega.core.data.PostalCode;
 import com.idega.data.IDORemoveRelationshipException;
-import com.idega.data.IDOUtil;
-import com.idega.idegaweb.IWApplicationContext;
-import com.idega.idegaweb.IWMainApplicationSettings;
 import com.idega.presentation.IWContext;
-import com.idega.user.business.GroupBusiness;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
-import com.idega.user.data.GroupHome;
-import com.idega.user.data.GroupType;
-import com.idega.user.data.GroupTypeHome;
 import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
-import com.idega.util.database.ConnectionBroker;
 import com.idega.util.datastructures.HashtableMultivalued;
 import com.idega.util.text.TextSoap;
 
@@ -68,7 +56,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   private static final String RELATIVE_TYPE_COLUMN = "02003";
 	private static final String RELATIVE_PIN_COLUMN = "02001";
-	private static final String LONG_LAT_COLUMN = "01025";
+	//private static final String LONG_LAT_COLUMN = "01025";
 	private static final String POSTAL_NAME_COLUMN = "01035";
 	private static final String POSTAL_CODE_COLUMN = "01034";
 	private static final String ADDRESS_COLUMN = "01033";
@@ -90,7 +78,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	
 	private static final String NACKA_CODE="0182";
 	
-	private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
+	//private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
 	private static final String FIX_PARAMETER_NAME = "run_fix";
 	
   private int startRecord = 0;
@@ -117,11 +105,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private MemberFamilyLogic relationBiz;
 	private CommuneUserBusiness comUserBiz;
 	private CaseBusiness caseBiz;
-	private GroupHome groupHome;
+	//private GroupHome groupHome;
 	private Group nackaGroup;
 	private Group nackaSpecialGroup;
 	private ImportFile file;
-	private UserTransaction transaction;
+	//private UserTransaction transaction;
 	private UserTransaction transaction2;
 
 	private boolean importUsers = true;
@@ -1025,6 +1013,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	
 	
 	
+	/* Commented out since it is never used...
 	private Group getCitizenTestGroup() {
 		
 		Group rootGroup = null;
@@ -1041,7 +1030,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 			else {
 				System.err.println("trying to store Citizen Test group");
-				/**@todo this seems a wrong way to do things**/
+				//@todo this seems a wrong way to do things
 				final GroupTypeHome typeHome = (GroupTypeHome) getIDOHome(GroupType.class);
 				final GroupType type = typeHome.create();
 				final GroupBusiness groupBusiness = comUserBiz.getGroupBusiness();
@@ -1060,7 +1049,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			
 		return rootGroup;
 	}
+	*/
 	
+	/* Commented out since it is never used...
 	private void moveNonCitizensToTestGroup(){
 		//breyta grouprelationidinu i id test gruppunnar
 		
@@ -1125,7 +1116,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		}
 	
 
-	}
+	}*/
 	
 private String getValueAtIndexFromNameString(int index , String name){		
 	int i = 1;

@@ -1,7 +1,6 @@
 package se.idega.idegaweb.commune.block.importer.data;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import com.idega.block.importer.data.GenericImportFile;
 import com.idega.block.importer.data.ImportFile;
@@ -16,8 +15,8 @@ import com.idega.block.importer.data.ImportFile;
  */
 
 public class NackaImportFile extends GenericImportFile implements ImportFile{
-  private int importAtATimeLimit = 5;
-  private ArrayList records;
+  //private int importAtATimeLimit = 5;
+  //private ArrayList records;
   
   
   public NackaImportFile() {
