@@ -1,5 +1,5 @@
 /*
- * $Id: NackaParagraphImportFileHandlerBean.java,v 1.2 2003/10/27 07:57:28 laddi Exp $
+ * $Id: NackaParagraphImportFileHandlerBean.java,v 1.3 2003/10/30 08:13:32 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -37,26 +37,21 @@ import com.idega.util.Timer;
  * Import logic for adding paragraphs to Nacka student placements.
  * <br>
  * To add this to the "Import handler" dropdown for the import function, execute the following SQL:<br>
- * insert into im_handler values (9, 'Nacka student parapgraph importer', 
+ * insert into im_handler values (9, 'Nacka student paragraph importer', 
  * 'se.idega.idegaweb.commune.block.importer.business.NackaParagraphImportFileHandlerBean',
  * 'Imports paragraphs for Nacka student placements.')
  * <br>
  * Note that the "9" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/27 07:57:28 $ by $Author: laddi $
+ * Last modified: $Date: 2003/10/30 08:13:32 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implements NackaParagraphImportFileHandler, ImportFileHandler {
 
 	private CommuneUserBusiness biz = null;
-	//private SchoolBusiness schoolBiz = null;
-  
-	//private SchoolTypeHome sTypeHome = null;
-	//private SchoolHome sHome = null;
-	//private SchoolClassHome sClassHome = null;
 	private SchoolClassMemberHome sClassMemberHome = null;
     
 	private ImportFile file;
@@ -86,12 +81,6 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 		try {
 			//initialize business beans and data homes
 			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			//home = biz.getUserHome();      
-			//schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-
-			//sHome = schoolBiz.getSchoolHome();           
-			//sTypeHome = schoolBiz.getSchoolTypeHome();
-			//sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
             		
 			transaction.begin();
