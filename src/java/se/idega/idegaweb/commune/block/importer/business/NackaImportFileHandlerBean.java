@@ -497,9 +497,24 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				//System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
      
 		}
-    
+		
+		if(lastName.startsWith("Van ") && !updateName){
+			StringBuffer half = new StringBuffer();
+			half.append(firstName).append(" ").append(middleName);
+			String halfName = half.toString();
+			firstName = getValueAtIndexFromNameString(1,halfName);
+			middleName = halfName.substring(Math.min(halfName.indexOf(" ")+1,halfName.length()),halfName.length());
+			middleName = TextSoap.findAndReplace(middleName,"  "," ");
+			//lastName //unchanged
+			
+			
+			updateName = true;
+		}
+  	
+      
     if(updateName){//needed because createUser uses the method setFullName that splits the name with it's own rules
     	
+			if(firstName.endsWith(" "))  firstName = firstName.substring(0,firstName.length()-1);
     	if(middleName.startsWith(" ")) middleName = middleName.substring(1,middleName.length());
     	if(middleName.endsWith(" "))  middleName = middleName.substring(0,middleName.length()-1);
 			if(lastName.startsWith(" ")) lastName = lastName.substring(1,lastName.length());
@@ -521,7 +536,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       String addressLine = getUserProperty(ADDRESS_COLUMN);
       
 			String foreignAddressLine1 = getUserProperty(FOREIGN_ADDRESS_1_COLUMN);
-			
 		
 			
       if( (addressLine!=null) && importAddresses){
