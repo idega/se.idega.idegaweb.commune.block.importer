@@ -230,6 +230,9 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		SchoolClassMember student = null;
 		User studentUser = null;
 		Phone studentPhone = null;
+		
+		
+		
 		try {
 			studentUser = userBiz.getUser(studentSSN);
 		}catch(FinderException ce) {
@@ -242,49 +245,58 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			}
 			
 		}
-		if(studentUser != null) {
-			Integer userID = (Integer) studentUser.getPrimaryKey();
-			PhoneHome phHome = userBiz.getPhoneHome();
-			try {
-				if(studentTelNr != null && !studentTelNr.equals(" ")) {
-					studentPhone = phHome.create();
-					studentPhone.setNumber(studentTelNr);
-					studentPhone.store();
-					
-					studentUser.addPhone(studentPhone);
-					studentUser.store();
-					
-				}
-				Integer musicSchoolID = new Integer(-1);
-				Integer seasonID = new Integer(-1);
-				Integer instrumentID = new Integer(-1);
-				
-				if(musicSchool != null) {
-					musicSchoolID = (Integer) musicSchool.getPrimaryKey();
-				}
-				if(schoolSeason != null) {
-					seasonID = (Integer) schoolSeason.getPrimaryKey();
-				}
-				if(instrument != null) {
-					instrumentID = (Integer) instrument.getPrimaryKey();
-				}
+		if(studentUser != null) {			
+			if(studentTelNr != null && !studentTelNr.equals(" ")) {
+				PhoneHome phHome = userBiz.getPhoneHome();
 				try {
-					student = studentHome.findByUserAndSchoolAndSeasonAndStudyPath(userID.intValue(),musicSchoolID.intValue(),seasonID.intValue(),instrumentID.intValue());
-					
-				}catch(FinderException fEx) {
+					studentPhone = phHome.findUsersHomePhone(studentUser);
+				}
+				catch(FinderException fEx) {
+					try {
+						studentPhone = phHome.create();
+						studentPhone.setNumber(studentTelNr);
+						studentPhone.store();
+					}catch(CreateException crEx) {
+						studentPhone = null;
+					}
+				}
+				if(studentPhone != null) {
+					try {
+						studentUser.addPhone(studentPhone);
+						studentUser.store();
+					}catch(IDOAddRelationshipException idoEx) {						
+					}				
+				}
+			}
+			Integer userID = (Integer) studentUser.getPrimaryKey();
+			Integer musicSchoolID = new Integer(-1);
+			Integer seasonID = new Integer(-1);
+			Integer instrumentID = new Integer(-1);
+			
+			if(musicSchool != null) {
+				musicSchoolID = (Integer) musicSchool.getPrimaryKey();
+			}
+			if(schoolSeason != null) {
+				seasonID = (Integer) schoolSeason.getPrimaryKey();
+			}
+			if(instrument != null) {
+				instrumentID = (Integer) instrument.getPrimaryKey();
+			}
+			try {
+				student = studentHome.findByUserAndSchoolAndSeasonAndStudyPath(userID.intValue(),musicSchoolID.intValue(),seasonID.intValue(),instrumentID.intValue());				
+			}catch(FinderException fEx) {
+				try {
 					student = studentHome.create();
 					student.setClassMemberId(userID.intValue());
+					if(mainClass != null) {
+						Integer mainClassID = (Integer) mainClass.getPrimaryKey();
+						//SchoolClassmember (many-to-one) SchoolClass
+						student.setSchoolClassId(mainClassID.intValue());					
+					}
+					student.store();
+				}catch(CreateException crEx) {
+					student = null;
 				}
-				if(mainClass != null) {
-					Integer mainClassID = (Integer) mainClass.getPrimaryKey();
-					//SchoolClassmember (many-to-one) SchoolClass
-					student.setSchoolClassId(mainClassID.intValue());					
-				}
-				student.store();
-			}catch(CreateException crEx) {
-				student = null;
-			}catch(IDOAddRelationshipException idoex) {
-				System.out.println("cannot add phone to studentUser!");
 			}
 		}
 		return student;
