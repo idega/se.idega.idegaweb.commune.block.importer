@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 
@@ -83,6 +84,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
   private final String RELATION_TYPE_FATHER = "FA";
   private final String RELATION_TYPE_MOTHER = "MO";
+  
+  private ArrayList failedRecords = new ArrayList();
 
   private Gender male;
   private Gender female;
@@ -134,7 +137,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         count++;
 
         if( count>startRecord ){
-          processRecord(item);
+          if( ! processRecord(item) ) failedRecords.add(item);
         }
 
         if( (count % 500) == 0 ){
@@ -302,6 +305,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     String middleName = getUserProperty("01013","");
     String lastName = getUserProperty("01014","");
     String PIN = getUserProperty("01001");
+    
+    if(PIN == null ) return false;
 
     Gender gender = getGenderFromPin(PIN);
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
@@ -618,7 +623,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     return dob;
   }
   
+/**
+ * @see com.idega.block.importer.business.ImportFileHandler#setRootGroup(Group)
+ */
   public void setRootGroup(Group group){}
   
+  
+	  /**
+	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
+	 */
+	public List getFailedRecords(){
+		return failedRecords;	
+	}
 
-  }
+}

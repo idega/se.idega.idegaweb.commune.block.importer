@@ -3,6 +3,7 @@ package se.idega.idegaweb.commune.block.importer.business;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
@@ -298,6 +299,13 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
  * @param rootGroup The rootGroup to set
  */
 public void setRootGroup(Group rootGroup) {
+}
+
+/**
+ * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
+ */
+public List getFailedRecords(){
+	return failedRecords;	
 }
 
   }
