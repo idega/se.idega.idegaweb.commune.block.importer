@@ -296,7 +296,8 @@ implements ImportFileHandler
 		}
 		else {
 			try {
-				placementTo = new IWTimestamp(formatDate(placementEndDate));
+				placementTo = new IWTimestamp();
+				placementTo.setDate(formatDate(placementEndDate));
 			}
 			catch (Exception e) {
 				placementTo = null;
