@@ -93,6 +93,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String IMMIGRATION_SECTION_STARTS = "05001";
   private final String IMMIGRATION_SECTION_ENDS = SPECIALCASE_RELATIONAL_SECTION_STARTS;
   private final String OTHER_ADDRESSES_SECTION_STARTS = "07001";*/
+  
+  public NackaImportFileHandlerBean(){}
 
   public boolean handleRecords() throws RemoteException{
   	
