@@ -79,7 +79,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			
 			String item;
 			int count = 1;
-			
+
 			while ( !(item=(String)file.getNextRecord()).equals("") ) {
 				
 				if(!processRecord(item)) {
@@ -367,12 +367,16 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 						level.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
 						level.setSchoolYearName(levelNr);
 						level.setLocalizedKey("sch_year." + levelNr);
-						level.setIsSelectable(false);
+						level.setIsSelectable(true);
 						level.store();
 					}
 					//SchoolClass (many-to-many) SchoolYear
 					try {
 						mainClass.addSchoolYear(level);
+					}
+					catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
+					try {
+						musicSchool.addSchoolYear(level);
 					}
 					catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
 					
@@ -384,20 +388,24 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				}
 				if(levelString != null && !levelString.equals(" ")) {
 					try {
-						level = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelString);
+						levelStr = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelString);
 					}
 					catch (FinderException fe) {
 						levelStr = levelHome.create();
 						levelStr.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
 						levelStr.setSchoolYearName(levelString);
 						levelStr.setLocalizedKey("sch_year." + levelString);
-						levelStr.setIsSelectable(false);
+						levelStr.setIsSelectable(true);
 						levelStr.store();
 					}
 					if(level == null) {
 						//SchoolClass (many-to-many) SchoolYear (only if levelNr is empty)
 						try {
 							mainClass.addSchoolYear(levelStr);
+						}
+						catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
+						try {
+							musicSchool.addSchoolYear(levelStr);
 						}
 						catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
 						
