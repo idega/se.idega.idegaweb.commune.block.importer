@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
@@ -23,6 +22,9 @@ import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import se.idega.util.PIDChecker;
 
 import com.idega.block.importer.data.ImportFile;
+import com.idega.business.IBOLookup;
+import com.idega.business.IBOLookupException;
+import com.idega.business.IBORuntimeException;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.location.business.AddressBusiness;
 import com.idega.core.location.data.Address;
@@ -34,7 +36,6 @@ import com.idega.core.location.data.Country;
 import com.idega.core.location.data.CountryHome;
 import com.idega.core.location.data.PostalCode;
 import com.idega.data.IDORemoveRelationshipException;
-import com.idega.data.IDOStoreException;
 import com.idega.presentation.IWContext;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
@@ -273,7 +274,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			return false;
 		}
 
-		user = handleNames(user, firstName, middleName, lastName, false);
+		user = getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, false);
 		/*
 		//preferred name handling.
 		if (preferredNameIndex != null) {
@@ -785,17 +786,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 *  
 	 */
 
-	private String getValueAtIndexFromNameString(int index, String name) {
-		int i = 1;
-		StringTokenizer tokens = new StringTokenizer(name);
-		String value = null;
-		while (tokens.hasMoreTokens() && i <= index) {
-			value = tokens.nextToken();
-			i++;
-		}
-
-		return value;
-	}
 
 	//This method is syncronized because this implementation
 	// is not reentrant (does not allow simultaneous invocation by many callers)
@@ -1394,23 +1384,25 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					String firstName = user.getFirstName();
 					String middleName = user.getMiddleName();
 					String lastName = (getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) != null) ? getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) : user.getLastName();
+					String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
 					
 					String firstPartOfLast = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
 					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
-					handleNames(user, firstName, middleName, lastName, true);
+					getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, true);
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_LAST_NAME)) {
 					/** CHANGING THE LAST NAME */
 					String firstName = user.getFirstName();
 					String middleName = user.getMiddleName();
 					String lastName = (getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) != null) ? getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN, "") : user.getLastName();
+					String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
 					
 					String firstPartOfLast = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
 					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
-					handleNames(user, firstName, middleName, lastName, true);
+					getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, true);
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_MARRIAGE)) {
 					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
@@ -1863,198 +1855,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 * @param updateName
 	 * @param user
 	 */
-	private User handleNames(User user, boolean store) {
+	private User handleNames(User user, boolean store) throws RemoteException {
 		//variables
 		
 		String firstName = getUserProperty(ImportFileFieldConstants.FIRST_NAME_COLUMN, "");
 		String middleName = "";
 		String lastNameFirstPart = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null); 
 		String lastName = getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN, "");
-		
+		String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
+
 		if (lastNameFirstPart != null ) {
 			lastName = lastNameFirstPart + " " + lastName;
 		}
 		
-		return handleNames(user, firstName, middleName, lastName, store);
+		return getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, store);
 	}
 
-	/**
-	 * @param updateName
-	 * @param user
-	 */
-	private User handleNames(User user, String firstName, String middleName, String lastName, boolean store) {
-		boolean updateName = false;
-		
-		if (firstName == null) {
-			firstName = "";
-		}
-		// Setting middleName as "", required for the rest of the code
-		if (middleName != null && !middleName.equals("")) {
-			firstName = firstName + " " + middleName;
-			middleName = "";
-		} else {
-			middleName = "";
-		}
-		
-		if (lastName == null) {
-			lastName = "";
-		}
-		
-		String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
-		if (preferredNameIndex == null) {
-			preferredNameIndex = "10";
-		}
-		
-		StringBuffer fullname = new StringBuffer();
-		//preferred name handling.
-		if (preferredNameIndex != null) {
-
-			fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			//log("Name : "+fullname.toString());
-
-			//if (!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex)) {
-			int index = Integer.parseInt(preferredNameIndex);
-			int refName1 = index / 10;
-			int refName2 = index % 10;
-			
-				if (refName2 > 0) {
-					//StringBuffer full = new StringBuffer();
-					//full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-					String fullName = fullname.toString();
-					
-					String preferredName1 = getValueAtIndexFromNameString(refName1, fullName);
-					String preferredName2 = getValueAtIndexFromNameString(refName2, fullName);
-					
-					firstName = preferredName1 + " " + preferredName2;
-					firstName = TextSoap.findAndReplace(firstName, "  ", " ");
-
-					// Remember MIDDLE NAME is always "" in the beginnig ...
-					// Removing lastName since last name should only be changed when moving name to firstName
-					middleName = TextSoap.findAndCut(fullName, lastName);
-					middleName = TextSoap.findAndCut(middleName, preferredName1);
-					middleName = TextSoap.findAndCut(middleName, preferredName2);
-					middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-
-					lastName = TextSoap.findAndCut(lastName, preferredName2);
-					lastName = TextSoap.findAndReplace(lastName, "  ", " ");
-
-					updateName = true;					
-				} else if (refName1 > 0){
-					String fullName = fullname.toString();
-					
-					String preferredName = getValueAtIndexFromNameString(refName1, fullName);
-					if (middleName.equals("")) {
-						middleName = firstName;
-					}
-					else {
-						if (middleName.startsWith(" ")) {
-							middleName = firstName + middleName;
-						}
-						else {
-							middleName = firstName + " " + middleName;
-						}
-					}
-	
-					firstName = preferredName;
-					middleName = TextSoap.findAndCut(middleName, preferredName);
-					middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-					if (refName1 > 1 && !lastName.equals(preferredName)) { // !lastName.equals(preferredName) added so that last_name is not null, if preferred name = last_name
-						lastName = TextSoap.findAndCut(lastName, preferredName);
-						lastName = TextSoap.findAndReplace(lastName, "  ", " ");
-					}
-	
-					updateName = true;
-				}
-
-		}
-
-		if (lastName.startsWith("Van ") && !updateName) {
-			StringBuffer half = new StringBuffer();
-			half.append(firstName).append(" ").append(middleName);
-			String halfName = half.toString();
-			firstName = getValueAtIndexFromNameString(1, halfName);
-			middleName = halfName.substring(Math.min(halfName.indexOf(" ") + 1, halfName.length()), halfName.length());
-			middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-			//lastName //unchanged
-
-			updateName = true;
-		}
-
-		if (updateName) { //needed because createUser uses the method
-						  // setFullName
-			// that splits the name with it's own rules
-
-			if (firstName != null) {
-				if (firstName.endsWith(" "))
-					firstName = firstName.substring(0, firstName.length() - 1);
-			}
-
-			if (middleName != null) {
-				if (middleName.startsWith(" "))
-					middleName = middleName.substring(1, middleName.length());
-				if (middleName.endsWith(" "))
-					middleName = middleName.substring(0, middleName.length() - 1);
-			}
-
-			if (lastName != null) {
-				if (lastName.startsWith(" "))
-					lastName = lastName.substring(1, lastName.length());
-				if (lastName.endsWith(" "))
-					lastName = lastName.substring(0, lastName.length() - 1);
-			}
-
-			user.setFirstName(firstName);
-			user.setMiddleName(middleName);
-			user.setLastName(lastName);
-		}
-
-		if (store) {
-			try {
-				user.store();
-				/*if (firstName.indexOf(middleName) > -1) {
-					int index = Integer.parseInt(preferredNameIndex);
-					int refName1 = index / 10;
-					int refName2 = index % 10;
-					
-					String fullName = fullname.toString();
-					
-					String preferredName = getValueAtIndexFromNameString(refName1, fullName);
-					
-					System.out.println("fullName = "+fullName);
-					System.out.println("preferredName = '"+preferredName+"'");
-					System.out.println("refName1 = "+refName1);
-					System.out.println("refName2 = "+refName2);
-					
-					System.out.println("FirstName = "+firstName);
-					System.out.println("MiddleName = '"+middleName+"'");
-					middleName = TextSoap.findAndCut(middleName, preferredName);
-					System.out.println("MiddleName = '"+middleName+"'");
-					System.out.println("LastName = "+lastName);
-				}
-				*/
-			} catch (IDOStoreException e) {
-				/*
-				int index = Integer.parseInt(preferredNameIndex);
-				int refName1 = index / 10;
-				int refName2 = index % 10;
-				
-				String fullName = fullname.toString();
-				
-				String preferredName = getValueAtIndexFromNameString(refName1, fullName);
-				
-				System.out.println("fullName = "+fullName);
-				System.out.println("preferredName = "+preferredName);
-				System.out.println("refName1 = "+refName1);
-				System.out.println("refName2 = "+refName2);
-				System.out.println("FirstName = "+firstName);
-				System.out.println("MiddleName = "+middleName);
-				System.out.println("LastName = "+lastName);
-				*/
-				throw e;
-			}
-		}
-		return user;
-	}
 
 	/**
 	 * @param user
@@ -2128,6 +1944,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	public void setStartRecord(int startRecord) {
 		this.startRecord = startRecord;
+	}
+	
+	public NackaImportBusiness getImportBusiness() {
+		try {
+			return (NackaImportBusiness) IBOLookup.getServiceInstance(this.getIWApplicationContext(), NackaImportBusiness.class);
+		}
+		catch (IBOLookupException e) {
+			throw new IBORuntimeException(e);
+		}
 	}
 
 ///////////////////////////////////////////////////
