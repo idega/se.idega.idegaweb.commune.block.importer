@@ -397,85 +397,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     
     boolean updateName = false;
 
-    //preferred name handling.
-    if( preferredNameIndex!=null ){
-
-			StringBuffer fullname = new StringBuffer();
-			fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			//System.out.println("Name : "+fullname.toString());
-    	
-    if( !"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
-    	String preferredName = getPreferredName(preferredNameIndex,firstName,middleName,lastName);
-    	if(middleName.equals("")){
-    		middleName = firstName;
-    	}
-    	else{
-				if(middleName.startsWith(" ")){
-					middleName = firstName + middleName;
-				}
-				else{
-					middleName = firstName + " "+ middleName;
-				}
-    		
-    	}
-    	
-				firstName = preferredName;
-				middleName = TextSoap.findAndCut(middleName,preferredName);
-				middleName = TextSoap.findAndReplace(middleName,"  "," ");
-				lastName = TextSoap.findAndCut(lastName,preferredName);
-				lastName = TextSoap.findAndReplace(lastName,"  "," ");
-				
-			updateName = true;
-			
-			
-    }
-    else if( "12".equals(preferredNameIndex) ){
-    	//stupid rule set first name as firstname AND Second name
-			StringBuffer full = new StringBuffer();
-			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			String fullName = full.toString();
-			fullName = TextSoap.findAndReplace(fullName,"  "," ");
-    	
-			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
-			String preferredName2 = getValueAtIndexFromNameString(2,fullName);
-			
-			firstName = preferredName1+" "+preferredName2;
-			firstName  = TextSoap.findAndReplace(firstName,"  "," ");
-			middleName = TextSoap.findAndCut(middleName,preferredName2);
-			middleName = TextSoap.findAndReplace(middleName,"  "," ");
-			lastName = TextSoap.findAndCut(lastName,preferredName2);
-			lastName = TextSoap.findAndReplace(lastName,"  "," ");
-  
-    	
-    	updateName = true;
-    }
-    else if( "13".equals(preferredNameIndex) ){
-    	//even stupider set first name as firstname AND third name
-			StringBuffer full = new StringBuffer();
-			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			String fullName = full.toString();
-			fullName = TextSoap.findAndReplace(fullName,"  "," ");
-    	
-			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
-			String preferredName2 = getValueAtIndexFromNameString(3,fullName);
-			
-			firstName = preferredName1+" "+preferredName2;
-			firstName  = TextSoap.findAndReplace(firstName,"  "," ");
-			middleName = TextSoap.findAndCut(middleName,preferredName2);
-			middleName = TextSoap.findAndReplace(middleName,"  "," ");
-			lastName = TextSoap.findAndCut(lastName,preferredName2);
-			lastName = TextSoap.findAndReplace(lastName,"  "," ");
-    	
-    	updateName= true;
-    
-    }
-    
-			//fullname = new StringBuffer();
-			//fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-	
-			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
-     
-  	}
 
     /**
     * basic user info
@@ -488,6 +409,87 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       e.printStackTrace();
       return false;
     }
+    
+
+		//preferred name handling.
+		if( preferredNameIndex!=null ){
+	
+				StringBuffer fullname = new StringBuffer();
+				fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+				//System.out.println("Name : "+fullname.toString());
+	    	
+			if( !"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
+				String preferredName = getPreferredName(preferredNameIndex,firstName,middleName,lastName);
+				if(middleName.equals("")){
+					middleName = firstName;
+				}
+				else{
+					if(middleName.startsWith(" ")){
+						middleName = firstName + middleName;
+					}
+					else{
+						middleName = firstName + " "+ middleName;
+					}
+	    		
+				}
+	    	
+					firstName = preferredName;
+					middleName = TextSoap.findAndCut(middleName,preferredName);
+					middleName = TextSoap.findAndReplace(middleName,"  "," ");
+					lastName = TextSoap.findAndCut(lastName,preferredName);
+					lastName = TextSoap.findAndReplace(lastName,"  "," ");
+					
+				updateName = true;
+				
+				
+			}
+			else if( "12".equals(preferredNameIndex) ){
+				//stupid rule set first name as firstname AND Second name
+				StringBuffer full = new StringBuffer();
+				full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+				String fullName = full.toString();
+				fullName = TextSoap.findAndReplace(fullName,"  "," ");
+	    	
+				String preferredName1 = getValueAtIndexFromNameString(1,fullName);
+				String preferredName2 = getValueAtIndexFromNameString(2,fullName);
+				
+				firstName = preferredName1+" "+preferredName2;
+				firstName  = TextSoap.findAndReplace(firstName,"  "," ");
+				middleName = TextSoap.findAndCut(middleName,preferredName2);
+				middleName = TextSoap.findAndReplace(middleName,"  "," ");
+				lastName = TextSoap.findAndCut(lastName,preferredName2);
+				lastName = TextSoap.findAndReplace(lastName,"  "," ");
+	  
+	    	
+				updateName = true;
+			}
+			else if( "13".equals(preferredNameIndex) ){
+				//even stupider set first name as firstname AND third name
+				StringBuffer full = new StringBuffer();
+				full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+				String fullName = full.toString();
+				fullName = TextSoap.findAndReplace(fullName,"  "," ");
+	    	
+				String preferredName1 = getValueAtIndexFromNameString(1,fullName);
+				String preferredName2 = getValueAtIndexFromNameString(3,fullName);
+				
+				firstName = preferredName1+" "+preferredName2;
+				firstName  = TextSoap.findAndReplace(firstName,"  "," ");
+				middleName = TextSoap.findAndCut(middleName,preferredName2);
+				middleName = TextSoap.findAndReplace(middleName,"  "," ");
+				lastName = TextSoap.findAndCut(lastName,preferredName2);
+				lastName = TextSoap.findAndReplace(lastName,"  "," ");
+	    	
+				updateName= true;
+	    
+			}
+	    
+				//fullname = new StringBuffer();
+				//fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+		
+				//System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
+     
+		}
     
     if(updateName){//needed because createUser uses the method setFullName that splits the name with it's own rules
     	
