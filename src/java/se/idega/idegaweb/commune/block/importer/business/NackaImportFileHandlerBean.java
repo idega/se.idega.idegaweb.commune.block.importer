@@ -74,14 +74,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 
     try {
+      //initialize business beans and data homes
       biz = (UserBusiness) IBOLookup.getServiceInstance(iwac,UserBusiness.class);
       relationBiz = (MemberFamilyLogic) IBOLookup.getServiceInstance(iwac,MemberFamilyLogic.class);
       home = biz.getUserHome();
       groupHome = biz.getGroupHome();
 
+      //if the transaction failes all the users and their relations are removed
+      transaction.begin();
+
       /**@todo should be in a separate transaction?**/
       //create the default group
-      String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
+     /* String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
       if( groupId!=null ){
         nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
       }
@@ -93,11 +97,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
         iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
       }
-      // end default group creation
+      // end default group creation*/
 
-      //if the transaction failes all the users and their relations are removed
-      transaction.begin();
-
+      //iterate through the records and process them
       Iterator iter = records.iterator();
       int count = 0;
       while (iter.hasNext()) {
@@ -111,14 +113,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         }
       }
 
-      //family relations
+      //store family relations
       storeRelations();
 
       records = null;
       clock.stop();
       System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
-     // System.gc();
 
+      // System.gc();
+      //success commit changes
       transaction.commit();
 
       return true;
@@ -160,8 +163,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     storeUserInfo();
 
+    /**
+    * family and other releation stuff
+    */
+    addRelations();
 
-    //addRelations
 
     userPropertiesMap = null;
 
@@ -305,14 +311,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     * Main group relation
     * add to the Nacka root group
     */
-    nackaGroup.addUser(user);
-
-
-    /**
-     * family and other releation stuff
-    */
-    addRelations();
-
+    //nackaGroup.addUser(user);
 
     //finished with this user
     return true;
