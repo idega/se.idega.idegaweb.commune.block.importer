@@ -15,6 +15,7 @@ import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.data.*;
 import com.idega.block.school.business.*;
+import com.idega.business.IBORuntimeException;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDOAddRelationshipException;
 import com.idega.data.IDORelationshipException;
@@ -52,7 +53,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
   private ArrayList schoolValues;
   private ArrayList failedRecords = new ArrayList();
   
-  private boolean isPreSchoolFile = false;
+  private boolean isPreSchoolFile = true;
   private boolean checkIfPreSchool = true;  
 
 //The columns in the file are in this order
@@ -107,10 +108,11 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
       schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
       sHome = schoolBiz.getSchoolHome();
 			
-			preSchoolOnly = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(1));
-			caretakerPreSchool = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(2));
-			regularSchool = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(4));
-			schoolWithPreSchoolClass = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(5));
+			//preSchoolOnly = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(1));
+			preSchoolOnly = getPreSchoolSchoolType(schoolBiz);
+			caretakerPreSchool = getCareTakerSchoolType(schoolBiz);
+			regularSchool = getElementarySchoolType(schoolBiz);
+			schoolWithPreSchoolClass = getElementarySchoolWithPreschoolClassSchoolType(schoolBiz);
 			
 
       
@@ -163,7 +165,81 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
 
   }
 
-  private boolean processRecord(String record) throws RemoteException{
+/**
+ * @param schoolBiz
+ * @return
+ */
+private SchoolType getElementarySchoolType(SchoolBusiness schoolBiz) {
+	String schoolTypeKey="sch_type.school_type_forskoleklass";
+	return getSchoolType(schoolBiz,schoolTypeKey,"PreSchoolClass",true);
+}
+
+/**
+ * @param schoolBiz
+ * @return
+ */
+private SchoolType getElementarySchoolWithPreschoolClassSchoolType(SchoolBusiness schoolBiz) {
+	String schoolTypeKey="sch_type.school_type_grundskola";
+	return getSchoolType(schoolBiz,schoolTypeKey,"ElementarySchool",true);
+}
+
+/**
+ * @param schoolBiz
+ * @return
+ */
+private SchoolType getCareTakerSchoolType(SchoolBusiness schoolBiz) {
+	String schoolTypeKey="sch_type.school_type_familjedaghem";
+	return getSchoolType(schoolBiz,schoolTypeKey,"CareTaker",false);
+}
+
+/**
+ * @return
+ */
+private SchoolType getPreSchoolSchoolType(SchoolBusiness schoolBiz) {
+	String schoolTypeKey="sch_type.school_type_forskola";
+	return getSchoolType(schoolBiz,schoolTypeKey,"PreSchool",false);
+}
+
+/**
+ * @param childcareCategory if false then the category is set to childcare, else it is set to elementaryschool
+* @return A SchoolType and creates it if it does not exist.
+*/
+private SchoolType getSchoolType(
+	SchoolBusiness schoolBiz,
+	String schoolTypeKey,
+	String SchoolTypeName,
+	boolean elementarySchoolCategory) {
+	SchoolType type=null;
+	try {
+		SchoolTypeHome stHome = schoolBiz.getSchoolTypeHome();
+		try {
+			type = stHome.findByTypeKey(schoolTypeKey);
+		} catch (FinderException fe) {
+			try {
+				type = stHome.create();
+				type.setLocalizationKey(schoolTypeKey);
+				type.setSchoolTypeName(SchoolTypeName);
+
+				if(elementarySchoolCategory){
+					type.setSchoolCategory(schoolBiz.getElementarySchoolSchoolCategory());					
+				}
+				else{
+					type.setSchoolCategory(schoolBiz.getChildCareSchoolCategory());
+				}
+				type.store();
+			} catch (Exception e) {
+				//e.printStackTrace();
+				throw new IBORuntimeException(e);
+			}
+		}
+	} catch (RemoteException re) {
+		re.printStackTrace();
+	}
+	// TODO Auto-generated method stub
+	return type;
+}
+
+private boolean processRecord(String record) throws RemoteException{
     schoolValues = file.getValuesFromRecordString(record);
     //System.out.println("THE RECORD = "+record);
     
