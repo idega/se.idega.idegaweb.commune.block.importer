@@ -55,19 +55,25 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
           cnt++;
         }
 
-        clock.stop();
-
-        System.out.println("Time for operation: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
-        System.out.println("Number of Lines: "+cnt);
-        System.out.println("Number of records = "+records);
-        processRecords(list);
+        line = null;
+        buf = null;
 
         br.close();
         fr = null;
         br = null;
 
-        //Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
         System.gc();
+
+        processRecords(list);
+
+        clock.stop();
+
+        System.out.println("Time for operation: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
+        System.out.println("Number of Lines: "+cnt);
+        System.out.println("Number of records = "+records);
+
+        //Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
+
 
 
     }
@@ -91,9 +97,11 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
     while (iter.hasNext()) {
       count++;
       String item = (String) iter.next();
-      if( this.importAtATimeLimit >= count ){
-        System.out.println("RECORD ["+count+"] \n"+item);
-      }
+      //if( this.importAtATimeLimit >= count ){
+
+
+        System.out.println("RECORD ["+count+"]");
+      //}
     }
 
     list = null;
