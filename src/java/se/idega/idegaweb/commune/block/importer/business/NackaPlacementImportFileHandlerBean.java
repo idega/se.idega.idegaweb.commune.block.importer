@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.4 2003/10/21 07:44:58 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.5 2003/10/21 14:30:54 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -23,10 +23,13 @@ import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
+import se.idega.idegaweb.commune.accounting.resource.business.ResourceBusiness;
+import se.idega.idegaweb.commune.accounting.resource.data.Resource;
+import se.idega.idegaweb.commune.accounting.resource.data.ResourceClassMember;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
-import com.idega.block.importer.data.ImportFile;
 import com.idega.block.importer.business.ImportFileHandler;
+import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.business.SchoolBusiness;
 import com.idega.block.school.data.School;
 import com.idega.block.school.data.SchoolClass;
@@ -35,21 +38,19 @@ import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.block.school.data.SchoolSeason;
-import com.idega.block.school.data.SchoolSeasonHome;
-import com.idega.block.school.data.SchoolYear;
-import com.idega.block.school.data.SchoolYearHome;
 import com.idega.block.school.data.SchoolType;
 import com.idega.block.school.data.SchoolTypeHome;
+import com.idega.block.school.data.SchoolYear;
+import com.idega.block.school.data.SchoolYearHome;
 import com.idega.business.IBOServiceBean;
+import com.idega.core.location.data.Commune;
+import com.idega.core.location.data.CommuneHome;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
-
-import se.idega.idegaweb.commune.accounting.resource.business.ResourceBusiness;
-import se.idega.idegaweb.commune.accounting.resource.data.Resource;
 
 /** 
  * Import logic for placing Nacka students.
@@ -62,10 +63,10 @@ import se.idega.idegaweb.commune.accounting.resource.data.Resource;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/21 07:44:58 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/21 14:30:54 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -78,6 +79,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private SchoolHome sHome = null;
 	private SchoolClassHome sClassHome = null;
 	private SchoolClassMemberHome sClassMemberHome = null;
+	private CommuneHome communeHome = null;
 
 	private SchoolSeason season = null;
     
@@ -129,16 +131,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		failedRecords = new ArrayList();
 		failedSchools = new HashMap();
 		transaction = this.getSessionContext().getUserTransaction();
-    
-		try {
-			season = ((SchoolSeasonHome)this.getIDOHome(SchoolSeason.class)).findByPrimaryKey(new Integer(2));    	
-			//((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.Class)).getCurrentSeason();
-    	} catch(FinderException e) {
-			e.printStackTrace();
-			System.out.println("NackaPlacementHandler: School season is not defined");
-			return false;
-		}
-    
+        
 		Timer clock = new Timer();
 		clock.start();
 
@@ -152,8 +145,18 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			sHome = schoolBiz.getSchoolHome();           
 			sYearHome = schoolBiz.getSchoolYearHome();
 			sTypeHome = schoolBiz.getSchoolTypeHome();
-			sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
-			sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
+			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			
+
+			try {
+				season = schoolBiz.getCurrentSchoolSeason();    	
+			} catch(FinderException e) {
+				e.printStackTrace();
+				System.out.println("NackaPlacementHandler: School season is not defined");
+				return false;
+			}
       
       		// Get resources (change primary keys to the correct values)
 			skillLevel0Resource = resourceBiz.getResourceByPrimaryKey(new Integer(1));
@@ -195,7 +198,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).equals("")) {
+			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
@@ -214,7 +217,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			printFailedRecords();
 
 			clock.stop();
-			System.out.println("Number of records handled: " + count);
+			System.out.println("Number of records handled: " + (count - 1));
 			System.out.println("Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int)(clock.getTime()/1000)) + " s");
 
 			//success commit changes
@@ -323,8 +326,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		String studentZipArea = getUserProperty(this.COLUMN_STUDENT_ZIP_AREA);
 		studentZipArea = studentZipArea == null ? "" : studentZipArea;
 
-		String homeCommune = getUserProperty(this.COLUMN_HOME_COMMUNE);
-		homeCommune = homeCommune == null ? "" : homeCommune;
+		String homeCommuneName = getUserProperty(this.COLUMN_HOME_COMMUNE);
+		homeCommuneName = homeCommuneName == null ? "" : homeCommuneName;
 		
 		String schoolYear = getUserProperty(this.COLUMN_SCHOOL_YEAR);
 		if (schoolYear == null) return false;
@@ -350,12 +353,14 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 
 		// school type
 		String typeKey = null;
+		String schoolYearPrefix = "";
 		if (schoolTypeName.equals("Grundskola")) {
 			typeKey = "sch_type.school_type_grundskola";
 		} else if (schoolTypeName.substring(2).equals("rskoleklass")) {
 			typeKey = "sch_type.school_type_forskoleklass";
 		} else if (schoolTypeName.substring(2).equals("rskola")) {
 			typeKey = "sch_type.school_type_oblig_sarskola";
+			schoolYearPrefix = "S";
 		}
 		if (typeKey == null) {
 			System.out.println("School type: " + schoolTypeName + " not supported.");
@@ -400,6 +405,20 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		if (studentAddress.length() > 0) {
 			biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea);
 		}
+
+		if (useMotherTongue.equals("X")) {
+//			ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
+//			user.setNativeLanguage(nativeLanguage);		
+		}
+		
+		try {
+			Commune homeCommune = communeHome.findByCommuneName(homeCommuneName);
+			homeCommune.toString(); // REMOVE THIS WHEN SET COMMUNE FIXED
+//			user.setHomeCommune(...)
+		} catch (FinderException e) {
+			System.out.println("Commune not found: " + homeCommuneName);
+			return false;
+		}
 		
 		user.store();
 				
@@ -416,10 +435,10 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				return false;
 			}		
 
-			Iterator iter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
+			Iterator schoolTypeIter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
 			boolean hasSchoolType = false;
-			while (iter.hasNext()) {
-				SchoolType st = (SchoolType) iter.next();
+			while (schoolTypeIter.hasNext()) {
+				SchoolType st = (SchoolType) schoolTypeIter.next();
 				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
 					hasSchoolType = true;
 					break;
@@ -433,7 +452,9 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			
 			if (schoolYear.equals("0")) {
 				schoolYear = "F";
-			} 
+			} else {
+				schoolYear = schoolYearPrefix + schoolYear; 
+			}
 			try {
 				//school year	
 				year = sYearHome.findByYearName(schoolYear);
@@ -443,10 +464,10 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			}
 
 			Map schoolYears = schoolBiz.getSchoolRelatedSchoolYears(school);
-			iter = schoolYears.values().iterator();
+			Iterator schoolYearIter = schoolYears.values().iterator();
 			boolean schoolYearFound = false;
-			while (iter.hasNext()) {
-				SchoolYear sy = (SchoolYear) iter.next();
+			while (schoolYearIter.hasNext()) {
+				SchoolYear sy = (SchoolYear) schoolYearIter.next();
 				if (sy.getSchoolYearName().equals(schoolYear)) {
 					schoolYearFound = true;
 					break;
@@ -469,10 +490,10 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				
 				sClass = schoolBiz.storeSchoolClass(schoolClass, school, year, season);
 				sClass.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
-				sClass.store();
 				if (sClass == null) {
 					return false;
 				}				
+				sClass.store();
 			}
 			
 			//school Class member
@@ -491,6 +512,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 								yesterday.addDays(-1);
 								placement.setRemovedDate(yesterday.getTimestamp());
 								placement.store();
+								Collection c = resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
+								Iterator resourceMemberIter = c.iterator();
+								while (resourceMemberIter.hasNext()) {
+									ResourceClassMember m = (ResourceClassMember) resourceMemberIter.next();
+									m.setEndDate(yesterday.getDate());
+									m.store();
+								}
 							}
 						}
 					}
