@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.29 2003/11/13 16:41:52 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.30 2003/11/19 10:35:53 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -59,17 +59,17 @@ import com.idega.util.Timer;
  * Import logic for placing Nacka students.
  * <br>
  * To add this to the "Import handler" dropdown for the import function, execute the following SQL:<br>
- * insert into im_handler values (5, 'Nacka student placement importer with resources', 
+ * insert into im_handler values (8, 'Nacka student placement importer with resources', 
  * 'se.idega.idegaweb.commune.block.importer.business.NackaPlacementImportFileHandlerBean',
  * 'Imports Nacka students with resources and students in other communes.')
  * <br>
- * Note that the "5" value in the SQL might have to be adjusted in the sql, 
+ * Note that the "8" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/13 16:41:52 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/19 10:35:53 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.29 $
+ * @version $Revision: 1.30 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -123,8 +123,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 
 	private final int RESOURCE_ID_SKILL_LEVEL_0 = 32;
 	private final int RESOURCE_ID_SKILL_LEVEL_1 = 33;
-	private final int RESOURCE_ID_SKILL_LEVEL_2 = 41;
-	private final int RESOURCE_ID_SKILL_LEVEL_3 = 42;
+	private final int RESOURCE_ID_SKILL_LEVEL_2 = 81;
+	private final int RESOURCE_ID_SKILL_LEVEL_3 = 82;
 	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 30;
 	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 31;
 	
