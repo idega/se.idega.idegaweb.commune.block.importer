@@ -176,6 +176,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private HashMap unhandledActions;
 	private Map userPropertiesMap;
 
+	private User performer = null;
+	
 	//not needed..yet?
 	/*
 	 * private final String USER_SECTION_STARTS = "01001"; private final String
@@ -268,7 +270,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			commune = getCommuneHome().findByCommuneCode(communeCode);
 		}
 		catch (FinderException e1) {
-			logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
+			//logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
 		}
 		
 		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
@@ -519,22 +521,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 				//this will force a new record in the relation table
 				try {
-					// try to get the current user
-					User currentUser;
-					try {
-						currentUser = IWContext.getInstance().getCurrentUser();
-					}
-					catch (Exception ex) {
-						currentUser = null;
-					}
-
-					comUserBiz.getRootProtectedCitizenGroup().removeUser(user, currentUser);
+				comUserBiz.getRootProtectedCitizenGroup().removeUser(user, performer);
 				}
 				catch (Exception e) {
 				}
 			}
 
-			comUserBiz.moveCitizenToProtectedCitizenGroup(user);
+			comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), performer);
 		}
 		else if (isMovingFromHomeCommune) {
 			//		this will force a new record in the relation table
@@ -558,10 +551,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 
 			if (dateOfDeactivation != null) {
-				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp());
+				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), performer);
 			}
 			else {
-				comUserBiz.moveCitizenFromCommune(user);
+				comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), performer);
 			}
 
 		}
@@ -586,10 +579,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 
 			if (dateOfRegistration != null) {
-				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp());
+				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), performer);
 			}
 			else {
-				comUserBiz.moveCitizenToCommune(user);
+				comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), performer);
 			}
 
 		}
@@ -881,7 +874,20 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		//transaction = this.getSessionContext().getUserTransaction();
 		transaction2 = this.getSessionContext().getUserTransaction();
+
 		Timer clock = new Timer();
+		try {
+			clock.start();
+			performer = IWContext.getInstance().getCurrentUser();
+			clock.stop();
+			log("Time to get performer: "
+				+ clock.getTime()
+				+ " ms ");
+		}
+		catch (Exception ex) {
+			performer = null;
+		}
+		clock = new Timer();
 		clock.start();
 
 		try {
@@ -1360,7 +1366,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	protected boolean storeUserInfo() throws RemoteException {
 
 		String actionType = getUserProperty(ACTION_TYPE_COLUMN);
-		String[][] actions = parseAction(actionType);
+		String[][] actions = new String[0][0];
+		if (actionType != null) {
+			parseAction(actionType);
+		}
 		//HashMap actionTypeMap = parseAction(actionType);
 		//List actionTypes = TextSoap.FindAllWithSeparator(actionType, ",");
 		//Set actionTypes = actionTypeMap.keySet();
@@ -1395,15 +1404,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		
 		if (actions.length == 0) {
 			/** FULL IMPORT */
-			System.out.println("FullImport, No Actions");
+			//System.out.print("FullImport, No Actions");
 			if (!fullImport()) {
+				//System.out.println(" ... failed !!!!");
 				return false;
+			} else {
+				//System.out.println(" ... SUCCESS !!!!");
 			}
 		} else {
 			for (int i = 0; i < actions.length; i++) {
 				action = actions[i][0];
 				concerns = actions[i][1];
 				prefix = actions[i][2];
+				if (action == null) {
+					System.out.println("... action = null, set to \"\"");
+					action = "";
+				}
 				
 				//System.out.println("Action = "+action+" ("+concerns+")");
 				if (action.equals(ACTION_TYPE_BIRTH)) {
@@ -1441,19 +1457,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					}
 				} else if (action.equals(ACTION_TYPE_MIDDLE_NAME)) { 
 					/** CHANGING THE FIRST PART OF THE LAST NAME */
-					String firstName = (getUserProperty(FIRST_NAME_COLUMN) != null) ? getUserProperty(FIRST_NAME_COLUMN) : user.getFirstName();
-					String middleName = "";//user.getMiddleName();
+					String firstName = user.getFirstName();
+					String middleName = user.getMiddleName();
 					String lastName = (getUserProperty(LAST_NAME_COLUMN) != null) ? getUserProperty(LAST_NAME_COLUMN) : user.getLastName();
 					
-					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN);
+					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
 					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
 					handleNames(user, firstName, middleName, lastName, true);
 				} else if (action.equals(ACTION_TYPE_LAST_NAME)) {
 					/** CHANGING THE LAST NAME */
-					String firstName = (getUserProperty(FIRST_NAME_COLUMN) != null) ? getUserProperty(FIRST_NAME_COLUMN, "") : user.getFirstName();
-					String middleName = "";//user.getMiddleName();
+					String firstName = user.getFirstName();
+					String middleName = user.getMiddleName();
 					String lastName = (getUserProperty(LAST_NAME_COLUMN) != null) ? getUserProperty(LAST_NAME_COLUMN, "") : user.getLastName();
 					
 					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null);
@@ -1574,6 +1590,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 * @return
 	 */
 	private String handleDoubleLastName(String lastName, String firstPartOfLast) {
+		if (lastName == null) {
+			lastName = "";
+		}
 		if (firstPartOfLast == null || "".equals(firstPartOfLast) || EMPTY_FIELD_CHARACTER.equals(firstPartOfLast)) {
 			int index = lastName.indexOf(" ");
 			if (index != -1 && lastName.length() > 0) {
@@ -1819,7 +1838,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			commune = getCommuneHome().findByCommuneCode(communeCode);
 		}
 		catch (FinderException e1) {
-			logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
+			//logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
 		}
 		
 		boolean isMovingFromHomeCommune = false; 
@@ -1862,10 +1881,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 			
 			if (dateOfDeactivation != null) {
-				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp());
+				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), performer);
 			}
 			else {
-				comUserBiz.moveCitizenFromCommune(user);
+				comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), performer);
 			}
 
 		}
@@ -1895,10 +1914,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				dateOfRegistration = getDateFromString(dateOfRegistrationString);
 			}
 			if (dateOfRegistration != null) {
-				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp());
+				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), performer);
 			}
 			else {
-				comUserBiz.moveCitizenToCommune(user);
+				comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), performer);
 			}
 
 		}
@@ -1952,18 +1971,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			preferredNameIndex = "10";
 		}
 		
+		StringBuffer fullname = new StringBuffer();
 		//preferred name handling.
 		if (preferredNameIndex != null) {
 
-			StringBuffer fullname = new StringBuffer();
 			fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
 			//log("Name : "+fullname.toString());
 
 			//if (!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex)) {
-				int index = Integer.parseInt(preferredNameIndex);
-				int refName1 = index / 10;
-				int refName2 = index % 10;
-
+			int index = Integer.parseInt(preferredNameIndex);
+			int refName1 = index / 10;
+			int refName2 = index % 10;
+			
 				if (refName2 > 0) {
 					//StringBuffer full = new StringBuffer();
 					//full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
@@ -2000,14 +2019,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						else {
 							middleName = firstName + " " + middleName;
 						}
-	
 					}
 	
 					firstName = preferredName;
 					middleName = TextSoap.findAndCut(middleName, preferredName);
 					middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-					lastName = TextSoap.findAndCut(lastName, preferredName);
-					lastName = TextSoap.findAndReplace(lastName, "  ", " ");
+					if (refName1 > 1 && !lastName.equals(preferredName)) { // !lastName.equals(preferredName) added so that last_name is not null, if preferred name = last_name
+						lastName = TextSoap.findAndCut(lastName, preferredName);
+						lastName = TextSoap.findAndReplace(lastName, "  ", " ");
+					}
 	
 					updateName = true;
 				}
@@ -2056,11 +2076,46 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		if (store) {
 			try {
-			user.store();
+				user.store();
+				/*if (firstName.indexOf(middleName) > -1) {
+					int index = Integer.parseInt(preferredNameIndex);
+					int refName1 = index / 10;
+					int refName2 = index % 10;
+					
+					String fullName = fullname.toString();
+					
+					String preferredName = getValueAtIndexFromNameString(refName1, fullName);
+					
+					System.out.println("fullName = "+fullName);
+					System.out.println("preferredName = '"+preferredName+"'");
+					System.out.println("refName1 = "+refName1);
+					System.out.println("refName2 = "+refName2);
+					
+					System.out.println("FirstName = "+firstName);
+					System.out.println("MiddleName = '"+middleName+"'");
+					middleName = TextSoap.findAndCut(middleName, preferredName);
+					System.out.println("MiddleName = '"+middleName+"'");
+					System.out.println("LastName = "+lastName);
+				}
+				*/
 			} catch (IDOStoreException e) {
+				/*
+				int index = Integer.parseInt(preferredNameIndex);
+				int refName1 = index / 10;
+				int refName2 = index % 10;
+				
+				String fullName = fullname.toString();
+				
+				String preferredName = getValueAtIndexFromNameString(refName1, fullName);
+				
+				System.out.println("fullName = "+fullName);
+				System.out.println("preferredName = "+preferredName);
+				System.out.println("refName1 = "+refName1);
+				System.out.println("refName2 = "+refName2);
 				System.out.println("FirstName = "+firstName);
 				System.out.println("MiddleName = "+middleName);
 				System.out.println("LastName = "+lastName);
+				*/
 				throw e;
 			}
 		}
@@ -2102,7 +2157,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 		}
 
-		comUserBiz.moveCitizenToProtectedCitizenGroup(user);
+		comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), performer);
 	}
 
 ///////////////////////////////////////////////////
