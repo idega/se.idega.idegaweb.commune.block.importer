@@ -48,7 +48,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private UserTransaction transaction;
   private UserTransaction transaction2;
 
-  private boolean onlyImportRelations = false;
+  private boolean importUsers = true;
+  private boolean importAddresses = true;
+  private boolean importRelations = true;
+
   private int startRecord = 0;
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
@@ -65,6 +68,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
   private final String RELATION_TYPE_FATHER = "FA";
   private final String RELATION_TYPE_MOTHER = "MO";
+
+  private Gender male;
+  private Gender female;
 
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
@@ -123,7 +129,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 
       //store family relations
-      storeRelations();
+      if( importRelations){
+        storeRelations();
+      }
 
       return true;
     }
@@ -147,7 +155,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     record = TextSoap.findAndCut(record,"#UP ");
 
-    if( !onlyImportRelations ){
+    if( importUsers || importAddresses ){
        //Family relations
       userPropertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
       //Special case relations
@@ -163,7 +171,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //System.out.println("storeUserInfo");
       storeUserInfo();
     }
-    else{//only store relations
+    else if( !importUsers && !importAddresses && importRelations){//only store relations
       //the rest e.g. User info and immigration stuff
       userPropertiesMap.putAll(getPropertiesMapFromString(record," "));//PIN number etc.
       //Family relations
@@ -173,7 +181,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     /**
     * family and other releation stuff
     */
-    addRelations();
+    if( importRelations ) addRelations();
 
 
     userPropertiesMap = null;
@@ -272,12 +280,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     String lastName = getUserProperty("01014","");
     String PIN = getUserProperty("01001");
 
+    Gender gender = getGenderFromPin(PIN);
+    idegaTimestamp dateOfBirth = getBirthDateFromPin(PIN);
+
     /**
     * basic user info
     */
     try{
       //System.err.println(firstName);
-      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN);
+      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
     }
     catch(Exception e){
       e.printStackTrace();
@@ -291,7 +302,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //country id 187 name Sweden isoabr: SE
 
       String addressLine = getUserProperty("01033");
-      if( addressLine!=null ){
+      if( (addressLine!=null) && importAddresses ){
         try{
 
         String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
@@ -529,11 +540,59 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   }
 
   public void setOnlyImportRelations(boolean onlyImportRelations){
-    this.onlyImportRelations = onlyImportRelations;
+    setImportRelations(true);
+    setImportUsers(false);
+    setImportAddresses(false);
+  }
+
+  public void setImportRelations(boolean importRelations){
+    this.importRelations = importRelations;
+  }
+
+  public void setImportUsers(boolean importUsers){
+    this.importUsers = importUsers;
+  }
+
+  public void setImportAddresses(boolean importAddresses){
+    this.importAddresses = importAddresses;
   }
 
   public void setStartRecord(int startRecord){
     this.startRecord = startRecord;
+  }
+
+  private Gender getGenderFromPin(String pin){
+    //pin format = 190010221208 second last number is the gender
+    //even number = female
+    //odd number = male
+    try {
+      GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
+      if( Integer.parseInt(pin.substring(10,11)) % 2 == 0 ){
+        if( female == null ){
+          female = home.getFemaleGender();
+        }
+        return female;
+      }
+      else{
+        if( male == null ){
+          male = home.getMaleGender();
+        }
+        return male;
+      }
+    }
+    catch (Exception ex) {
+      ex.printStackTrace();
+      return null;//if something happened
+    }
+  }
+
+  private idegaTimestamp getBirthDateFromPin(String pin){
+    //pin format = 190010221208 yyyymmddxxxx
+    int dd = Integer.parseInt(pin.substring(6,8));
+    int mm = Integer.parseInt(pin.substring(4,6));
+    int yyyy = Integer.parseInt(pin.substring(0,4));
+    idegaTimestamp dob = new idegaTimestamp(dd,mm,yyyy);
+    return dob;
   }
 
   }
