@@ -28,6 +28,7 @@ import com.idega.block.school.data.SchoolClassMemberHome;
 import com.idega.block.school.data.SchoolClassMemberLog;
 import com.idega.block.school.data.SchoolClassMemberLogHome;
 import com.idega.block.school.data.SchoolHome;
+import com.idega.block.school.data.SchoolType;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDORelationshipException;
 import com.idega.idegaweb.UnavailableIWContext;
@@ -402,7 +403,8 @@ implements ImportFileHandler
 				
 				//iterator through the school types but there is only one per provider :)
 				while (iterTypes.hasNext()) {
-					schoolTypeID = ((Integer) iterTypes.next()).intValue();
+					SchoolType type = (SchoolType) iterTypes.next();					
+					schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
 				}
 				
 			}
