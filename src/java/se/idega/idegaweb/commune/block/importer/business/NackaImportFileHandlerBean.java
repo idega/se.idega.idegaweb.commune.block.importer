@@ -435,12 +435,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 			lastName = lastNameFirstPart + " " + lastName;
 		}
-
-		System.out.println("firstName = "+firstName);
-		System.out.println("middleName = "+middleName);
-		System.out.println("lastNameFirstPart = "+lastNameFirstPart);
-		System.out.println("lastName = "+lastName);
-		System.out.println("preferredNameIndex = "+preferredNameIndex);
 		
 		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
 		IWTimestamp dateOfRegistration = null;
@@ -482,7 +476,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			commune = getCommuneHome().findByCommuneCode(communeCode);
 		}
 		catch (FinderException e1) {
-			logWarning("Commune with code:"+communeCode+" not found in database");
+			logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
 		}
 		String secrecy = getUserProperty(SECRECY_MARKING_COLUMN);
 		boolean secretPerson = "J".equals(secrecy);
