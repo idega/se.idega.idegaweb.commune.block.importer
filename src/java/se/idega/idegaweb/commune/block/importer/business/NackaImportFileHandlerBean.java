@@ -49,8 +49,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   private final String RELATION_TYPE_CHILD = "B";
   private final String RELATION_TYPE_SPOUSE = "M";
-  private final String RELATION_TYPE_SPOUSE2 = "VF";
+  private final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
   private final String RELATION_TYPE_FATHER = "FA";
+  private final String RELATION_TYPE_MOTHER = "MO";
 
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
@@ -336,6 +337,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
                     else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
                       relationBiz.setAsSpouseFor(relative,user);
                     }
+                    else if( relationType.equals(this.RELATION_TYPE_FATHER) ){
+                      relationBiz.setAsChildFor(user,relative);
+                    }
+                    else if( relationType.equals(this.RELATION_TYPE_MOTHER) ){
+                      relationBiz.setAsChildFor(user,relative);
+                    }
+                    else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
+                      relationBiz.setAsChildFor(relative,user);
+                    }
+
                     //other types
                   }
                   catch (CreateException ex) {
