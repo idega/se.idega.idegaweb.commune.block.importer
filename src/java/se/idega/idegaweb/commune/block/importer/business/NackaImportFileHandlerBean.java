@@ -318,6 +318,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   }
 
   protected void storeRelations() throws RemoteException{
+    ArrayList errors = new ArrayList();
 
    //get keys <- pins
   //get user bean
@@ -369,40 +370,50 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
                 if( relativePIN !=null ){
                   try {
-                    relative = home.findByPersonalID(relativePIN);
 
-                    if( relationType.equals(this.RELATION_TYPE_CHILD) ){
-                      relationBiz.setAsChildFor(relative,user);
+                    if( relationType != null ){
+                      relative = home.findByPersonalID(relativePIN);
+
+                      if( relationType.equals(this.RELATION_TYPE_CHILD) ){
+                        relationBiz.setAsChildFor(relative,user);
+                      }
+                      else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
+                        relationBiz.setAsSpouseFor(relative,user);
+                      }
+                      else if( relationType.equals(this.RELATION_TYPE_FATHER) ){
+                        relationBiz.setAsChildFor(user,relative);
+                      }
+                      else if( relationType.equals(this.RELATION_TYPE_MOTHER) ){
+                        relationBiz.setAsChildFor(user,relative);
+                      }
+                      else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
+                      /**
+                       * @todo custodian stuff?
+                       */
+                        relationBiz.setAsChildFor(relative,user);
+                      }
                     }
-                    else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
-                      relationBiz.setAsSpouseFor(relative,user);
-                    }
-                    else if( relationType.equals(this.RELATION_TYPE_FATHER) ){
-                      relationBiz.setAsChildFor(user,relative);
-                    }
-                    else if( relationType.equals(this.RELATION_TYPE_MOTHER) ){
-                      relationBiz.setAsChildFor(user,relative);
-                    }
-                    else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
-                    /**
-                     * @todo custodian stuff?
-                     */
-                      relationBiz.setAsChildFor(relative,user);
+                    else{
+                      errors.add("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
+                      //System.out.println("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
                     }
 
                       //other types
                   }
                   catch (CreateException ex) {
-                    System.out.println("NackaImporter : Error adding relation for user: "+PIN);
+                    errors.add("NackaImporter : Error adding relation for user: "+PIN);
+                    //System.out.println("NackaImporter : Error adding relation for user: "+PIN);
                     //ex.printStackTrace();
                   }
                   catch (FinderException ex) {
-                    System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+                    errors.add("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+                    //System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
                     //ex.printStackTrace();
                   }
                 }//if relativepin !=null
                 else{
-                  System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
+                  errors.add("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
+                  //System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
                 }
               }//end while iter2
             }//end if relative
@@ -410,6 +421,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
           //success commit
           transaction2.commit();
+
+          Iterator err = errors.iterator();
+          while (err.hasNext()) {
+            String item = (String) err.next();
+            System.out.println(item);
+          }
 
         }
         catch(Exception e){
