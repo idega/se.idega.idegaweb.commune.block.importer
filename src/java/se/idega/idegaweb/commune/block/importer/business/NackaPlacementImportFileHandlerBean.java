@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.32 2003/11/25 11:17:23 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.33 2003/11/25 14:22:07 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -67,10 +67,10 @@ import com.idega.util.Timer;
  * Note that the "8" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/25 11:17:23 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/25 14:22:07 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.32 $
+ * @version $Revision: 1.33 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -467,7 +467,6 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			isNewUser = true;
 			user.setFirstName(studentFirstName);
 			user.setLastName(studentLastName);
-			user.store();
 		}
 		
 		if (isNewUser) {
