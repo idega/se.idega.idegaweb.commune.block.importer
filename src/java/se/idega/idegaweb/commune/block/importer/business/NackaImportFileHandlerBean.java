@@ -95,6 +95,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String OTHER_ADDRESSES_SECTION_STARTS = "07001";*/
 
   public boolean handleRecords() throws RemoteException{
+  	
+  	      /**@todo temporary workaround**/
+      //((NackaImportFileHandler)handler).setOnlyImportRelations(true);
+      //((NackaImportFileHandler)handler).setStartRecord(52000);
+      //((NackaImportFileHandler)handler).setImportRelations(false);
+     // status = handler.handleRecords();
 
     //transaction =  this.getSessionContext().getUserTransaction();
     transaction2 =  this.getSessionContext().getUserTransaction();
