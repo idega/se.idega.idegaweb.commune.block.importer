@@ -78,38 +78,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private static final String MIDDLE_NAME_COLUMN = "01013";
 	private static final String FIRST_NAME_COLUMN = "01012";
 	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
+	private static final String SECRECY_MARKING_COLUMN = "01003";
 	
 	private static final String COUNTY_CODE_COLUMN = "01022";// for stockholmarea 01
 	private static final String COMMUNE_CODE_COLUMN = "01023";// for nacka 82
 	
 	private static final String NACKA_CODE="0182";
 	
-	
-	private Map userPropertiesMap;
-  private Map relationsMap;
-  private UserHome home;
-  private AddressBusiness addressBiz;
-  private MemberFamilyLogic relationBiz;
-  private CommuneUserBusiness comUserBiz;
-  private CaseBusiness caseBiz;
-  private GroupHome groupHome;
-  private Group nackaGroup;
-  private Group nackaSpecialGroup;
-  private ImportFile file;
-  private UserTransaction transaction;
-  private UserTransaction transaction2;
-
-  private boolean importUsers = true;
-  private boolean importAddresses = true;
-  private boolean importRelations = true;
-  private boolean fix = false;
-  
 	private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
 	private static final String FIX_PARAMETER_NAME = "run_fix";
 	
-  //private boolean importAddresses = false;//temp
-  //private boolean importRelations = false;//temp
-
   private int startRecord = 0;
 
   private static final String RELATIONAL_SECTION_STARTS = "02000";
@@ -126,6 +104,27 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private static final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
   private static final String RELATION_TYPE_FATHER = "FA";
   private static final String RELATION_TYPE_MOTHER = "MO";
+  
+	private Map userPropertiesMap;
+	private Map relationsMap;
+	private UserHome home;
+	private AddressBusiness addressBiz;
+	private MemberFamilyLogic relationBiz;
+	private CommuneUserBusiness comUserBiz;
+	private CaseBusiness caseBiz;
+	private GroupHome groupHome;
+	private Group nackaGroup;
+	private Group nackaSpecialGroup;
+	private ImportFile file;
+	private UserTransaction transaction;
+	private UserTransaction transaction2;
+
+	private boolean importUsers = true;
+	private boolean importAddresses = true;
+	private boolean importRelations = true;
+	//private boolean importAddresses = false;//temp
+	//private boolean importRelations = false;//temp
+	private boolean fix = false;
   
   private ArrayList failedRecords = new ArrayList();
   private ArrayList citizenIds = new ArrayList();
@@ -358,9 +357,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String county = getUserProperty(COUNTY_CODE_COLUMN);
 		String commune = getUserProperty(COMMUNE_CODE_COLUMN);
 
+		boolean secretPerson = "Y".equals(getUserProperty(SECRECY_MARKING_COLUMN));
 		boolean isMovingFromNacka = !NACKA_CODE.equals(county+commune);
 		
-    
     String PIN = getUserProperty(PIN_COLUMN);
     
     
@@ -370,8 +369,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
     
     //preferred name handling.
-/*    if( preferredNameIndex!=null && !preferredNameIndex.equals("10") ){
-    	String preferredName = removePreferredNameFromStringsAndReturnIt(preferredNameIndex,firstName,middleName,lastName);
+    if(!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
+    	String preferredName = getPreferredName(preferredNameIndex,firstName,middleName,lastName);
     	if(middleName.equals("")){
     		middleName = firstName;
     	}
@@ -397,7 +396,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
     }
-*/
+    else if( "12".equals(preferredNameIndex) ){
+    	//stupid rule
+    }
+    else if( "13".equals(preferredNameIndex) ){
+    	//even stupider
+    
+    }
+    
+    
+    //check if any parts of name are null
+    
+
     /**
     * basic user info
     */
@@ -428,6 +438,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       e.printStackTrace();
       return false;
     }
+    
+    
 
     /**
      * addresses
@@ -505,8 +517,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     * add to the Nacka root group
     * or move from it
     */
-    //nackaGroup.addUser(user);
-    if( isMovingFromNacka ){
+    if( secretPerson ){
+    	comUserBiz.moveCitizenToProtectedCitizenGroup(user);
+    }
+    else if( isMovingFromNacka ){
 			comUserBiz.moveCitizenFromCommune(user);
     }
     else{
@@ -543,7 +557,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 * @param fullName
 	 * @return the prefferedName
 	 */
-	private String removePreferredNameFromStringsAndReturnIt(String preferredNameIndex, String firstName,String middleName, String lastName) {
+	private String getPreferredName(String preferredNameIndex, String firstName,String middleName, String lastName) {
 		String preferredName = null;
 		int index = Integer.parseInt(preferredNameIndex);
 		index = index/10;
