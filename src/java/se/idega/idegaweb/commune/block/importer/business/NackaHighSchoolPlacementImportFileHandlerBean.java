@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.2 2003/11/11 10:24:26 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.3 2003/11/11 16:07:58 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -35,6 +35,8 @@ import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.block.school.data.SchoolSeason;
+import com.idega.block.school.data.SchoolStudyPath;
+import com.idega.block.school.data.SchoolStudyPathHome;
 import com.idega.block.school.data.SchoolType;
 import com.idega.block.school.data.SchoolTypeHome;
 import com.idega.block.school.data.SchoolYear;
@@ -60,10 +62,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/11 10:24:26 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/11 16:07:58 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -76,6 +78,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private SchoolClassHome schoolClassHome = null;
 	private SchoolClassMemberHome schoolClassMemberHome = null;
 	private CommuneHome communeHome = null;
+	private SchoolStudyPathHome studyPathHome = null;
 
 	private SchoolSeason season = null;
     
@@ -137,6 +140,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
 			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
 
 			try {
 				season = schoolBusiness.getCurrentSchoolSeason();    	
@@ -215,6 +219,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 * @see com.idega.block.importer.business.ImportFileHandler#printFailedRecords() 
 	 */
 	public void printFailedRecords() {
+		System.out.println("\n----------------------------------------------\n");
 		if (failedRecords.isEmpty()) {
 			System.out.println("All records imported successfully.");
 		} else {
@@ -237,6 +242,8 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			String message = (String) errorLog.get(row);
 			System.out.println("Line " + row + ": " + message);
 		}	
+		
+		System.out.println();
 	}
 
 	/**
@@ -357,10 +364,12 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				
 		// school type
 		String typeKey = null;
+		String schoolYearPrefix = "G";
 		if (highSchoolType.equals("GY")) {
 			typeKey = LOC_KEY_HIGH_SCHOOL;
 		} else {
 			typeKey = LOC_KEY_SPECIAL_HIGH_SCHOOL;
+			schoolYearPrefix += "S";
 		}
 		
 		try {
@@ -374,7 +383,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			school = schoolHome.findBySchoolName(providerName);
 		} catch (FinderException e) {
-			errorLog.put(providerName, providerName);
+			errorLog.put(new Integer(row), "Cannot find school with name '" + providerName + "'");
 			return false;
 		}
 		
@@ -395,6 +404,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		// school year
 		SchoolYear schoolYear = null;
+		schoolYearName = schoolYearPrefix + schoolYearName;
 		try {
 			schoolYear = schoolYearHome.findByYearName(schoolYearName);
 		} catch (FinderException e) {
@@ -408,7 +418,16 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			return false;
 		}
 
-		//school Class		
+		// study path
+		SchoolStudyPath studyPath = null;
+		try {
+			studyPath = studyPathHome.findByCode(studyPathCode);
+		} catch (Exception e) {
+			errorLog.put(new Integer(row), "Cannot find study path: " + studyPathCode);
+			return false;
+		}
+		
+		// school Class		
 		SchoolClass schoolClass = null;
 		try {	
 			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
@@ -493,7 +512,8 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		member.setRegisterDate(REGISTER_DATE);
 		member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
 		member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
-		member.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue()); 
+		member.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
+		member.setStudyPathId(((Integer) studyPath.getPrimaryKey()).intValue());
 		member.store();
 
 		return true;
