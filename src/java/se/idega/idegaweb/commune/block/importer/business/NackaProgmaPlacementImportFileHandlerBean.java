@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.4 2003/12/05 07:58:01 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.5 2003/12/05 11:11:39 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -63,10 +63,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/05 07:58:01 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/05 11:11:39 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -287,7 +287,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		String studentLastName = "";
 		if (cutPos != -1) {
 			studentLastName = name.substring(0, cutPos);
-			studentLastName = name.substring(cutPos + 1);
+			studentFirstName = name.substring(cutPos + 1);
 		} else {
 			errorLog.put(new Integer(row), "Student name must contain lastname and firstname: " + name);
 		}
