@@ -12,8 +12,8 @@ import javax.transaction.UserTransaction;
 
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import se.idega.idegaweb.commune.care.business.AlreadyCreatedException;
-import se.idega.idegaweb.commune.care.data.ChildCareContract;
 import se.idega.idegaweb.commune.childcare.business.ChildCareBusiness;
+import se.idega.util.PIDChecker;
 import se.idega.util.Report;
 
 import com.idega.block.importer.business.ImportFileHandler;
@@ -32,7 +32,6 @@ import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
-//import com.idega.user.data.UserHome;
 import com.idega.util.DateFormatException;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
@@ -74,7 +73,7 @@ implements ImportFileHandler
 	private static final int COLUMN_UNIT = 2;
 	private static final int COLUMN_GROUP_NAME = 3;
 	private static final int COLUMN_DBV = 4;
-	private static final int COLUMN_DBV_PERSONAL_ID = 5; //Not used
+	//private static final int COLUMN_DBV_PERSONAL_ID = 5; //Not used
 	private static final int COLUMN_HOURS = 6;
 	private static final int COLUMN_PLACEMENT_FROM = 7;
 	private static final int COLUMN_PLACEMENT_TO = 8;
@@ -218,6 +217,10 @@ implements ImportFileHandler
 		if (PIN == null)
 		{
 			report.append("Could not read the personal ID");
+			return false;
+		}
+		if (!PIDChecker.getInstance().isValid(PIN, false)) {
+			report.append("Personal ID is invalid: " + PIN);
 			return false;
 		}
 		String childName = getUserProperty(COLUMN_CHILD_NAME);
@@ -453,16 +456,6 @@ implements ImportFileHandler
 	
 	public void setImportFile(ImportFile file) {
 		this.file = file;
-	}
-	
-	private float getFloatUserProperty(int columnIndex){
-		float val;
-		try {
-			val = Float.parseFloat(getUserProperty(columnIndex));
-		} catch (Exception e) {
-			val = 0;
-		}
-		return val;
 	}
 	
 	private Collection getSchoolTypes() throws RemoteException {
