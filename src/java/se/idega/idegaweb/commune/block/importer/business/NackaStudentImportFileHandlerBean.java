@@ -292,47 +292,35 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	}
 	
 	//school class member
-	SchoolClassMember member = null;
-	SchoolClassMember temp = null;
-	try {
-		temp = sClassMemberHome.findByUserAndSeason(user,season);
-		member = sClassMemberHome.findByUserAndSchoolClass(user,sClass);
+		SchoolClassMember member = null;
+		try{
 		
-		if( !temp.getPrimaryKey().equals(member.getPrimaryKey()) ){
-		
-			try {
-				temp.remove();
-			}
-			catch (RemoveException e) {
-				e.printStackTrace();
-				return false;
-				
-			}	
-		
-		}
-		
-	}catch (FinderException e) {
-		//e.printStackTrace();
-		//System.out.println("School class member not found creating...");	
-		if( temp!=null ){
+			Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+			
+			Iterator oldClasses = classMembers.iterator();
+			while (oldClasses.hasNext()) {
+				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
 				try {
 					temp.remove();
 				}
-				catch (RemoveException ex) {
-					ex.printStackTrace();
+				catch (RemoveException e) {
+					e.printStackTrace();
 					return false;
+				}
+				
+				
+			}
+		}
+		catch(FinderException f){
 			
-				}	
-		}				
-		
+		}
+	
+		//System.out.println("School class member not found creating...");	
 		member = schoolBiz.storeSchoolClassMember(sClass, user);
 		member.store();
-		if (member == null)
-			return false;
-			
+		if (member == null) return false;
 	
-	}
-	
+		//schoolclassmember finished
 	
 
     //finished with this user
