@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2004/01/12 09:10:37 $ by $Author: laddi $
+ * Last modified: $Date: 2004/02/20 16:36:50 $ by $Author: tryggvil $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -105,7 +105,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                     School school = findBySchool (schoolName, schoolHome);
                     if (school == null) {
                         final String aliasedName
-                                = getIWApplicationContext().getApplication()
+                                = getIWApplicationContext().getIWMainApplication()
                                 .getBundle("se.idega.idegaweb.commune")
                                 .getProperty (schoolName + "_alias");
                         if (aliasedName != null) {
