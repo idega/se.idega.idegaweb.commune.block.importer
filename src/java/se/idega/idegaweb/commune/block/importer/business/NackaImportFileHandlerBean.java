@@ -67,7 +67,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   public boolean handleRecords(Collection records) throws RemoteException{
 
     IWApplicationContext iwac = this.getIWApplicationContext();
-    UserTransaction transaction =  this.getSessionContext().getUserTransaction();
+    //UserTransaction transaction =  this.getSessionContext().getUserTransaction();
 
     Timer clock = new Timer();
     clock.start();
@@ -81,7 +81,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       groupHome = biz.getGroupHome();
 
       //if the transaction failes all the users and their relations are removed
-      transaction.begin();
+      //transaction.begin();
 
       /**@todo should be in a separate transaction?**/
       //create the default group
@@ -122,7 +122,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
       // System.gc();
       //success commit changes
-      transaction.commit();
+      //transaction.commit();
 
       return true;
     }
@@ -132,12 +132,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
      */
      ex.printStackTrace();
 
-     try {
+     /*try {
       transaction.rollback();
      }
      catch (SystemException e) {
        e.printStackTrace();
-     }
+     }*/
 
      return false;
     }
