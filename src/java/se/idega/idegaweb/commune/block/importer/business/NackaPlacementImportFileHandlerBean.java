@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.3 2003/10/20 13:44:30 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.4 2003/10/21 07:44:58 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -62,10 +62,10 @@ import se.idega.idegaweb.commune.accounting.resource.data.Resource;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/20 13:44:30 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/21 07:44:58 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -192,13 +192,16 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 
 			//iterate through the records and process them
 			String item;
-
 			int count = 0;
+			boolean failed = false;
+
 			while (!(item = (String) file.getNextRecord()).equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
 					failedRecords.add(item);
+					failed = true;
+					break;
 				} 
 
 				if ((count % 200) == 0 ) {
@@ -211,12 +214,17 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			printFailedRecords();
 
 			clock.stop();
+			System.out.println("Number of records handled: " + count);
 			System.out.println("Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int)(clock.getTime()/1000)) + " s");
 
 			//success commit changes
-			transaction.commit();
+			if (!failed) {
+				transaction.commit();
+			} else {
+				transaction.rollback(); 
+			}
 			
-			return true;
+			return !failed;
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -471,17 +479,19 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			SchoolClassMember member = null;
 			try {	
 				Collection placements =  sClassMemberHome.findAllByUserAndSeason(user, season);
-					
-				Iterator oldPlacements = placements.iterator();
-				while (oldPlacements.hasNext()) {
-					SchoolClassMember placement = (SchoolClassMember) oldPlacements.next();
-					SchoolType st = placement.getSchoolClass().getSchoolType();
-					if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
-						if (placement.getRemovedDate() == null) {
-							IWTimestamp yesterday = new IWTimestamp();
-							yesterday.addDays(-1);
-							placement.setRemovedDate(yesterday.getTimestamp());
-							placement.store();
+				
+				if (placements != null) {
+					Iterator oldPlacements = placements.iterator();
+					while (oldPlacements.hasNext()) {
+						SchoolClassMember placement = (SchoolClassMember) oldPlacements.next();
+						SchoolType st = placement.getSchoolClass().getSchoolType();
+						if (st == null || st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+							if (placement.getRemovedDate() == null) {
+								IWTimestamp yesterday = new IWTimestamp();
+								yesterday.addDays(-1);
+								placement.setRemovedDate(yesterday.getTimestamp());
+								placement.store();
+							}
 						}
 					}
 				}
