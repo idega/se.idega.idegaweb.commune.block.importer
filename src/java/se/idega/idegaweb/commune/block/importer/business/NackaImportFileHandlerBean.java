@@ -1,4 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import com.idega.user.data.*;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 import com.idega.idegaweb.IWApplicationContext;
@@ -6,13 +7,11 @@ import javax.ejb.CreateException;
 import java.rmi.RemoteException;
 import com.idega.business.IBOServiceBean;
 import javax.ejb.FinderException;
-import com.idega.user.data.UserHome;
 import is.idega.idegaweb.member.business.MemberFamilyLogic;
 import com.idega.user.business.UserBusiness;
 import com.idega.presentation.IWContext;
 import com.idega.business.IBOLookup;
 import com.idega.data.*;
-import com.idega.user.data.User;
 import java.io.LineNumberReader;
 import com.idega.util.text.TextSoap;
 import java.util.*;
@@ -36,6 +35,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private UserBusiness biz;
   private UserHome home;
   private MemberFamilyLogic relationBiz;
+  private GroupHome groupHome;
+  private Group nackaGroup;
 
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
@@ -53,6 +54,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String RELATION_TYPE_FATHER = "FA";
   private final String RELATION_TYPE_MOTHER = "MO";
 
+  private final String NACKA_ROOT_GROUP_ID_PARAMETER_NAME = "commune_id";
+
+
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
   private final String USER_SECTION_ENDS = RELATIONAL_SECTION_STARTS;
@@ -62,7 +66,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   public boolean handleRecords(Collection records) throws RemoteException{
 
-    IWApplicationContext iwc = this.getIWApplicationContext();
+    IWApplicationContext iwac = this.getIWApplicationContext();
     UserTransaction transaction =  this.getSessionContext().getUserTransaction();
 
     Timer clock = new Timer();
@@ -70,11 +74,25 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 
     try {
-      biz = (UserBusiness) IBOLookup.getServiceInstance(iwc,UserBusiness.class);
-      relationBiz = (MemberFamilyLogic) IBOLookup.getServiceInstance(iwc,MemberFamilyLogic.class);
-      home = (UserHome) IDOLookup.getHome(User.class);
+      biz = (UserBusiness) IBOLookup.getServiceInstance(iwac,UserBusiness.class);
+      relationBiz = (MemberFamilyLogic) IBOLookup.getServiceInstance(iwac,MemberFamilyLogic.class);
+      home = biz.getUserHome();
+      groupHome = biz.getGroupHome();
+
+
+      //if the transaction failes all the users and their relations are removed
       transaction.begin();
 
+
+      String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
+      if( groupId!=null ){
+        nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
+      }
+      else{
+        nackaGroup = groupHome.create();
+        iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
+        iwac.getApplication().storeStatus();
+      }
 
       Iterator iter = records.iterator();
       int count = 0;
