@@ -1,5 +1,5 @@
 /*
- * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.1 2003/12/16 09:16:34 anders Exp $
+ * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.2 2003/12/16 09:39:28 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -60,10 +60,10 @@ import com.idega.util.Timer;
  * Note that the "10" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/16 09:16:34 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/16 09:39:28 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implements NackaAfterSchoolFixFileHandler, ImportFileHandler {
 
@@ -538,10 +538,15 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			while (iter.hasNext()) {
 				cccFound = true;
 				ChildCareContract ccc = (ChildCareContract) iter.next();
-				SchoolClassMember scm = ccc.getSchoolClassMmeber();
-				int stId = scm.getSchoolTypeId();
-				if ((stId == 4) || (stId == 5)) {
-					// Elementary school, forskoleklass placements should not have contracts
+				SchoolClassMember scm = null;
+				int stId = -1;
+				try {
+					scm = ccc.getSchoolClassMmeber();
+					stId = scm.getSchoolTypeId();	
+				} catch (Exception e) {}
+				
+				if ((stId == 4) || (stId == 5) || (stId == 28) || (stId == -1)) {
+					// Elementary school, forskoleklass and null placements should not have contracts
 					Collection placements = sClassMemberHome.findByStudent(child);
 					Iterator iter2 = placements.iterator();
 					int afterSchoolPlacementId = -1;
@@ -553,11 +558,14 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 						}
 					}
 					if (afterSchoolPlacementId == -1) {
-						System.out.println("After school placement not found for child, userId = " + childId);
+						System.out.println("After school placement not found for child, userId = " + childId + ", pnr = " + personalId);
 					} else {
 						// Redirect contract to correct placement
 						ccc.setSchoolClassMemberID(afterSchoolPlacementId);
 						ccc.store();
+					}
+					if (stId == -1) {
+						System.out.println("Child with null in contract placement, userId = " + childId + ", pnr = " + personalId);
 					}
 				}
 				
@@ -565,7 +573,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 		} catch (FinderException e) {}
 
 		if (!cccFound) {
-			System.out.println("Contract not found for child, userId = " + childId);
+			System.out.println("Contract not found for child, userId = " + childId + ", pnr = " + personalId);
 		}
 		
 //		return importDone;
