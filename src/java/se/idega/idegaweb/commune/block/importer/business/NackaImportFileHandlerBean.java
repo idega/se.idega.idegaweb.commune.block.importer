@@ -90,6 +90,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       }
       else{
         nackaGroup = groupHome.create();
+        nackaGroup.setDescription("The Nacka Commune Root Group.");
+        nackaGroup.setName("Nacka Commune");
+        nackaGroup.store();
+
         iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
         iwac.getApplication().storeStatus();
       }
@@ -262,6 +266,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       }
     }
 
+    /**
+     * basic user info
+     */
+
     //variables
     String firstName = getUserProperty("01012");
     String middleName = getUserProperty("01013");
@@ -273,11 +281,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     user.setMiddleName(middleName);
     user.setLastName(lastName);
 
-
-
-    //user info
-
-    //address
+    /**
+     * addresses
+     */
     //main address
     //extra address
     //special address
@@ -285,18 +291,31 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //foreign adress
     //previous address
 
+    /**
+     * citizen info (commune stuff)
+     */
 
-    //citizen info (commune stuff)
 
+    /**
+     * Save the user to the database
+     */
     user.store();
 
-    //family and other releation stuff
+    /**
+    * Main group relation
+    * add to the Nacka root group
+    */
+    nackaGroup.addUser(user);
+
+
+    /**
+     * family and other releation stuff
+    */
     addRelations();
 
 
+    //finished with this user
     return true;
-
-
   }
 
   protected void addRelations(){
