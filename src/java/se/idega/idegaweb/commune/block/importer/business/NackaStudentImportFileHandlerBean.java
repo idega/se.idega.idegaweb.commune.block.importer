@@ -236,92 +236,121 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		
 	}	
 	
-	try{
-		//school
-		//this can only work if there is only one school with this name. add more parameters for other areas
-		school = sHome.findBySchoolName(schoolName);
-	}
-	catch (FinderException e) {
-		//System.out.println("School not found : "+schoolName);
-		schoolName = "I annan kommun 1";
-		try {
+	if( !"secret".equals(user.getDescription())){
+	
+		try{
+			//school
+			//this can only work if there is only one school with this name. add more parameters for other areas
 			school = sHome.findBySchoolName(schoolName);
 		}
-		catch (FinderException ex) {
-			failedSchools.put(schoolName,schoolName);
-			return false;
-		}
-	}		
-	
-	try{
-		//school year	
-		if( schoolYear.equals("0") ) schoolYear = "F";
-		year = sYearHome.findByYearName(schoolYear);
-	}
-	catch (FinderException e) {
-		System.out.println("SchoolYear not found : "+schoolYear);
-		//TODO CREATE THE YEAR
+		catch (FinderException e) {
+			//System.out.println("School not found : "+schoolName);
+			schoolName = "I annan kommun 1";
+			try {
+				school = sHome.findBySchoolName(schoolName);
+			}
+			catch (FinderException ex) {
+				failedSchools.put(schoolName,schoolName);
+				return false;
+			}
+		}		
 		
-		
-		return false;
-	}	
-		
-	//add year to school
-	try{
-		school.addSchoolYear(year);
-	}
-	catch(IDOAddRelationshipException aEx){
-		//aEx.printStackTrace();
-			
-	}
-	
-	//school class		
-	SchoolClass sClass = null;
-	
-	try {	
-		sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
-	}catch (FinderException e) {
-		//e.printStackTrace();
-		System.out.println("School class not found creating...");	
-		
-		sClass = schoolBiz.storeSchoolClass(schoolClass,school,year,season);
-		sClass.store();
-		if (sClass == null)
-			return false;
-			
-	}
-	
-	//school class member
-		SchoolClassMember member = null;
 		try{
-		
-			Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+			//school year	
+			if( schoolYear.equals("0") ) schoolYear = "F";
+			year = sYearHome.findByYearName(schoolYear);
+		}
+		catch (FinderException e) {
+			System.out.println("SchoolYear not found : "+schoolYear);
+			//TODO CREATE THE YEAR
 			
-			Iterator oldClasses = classMembers.iterator();
-			while (oldClasses.hasNext()) {
-				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
-				try {
-					temp.remove();
-				}
-				catch (RemoveException e) {
-					e.printStackTrace();
-					return false;
-				}
+			
+			return false;
+		}	
+			
+		//add year to school
+		try{
+			school.addSchoolYear(year);
+		}
+		catch(IDOAddRelationshipException aEx){
+			//aEx.printStackTrace();
 				
+		}
+		
+		//school class		
+		SchoolClass sClass = null;
+		
+		try {	
+			sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
+		}catch (FinderException e) {
+			//e.printStackTrace();
+			System.out.println("School class not found creating...");	
+			
+			sClass = schoolBiz.storeSchoolClass(schoolClass,school,year,season);
+			sClass.store();
+			if (sClass == null)
+				return false;
+				
+		}
+		
+		//school class member
+			SchoolClassMember member = null;
+			try{
+			
+				Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+				
+				Iterator oldClasses = classMembers.iterator();
+				while (oldClasses.hasNext()) {
+					SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
+					try {
+						temp.remove();
+					}
+					catch (RemoveException e) {
+						e.printStackTrace();
+						return false;
+					}
+					
+					
+				}
+			}
+			catch(FinderException f){
+				
+			}
+		
+			//System.out.println("School class member not found creating...");	
+			member = schoolBiz.storeSchoolClassMember(sClass, user);
+			member.store();
+			if (member == null) return false;
+		
+			//schoolclassmember finished
+		}
+		else{//remove secret market person from all schools this season
+			System.out.println("NackaStudentImportHandler Removing protected citizen from all classes (pin:"+user.getPersonalID()+")");
+			try{
+			
+				Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+				
+				Iterator oldClasses = classMembers.iterator();
+				while (oldClasses.hasNext()) {
+					SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
+					try {
+						temp.remove();
+					}
+					catch (RemoveException e) {
+						
+						e.printStackTrace();
+						System.out.println("NackaStudentImportHandler FAILED Removing protected citizen from all classes (pin:"+user.getPersonalID()+")");
+			
+						return false;
+					}
+					
+					
+				}
+			}
+			catch(FinderException f){
 				
 			}
 		}
-		catch(FinderException f){
-			
-		}
-	
-		//System.out.println("School class member not found creating...");	
-		member = schoolBiz.storeSchoolClassMember(sClass, user);
-		member.store();
-		if (member == null) return false;
-	
-		//schoolclassmember finished
-	
 
     //finished with this user
     user = null;

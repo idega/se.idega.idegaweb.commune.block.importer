@@ -57,6 +57,7 @@ import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
 import com.idega.util.database.ConnectionBroker;
+import com.idega.util.datastructures.HashtableMultivalued;
 import com.idega.util.text.TextSoap;
 import com.idega.util.Timer;
 
@@ -139,8 +140,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private boolean fix = false;
 	private boolean secretPerson = false;
   
-  private ArrayList failedRecords = new ArrayList();
-  private ArrayList citizenIds = new ArrayList();
+	private ArrayList failedRecords = new ArrayList();
+	private ArrayList citizenIds = new ArrayList();  
+  
 
   private Gender male;
   private Gender female;
@@ -156,7 +158,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   public NackaImportFileHandlerBean(){}
 
   public boolean handleRecords() throws RemoteException{
-  	
   	      /**@todo temporary workaround**/
       //((NackaImportFileHandler)handler).setOnlyImportRelations(true);
       //((NackaImportFileHandler)handler).setStartRecord(52000);
@@ -180,7 +181,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			nackaGroup = comUserBiz.getRootCitizenGroup();
 			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
 			String fixer = this.getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
-			if( "TRUE".equals(fixer) ) fix = true;
+			
+			System.out.println("NackaImportFileHandler [STARTING] time: "+IWTimestamp.getTimestampRightNow().toString());
+       
+			if( "TRUE".equals(fixer) ){
+				System.out.println("NackaImportFileHandler [WARNING] FIX (run_fix) is set to TRUE");
+				fix = true;
+				
+			}
 			
       //comUserBiz.getUserHome().create();
       //groupHome = comUserBiz.getGroupHome();
@@ -198,7 +206,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
           if( ! processRecord(item) ) failedRecords.add(item);
         }
 
-        if( (count % 500) == 0 ){
+        if( (count % 250) == 0 ){
           System.out.println("NackaImportFileHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
         }
         item = null;
@@ -217,7 +225,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         storeRelations();
       }
       if(fix){
-				moveNonCitizensToTestGroup();
+			//	moveNonCitizensToTestGroup();
       }
 
       return true;
@@ -369,23 +377,26 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		
 		String county = getUserProperty(COUNTY_CODE_COLUMN);
 		String commune = getUserProperty(COMMUNE_CODE_COLUMN);
-
-		boolean secretPerson = "Y".equals(getUserProperty(SECRECY_MARKING_COLUMN));
+		
+		String secrecy = getUserProperty(SECRECY_MARKING_COLUMN);
+		boolean secretPerson = "J".equals(secrecy);
+		
 		boolean isMovingFromNacka = !NACKA_CODE.equals(county+commune);
 		
     String PIN = getUserProperty(PIN_COLUMN);
     
+		if(secrecy!=null && !secrecy.equals("")) System.out.println("SECRET PERSON = "+PIN+" Code :"+secrecy+".");
+		
+    
     
     if(PIN == null ) return false;
 
+		
     Gender gender = getGenderFromPin(PIN);
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
     
     boolean updateName = false;
-    
-    
-		
-    
+
     //preferred name handling.
     if( preferredNameIndex!=null ){
 
@@ -479,17 +490,24 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     }
     
     if(updateName){//needed because createUser uses the method setFullName that splits the name with it's own rules
+    	
+    	if(middleName.startsWith(" ")) middleName = middleName.substring(1,middleName.length());
+    	if(middleName.endsWith(" "))  middleName = middleName.substring(0,middleName.length()-1);
+			if(lastName.startsWith(" ")) lastName = lastName.substring(1,lastName.length());
+			if(lastName.endsWith(" "))  lastName = lastName.substring(0,lastName.length()-1);
+			
     	user.setFirstName(firstName);
     	user.setMiddleName(middleName);
     	user.setLastName(lastName);
     }
     
-
-    /**
-     * addresses
-     */
-    //main address
-    //country id 187 name Sweden isoabr: SE
+    
+    if( !secretPerson ){
+	    /**
+	     * addresses
+	     */
+	    //main address
+	    //country id 187 name Sweden isoabr: SE
 
       String addressLine = getUserProperty(ADDRESS_COLUMN);
       
@@ -497,7 +515,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			
 		
 			
-      if( (addressLine!=null) && importAddresses ){
+      if( (addressLine!=null) && importAddresses){
         try{
 
         String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
@@ -543,7 +561,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	    }
 
     }    //foreign adress
-    else if (foreignAddressLine1!=null){
+    else if (foreignAddressLine1!=null ){
 			String foreignAddressLine2 = getUserProperty(FOREIGN_ADDRESS_2_COLUMN,"");
 			String foreignAddressLine3 = getUserProperty(FOREIGN_ADDRESS_3_COLUMN,"");
 			String foreignAddressCountry = getUserProperty(FOREIGN_ADDRESS_COUNTRY_COLUMN,"");
@@ -590,6 +608,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 	
     	
+    	}
+    
     }
 
     //extra address
@@ -601,12 +621,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
      * citizen info (commune stuff)
      * longitude/lattitude
      */
-     String longAndLat = getUserProperty(LONG_LAT_COLUMN);
+     //String longAndLat = getUserProperty(LONG_LAT_COLUMN);
 
-    /**
-     * Save the user to the database
-     */
-    user.store();
 
     /**
     * Main group relation
@@ -614,53 +630,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     * or move from it
     */
     if( secretPerson ){
+    	user.setDescription("secret");
     	//remove family ties!
-			try {
-				Collection children = relationBiz.getChildrenFor(user);
-				if( children != null ){
-					Iterator kids = children.iterator();
-					while (kids.hasNext()) {
-						User child = (User) kids.next();
-						relationBiz.removeAsChildFor(child,user);
-					}
-				}
-				
-			}
-			catch (RemoveException ex) {
-				ex.printStackTrace();
-			}
-			catch (NoChildrenFound x){}
-			
-			try {
-				User spouse = relationBiz.getSpouseFor(user);
-				if( spouse != null ){
-					relationBiz.removeAsSpouseFor(spouse,user);
-				}
-				
-			}
-			catch (RemoveException ex) {
-				ex.printStackTrace();
-			}
-			catch(NoSpouseFound x){}
-			
-			try {
-				Collection parents = relationBiz.getCustodiansFor(user);
-				if( parents != null ){
-					Iterator ents = parents.iterator();
-					while (ents.hasNext()) {
-						User ent = (User) ents.next();
-						relationBiz.removeAsParentFor(ent,user);
-					}
-				}
-				
-			}
-			catch (RemoveException ex) {
-				ex.printStackTrace();
-			}		
-			catch (NoCustodianFound x){}
-			
-			
-			
+			relationBiz.removeAllFamilyRelationsForUser(user);
     	//remove address
     	try {
 				user.removeAllAddresses();
@@ -669,27 +641,55 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				//e.printStackTrace();
 			}
     	
+    	if(fix){
     	
-    	//comUserBiz.moveCitizenToProtectedCitizenGroup(user);
+				//this will force a new record in the relation table
+				try{
+				
+					comUserBiz.getRootProtectedCitizenGroup().removeUser(user);
+				}
+				catch(Exception e){}
+    	}
+			
+    	comUserBiz.moveCitizenToProtectedCitizenGroup(user);
     }
     else if( isMovingFromNacka ){
+//		this will force a new record in the relation table
+			if(fix){
+    	
+				//this will force a new record in the relation table
+				try{
+						
+					comUserBiz.getRootSpecialCitizenGroup().removeUser(user);
+				}
+				catch(Exception e){}
+			}
+					
 			comUserBiz.moveCitizenFromCommune(user);
     }
     else{
-			comUserBiz.moveCitizenToCommune(user);    	
+    	
+			if(fix){
+				//this will force a new record in the relation table
+				try{
+							
+					comUserBiz.getRootCitizenGroup().removeUser(user);
+				}
+				catch(Exception e){}
+			}			
+		
+			comUserBiz.moveCitizenToCommune(user);  
+			  	
     }
     
     
     //get rid of test data
 		if( fix ){
-			citizenIds.add(user.getPrimaryKey());
 			
+			//citizenIds.add(user.getPrimaryKey());
 			/*try {
 				user.removeAllEmails();
 				user.removeAllPhones();
-				
-
-				
 			}
 			catch (Exception ex) {
 				ex.printStackTrace();
@@ -697,6 +697,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	*/		
 		}
     
+		/**
+		 * Save the user to the database
+		 */
+		user.store();
 
     //finished with this user
     user = null;
@@ -739,6 +743,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   protected void storeRelations() throws RemoteException{
     ArrayList errors = new ArrayList();
+		HashtableMultivalued parentRelations = new HashtableMultivalued();
 
    //get keys <- pins
   //get user bean
@@ -764,81 +769,98 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
         while (iter.hasNext()) {
           ++count;
-          if( (count % 500) == 0 ){
+          if( (count % 250) == 0 ){
             System.out.println("NackaImportFileHandler storing relations ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
           }
 
           PIN = (String) iter.next();
           user = null;
-          /**@todo
-           * IS THE LIST EVER NULL?
-           */
+
             ArrayList relatives = (ArrayList) relationsMap.get(PIN);
             if(relatives!=null){
               user = home.findByPersonalID(PIN);
+              
+              boolean secretPerson = false;
+              secretPerson = "secret".equals(user.getDescription());
 
-              Iterator iter2 = relatives.iterator();
-              while (iter2.hasNext()) {
-                Map relativeMap = (Map) iter2.next();
-                relativePIN = (String) relativeMap.get(RELATIVE_PIN_COLUMN);
-                relationType = (String) relativeMap.get(RELATIVE_TYPE_COLUMN);
-
-                /**
-                 * @todo use this second parameter if first is missing??? ask kjell
-                 */
-                //if( relativePIN == null ) relativePIN = (String) item.get("02002"));
-
-                if( relativePIN !=null ){
-                  try {
-
-                    if( relationType != null ){
-                      relative = home.findByPersonalID(relativePIN);
-
-                      if( relationType.equals(this.RELATION_TYPE_CHILD) ){
-                        relationBiz.setAsChildFor(relative,user);
-                      }
-                      else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
-                        relationBiz.setAsSpouseFor(relative,user);
-                      }
-                      else if( relationType.equals(this.RELATION_TYPE_FATHER) ){
-                        relationBiz.setAsChildFor(user,relative);
-                      }
-                      else if( relationType.equals(this.RELATION_TYPE_MOTHER) ){
-                        relationBiz.setAsChildFor(user,relative);
-                      }
-                      else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
-                      /**
-                       * @todo custodian stuff?
-                       */
-                        relationBiz.setAsChildFor(relative,user);
-                      }
-                    }
-                    else{
-                      errors.add("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
-                      //System.out.println("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
-                    }
-
-                      //other types
-                  }
-                  catch (CreateException ex) {
-                    errors.add("NackaImporter : Error adding relation for user: "+PIN);
-                    //System.out.println("NackaImporter : Error adding relation for user: "+PIN);
-                    //ex.printStackTrace();
-                  }
-                  catch (FinderException ex) {
-                    errors.add("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
-                    //System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
-                    //ex.printStackTrace();
-                  }
-                }//if relativepin !=null
-                else{
-                  errors.add("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
-                  //System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
-                }
-              }//end while iter2
+							if(!secretPerson){
+	              Iterator iter2 = relatives.iterator();
+	              while (iter2.hasNext()) {
+	                Map relativeMap = (Map) iter2.next();
+	                relativePIN = (String) relativeMap.get(RELATIVE_PIN_COLUMN);
+	                relationType = (String) relativeMap.get(RELATIVE_TYPE_COLUMN);
+	
+	                /**
+	                 * @todo use this second parameter if first is missing??? ask kjell
+	                 */
+	                //if( relativePIN == null ) relativePIN = (String) item.get("02002"));
+	                if( relativePIN !=null ){
+	                  try {
+	
+	                    if( relationType != null ){
+	                      relative = home.findByPersonalID(relativePIN);
+	                      
+												secretPerson = "secret".equals(relative.getDescription());
+												
+												if(!secretPerson){
+		                      if( relationType.equals(this.RELATION_TYPE_CHILD) ){
+		                        //relationBiz.setAsChildFor(relative,user);
+		                        //for custodian check
+														parentRelations.put(user.getPrimaryKey(),relative.getPrimaryKey());
+		                        
+		                      }
+		                      else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
+		                        relationBiz.setAsSpouseFor(relative,user);
+		                      }
+		                      else if( relationType.equals(this.RELATION_TYPE_FATHER) ){
+		                        //relationBiz.setAsChildFor(user,relative);
+														parentRelations.put(relative.getPrimaryKey(),user.getPrimaryKey());
+		                        
+		                        
+		                      }
+		                      else if( relationType.equals(this.RELATION_TYPE_MOTHER) ){
+		                        //relationBiz.setAsChildFor(user,relative);
+														parentRelations.put(relative.getPrimaryKey(),user.getPrimaryKey());
+		                        
+		                        
+		                      }
+		                      else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
+		                        relationBiz.setAsCustodianFor(user,relative);
+		                      }
+		                    }
+		                    else{
+		                      errors.add("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
+		                      //System.out.println("NackaImporter: Error Relation type not defined for relative ( pin "+relativePIN+" ) of user: "+PIN);
+		                    }
+	                    }
+	
+	                      //other types
+	                  }
+	                  catch (CreateException ex) {
+	                    errors.add("NackaImporter : Error adding relation for user: "+PIN);
+	                    //System.out.println("NackaImporter : Error adding relation for user: "+PIN);
+	                    //ex.printStackTrace();
+	                  }
+	                  catch (FinderException ex) {
+	                    errors.add("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+	                    //System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+	                    //ex.printStackTrace();
+	                  }
+	                }//if relativepin !=null
+	                else{
+	                  errors.add("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
+	                  //System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
+	                }
+	              }//end while iter2
+							}//end if secret
             }//end if relative
           }//end while iter
 
+					handleCustodyAndChildRelations(parentRelations);
+					
+        
+					
+					
           //success commit
           transaction2.commit();
 
@@ -1077,6 +1099,61 @@ private String getValueAtIndexFromNameString(int index , String name){
 
 	return value;
 } 
-	
 
+
+	private void handleCustodyAndChildRelations(HashtableMultivalued table){
+		if( table!=null ){
+		
+		
+		try {
+			Iterator keys = table.keySet().iterator();
+			
+			
+			while(keys.hasNext()) {
+				Integer parentId = (Integer) keys.next();
+				Collection coll = (Collection) ( table.getCollection(parentId)) ;
+				Iterator colIt = coll.iterator();
+				while(colIt.hasNext()){
+					Integer childId = (Integer)colIt.next();
+					
+					User parent = comUserBiz.getUser(parentId);
+					User child = comUserBiz.getUser(childId);
+					
+					Collection custodians = parent.getRelatedBy(relationBiz.getCustodianRelationType() );
+				
+					 if(coll==null || coll.isEmpty()){				
+							//and as custodian
+					 		parent.addUniqueRelation(((Integer)(this.convertUserToGroup(child).getPrimaryKey())).intValue(),relationBiz.getCustodianRelationType());	 		
+					 }
+					
+						relationBiz.setAsParentFor(parent,child); 
+
+					 
+				}
+			}
+		}
+		catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		catch (FinderException e) {
+			e.printStackTrace();
+		}
+		catch (CreateException e) {
+			e.printStackTrace();
+			System.err.println("NackaImportHandler Failed to create parent relation");
+		}
+		
+		
+		}
+	}
+	
+	protected Group convertUserToGroup(User user){
+		try{
+			return user.getUserGroup();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
