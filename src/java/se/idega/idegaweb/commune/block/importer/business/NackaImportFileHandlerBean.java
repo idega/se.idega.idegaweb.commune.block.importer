@@ -275,152 +275,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		}
 
 		user = getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, false);
-		/*
-		//preferred name handling.
-		if (preferredNameIndex != null) {
 
-			StringBuffer fullname = new StringBuffer();
-			fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			//log("Name : "+fullname.toString());
-
-			if (!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex)) {
-				String preferredName = getPreferredName(preferredNameIndex, firstName, middleName, lastName);
-				if (middleName.equals("")) {
-					middleName = firstName;
-				}
-				else {
-					if (middleName.startsWith(" ")) {
-						middleName = firstName + middleName;
-					}
-					else {
-						middleName = firstName + " " + middleName;
-					}
-
-				}
-
-				firstName = preferredName;
-				middleName = TextSoap.findAndCut(middleName, preferredName);
-				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-				lastName = TextSoap.findAndCut(lastName, preferredName);
-				lastName = TextSoap.findAndReplace(lastName, "  ", " ");
-
-				updateName = true;
-
-			}
-			else if ("12".equals(preferredNameIndex)) {
-				//stupid rule set first name as firstname AND Second name
-				StringBuffer full = new StringBuffer();
-				full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-				String fullName = full.toString();
-				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
-				
-				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
-				String preferredName2 = getValueAtIndexFromNameString(2, fullName);
-
-				firstName = preferredName1 + " " + preferredName2;
-				firstName = TextSoap.findAndReplace(firstName, "  ", " ");
-				middleName = TextSoap.findAndCut(middleName, preferredName2);
-				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-				lastName = TextSoap.findAndCut(lastName, preferredName2);
-				lastName = TextSoap.findAndReplace(lastName, "  ", " ");
-
-				updateName = true;
-			}
-			else if ("13".equals(preferredNameIndex)) {
-				//even stupider set first name as firstname AND third name
-				StringBuffer full = new StringBuffer();
-				full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-				String fullName = full.toString();
-				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
-
-				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
-				String preferredName2 = getValueAtIndexFromNameString(3, fullName);
-				
-				firstName = preferredName1 + " " + preferredName2;
-				firstName = TextSoap.findAndReplace(firstName, "  ", " ");
-
-				// Remember MIDDLE NAME is always "" in the beginnig ...
-				// Removing lastName since last name should only be changed when moving name to firstName
-				middleName = TextSoap.findAndCut(fullName, lastName);
-				middleName = TextSoap.findAndCut(middleName, preferredName1);
-				middleName = TextSoap.findAndCut(middleName, preferredName2);
-				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-
-				lastName = TextSoap.findAndCut(lastName, preferredName2);
-				lastName = TextSoap.findAndReplace(lastName, "  ", " ");
-
-				updateName = true;
-
-			}
-			else if ("10".equals(preferredNameIndex))
-			{
-				//System.out.println("Testing preferredNameIndex = 10");
-				String fullName = firstName;
-				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
-				
-				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
-				//System.out.println("Testing preferredName1 = "+preferredName1);
-				firstName = preferredName1;
-
-				middleName = TextSoap.findAndCut(fullName, preferredName1);
-				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-				//System.out.println("Testing firstName = "+firstName);
-				//System.out.println("Testing middleName = "+middleName);
-				//System.out.println("Testing lastName = "+lastName);
-				
-				updateName = true;
-				
-			}
-
-			//fullname = new StringBuffer();
-			//fullname.append(firstName).append("
-			// ").append(middleName).append(" ").append(lastName);
-
-			//log("Index : "+preferredNameIndex+" Modified
-			// name : "+fullname.toString());
-
-		}
-
-		if (lastName.startsWith("Van ") && !updateName) {
-			StringBuffer half = new StringBuffer();
-			half.append(firstName).append(" ").append(middleName);
-			String halfName = half.toString();
-			firstName = getValueAtIndexFromNameString(1, halfName);
-			middleName = halfName.substring(Math.min(halfName.indexOf(" ") + 1, halfName.length()), halfName.length());
-			middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-			//lastName //unchanged
-
-			updateName = true;
-		}
-
-		if (updateName) { //needed because createUser uses the method
-			// setFullName
-			// that splits the name with it's own rules
-
-			if (firstName != null) {
-				if (firstName.endsWith(" "))
-					firstName = firstName.substring(0, firstName.length() - 1);
-			}
-
-			if (middleName != null) {
-				if (middleName.startsWith(" "))
-					middleName = middleName.substring(1, middleName.length());
-				if (middleName.endsWith(" "))
-					middleName = middleName.substring(0, middleName.length() - 1);
-			}
-
-			if (lastName != null) {
-				if (lastName.startsWith(" "))
-					lastName = lastName.substring(1, lastName.length());
-				if (lastName.endsWith(" "))
-					lastName = lastName.substring(0, lastName.length() - 1);
-			}
-
-			user.setFirstName(firstName);
-			user.setMiddleName(middleName);
-			user.setLastName(lastName);
-		}
-		*/
 		if (!secretPerson) {
 			if (!handleAddress(user, countyNumber, commune)) {
 				return false;
@@ -1556,6 +1411,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String addressLine = getUserProperty(ImportFileFieldConstants.ADDRESS_COLUMN);
 		String coAddressLine = getUserProperty(ImportFileFieldConstants.CO_ADDRESS_COLUMN);
 		String foreignAddressLine1 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_1_COLUMN);
+		String addressKeyCode = getUserProperty(ImportFileFieldConstants.ADDRESS_KEY_CODE);
 
 		if ((addressLine != null) && importAddresses) {
 			try {
@@ -1597,6 +1453,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				address.setStreetName(streetName);
 				address.setStreetNumber(streetNumber);
 
+				if (addressKeyCode != null) {
+					address.setCoordinate(addressKeyCode);
+					System.out.println("Setting coordinates ("+addressKeyCode+") for address "+address.getStreetAddress());
+				}
+				
 				address.store();
 
 				if (addAddress) {
