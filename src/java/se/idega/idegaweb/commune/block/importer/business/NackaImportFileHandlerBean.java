@@ -25,6 +25,8 @@ import com.idega.business.IBORuntimeException;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.location.business.AddressBusiness;
 import com.idega.core.location.data.Address;
+import com.idega.core.location.data.AddressCoordinate;
+import com.idega.core.location.data.AddressCoordinateHome;
 import com.idega.core.location.data.AddressHome;
 import com.idega.core.location.data.AddressType;
 import com.idega.core.location.data.Commune;
@@ -32,6 +34,8 @@ import com.idega.core.location.data.CommuneHome;
 import com.idega.core.location.data.Country;
 import com.idega.core.location.data.CountryHome;
 import com.idega.core.location.data.PostalCode;
+import com.idega.data.IDOLookup;
+import com.idega.data.IDOLookupException;
 import com.idega.data.IDORemoveRelationshipException;
 import com.idega.presentation.IWContext;
 import com.idega.user.data.Gender;
@@ -110,6 +114,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	private User performer = null;
 	
+	private Map coordinateMap = null;
 	//not needed..yet?
 	/*
 	 * private final String USER_SECTION_STARTS = "01001"; private final String
@@ -1465,9 +1470,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				address.setStreetName(streetName);
 				address.setStreetNumber(streetNumber);
 
-				if (addressKeyCode != null) {
-					address.setCoordinate(addressKeyCode);
-//					System.out.println("Setting coordinates ("+addressKeyCode+") for address "+address.getStreetAddress());
+				AddressCoordinate ac = getAddressCoordinate(addressKeyCode);
+				if (ac != null) {
+					address.setCoordinate(ac);
 				}
 				
 				address.store();
@@ -1576,6 +1581,28 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 		}
 		return true;
+	}
+
+	private AddressCoordinate getAddressCoordinate(String addressKeyCode) throws IDOLookupException, CreateException {
+		if (addressKeyCode != null) {
+			if (coordinateMap == null) {
+				coordinateMap = new HashMap();
+			}
+			AddressCoordinate ac = (AddressCoordinate) coordinateMap.get(addressKeyCode);
+			if (ac == null) {
+				AddressCoordinateHome ach = (AddressCoordinateHome) IDOLookup.getHome(AddressCoordinate.class);
+				try {
+					ac = ach.findByCoordinate(addressKeyCode);
+				} catch (FinderException f) {
+					ac = ach.create();
+					ac.setCoordinate(addressKeyCode);
+					ac.store();
+				}
+				coordinateMap.put(addressKeyCode, ac);
+			}
+			return ac;
+		}
+		return null;
 	}
 
 	private void handleCustodyAndChildRelations(HashtableMultivalued table) {
