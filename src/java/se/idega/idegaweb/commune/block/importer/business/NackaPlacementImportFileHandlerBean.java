@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.7 2003/10/22 09:26:31 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.8 2003/10/23 11:57:26 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -65,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/22 09:26:31 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/23 11:57:26 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -416,11 +416,10 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		}	
 		
 		if (isNewUser) {
-			biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea);
 			try {
 				Commune homeCommune = communeHome.findByCommuneName(homeCommuneName);
-				homeCommune.toString(); // REMOVE THIS WHEN SET COMMUNE FIXED
-//				user.setHomeCommune(...)
+				Integer communeId = (Integer) homeCommune.getPrimaryKey();
+				biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
 			} catch (FinderException e) {
 				System.out.println("Commune not found: " + homeCommuneName);
 				return false;
@@ -428,7 +427,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			updateUser = true;
 		}
 
-		if (useMotherTongue.equals("X")) {
+		if (motherTongue.length() > 0) {
 			try {
 				ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
 				user.setNativeLanguage(nativeLanguage);
@@ -504,7 +503,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			SchoolClass sClass = null;
 			
 			try {	
-				sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
+				sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass, school, year, season);
 			} catch (FinderException e) {
 				//e.printStackTrace();
 				System.out.println("School class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
@@ -519,54 +518,84 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			
 			//school Class member
 			SchoolClassMember member = null;
-			try {	
-				Collection placements =  sClassMemberHome.findAllByUserAndSeason(user, season);
-				
+			boolean createNewPlacement = true;
+			try {
+				Collection placements = sClassMemberHome.findAllByUserAndSeason(user, season);
 				if (placements != null) {
 					Iterator oldPlacements = placements.iterator();
 					while (oldPlacements.hasNext()) {
 						SchoolClassMember placement = (SchoolClassMember) oldPlacements.next();
 						SchoolType st = placement.getSchoolClass().getSchoolType();
-						if (st == null || st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+						if (st != null && ((Integer) st.getPrimaryKey()).equals((Integer) schoolType.getPrimaryKey())) {
 							if (placement.getRemovedDate() == null) {
-								IWTimestamp yesterday = new IWTimestamp();
-								yesterday.addDays(-1);
-								placement.setRemovedDate(yesterday.getTimestamp());
-								placement.store();
-								Collection c = resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
-								Iterator resourceMemberIter = c.iterator();
-								while (resourceMemberIter.hasNext()) {
-									ResourceClassMember m = (ResourceClassMember) resourceMemberIter.next();
-									m.setEndDate(yesterday.getDate());
-									m.store();
+								int oldSchoolId = placement.getSchoolClass().getSchoolId();
+								int newSchoolId = ((Integer) school.getPrimaryKey()).intValue();
+								if (oldSchoolId != newSchoolId) { 
+									IWTimestamp yesterday = new IWTimestamp();
+									yesterday.addDays(-1);
+									placement.setRemovedDate(yesterday.getTimestamp());
+									placement.store();
+									Collection c = resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
+									Iterator resourceMemberIter = c.iterator();
+									while (resourceMemberIter.hasNext()) {
+										ResourceClassMember m = (ResourceClassMember) resourceMemberIter.next();
+										m.setEndDate(yesterday.getDate());
+										m.store();
+									}
+								} else {
+									createNewPlacement = false;
+									placement.setSchoolClassId(((Integer)sClass.getPrimaryKey()).intValue());
+									placement.store();
+									member = placement;
 								}
+								break;
 							}
 						}
 					}
 				}
 			} catch (FinderException f) {}
-			
-			member = schoolBiz.storeSchoolClassMember(sClass, user);
-			if (member == null) {
-				System.out.println("School class member could not be created for personal id: " + personalId);	
-				return false;
+
+			if (createNewPlacement) {			
+				member = schoolBiz.storeSchoolClassMember(sClass, user);
+				if (member == null) {
+					System.out.println("School class member could not be created for personal id: " + personalId);	
+					return false;
+				}
+				IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
+				member.setRegisterDate(registerDate.getTimestamp());
+				member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
+				member.store();
 			}
-			IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
-			member.setRegisterDate(registerDate.getTimestamp());
-			member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
-			member.store();
 			
 			int memberId = ((Integer) member.getPrimaryKey()).intValue();
 			int resourceId = -1;
 			
-			if (useMotherTongue.equals("X")) {
-				Resource motherTongueResource = null;
-				if (schoolYear.charAt(0) >= '6') {
-					motherTongueResource = motherTongue2Resource;
-				} else {
-					motherTongueResource = motherTongue1Resource;
+			boolean createMotherTongueResource = useMotherTongue.equals("X");
+			Resource motherTongueResource = null;
+			if (schoolYear.charAt(0) >= '6') {
+				motherTongueResource = motherTongue2Resource;
+			} else {
+				motherTongueResource = motherTongue1Resource;
+			}
+			resourceId = ((Integer) motherTongueResource.getPrimaryKey()).intValue();
+			Collection rm = resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
+			Iterator rmIter = rm.iterator();
+			while (rmIter.hasNext()) {
+				ResourceClassMember m = (ResourceClassMember) rmIter.next();
+				int mId = ((Integer) m.getPrimaryKey()).intValue();
+				if ((mId == RESOURCE_ID_NATIVE_LANGUAGE_1) || (mId == RESOURCE_ID_NATIVE_LANGUAGE_2)) {
+					if (resourceId != mId) {
+						IWTimestamp yesterday = new IWTimestamp();
+						yesterday.addDays(-1);
+						m.setEndDate(yesterday.getDate());
+						m.store();
+					} else {
+						createMotherTongueResource = false;
+					}
+					break;
 				}
-				resourceId = ((Integer) motherTongueResource.getPrimaryKey()).intValue();
+			}
+			if (createMotherTongueResource) {
 				try {
 					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
 				} catch (Exception e) {
@@ -575,27 +604,48 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				}
 			}
 			
-			if (useSkillLevel.equals("X")) {
-				char level = skillLevel.charAt(0);
-				Resource skillLevelResource = null;
-				switch (level) {
-					case '0':
-						skillLevelResource = skillLevel0Resource;
-						break;			
-					case '1':
-						skillLevelResource = skillLevel1Resource;
-						break;			
-					case '2':
-						skillLevelResource = skillLevel2Resource;
-						break;			
-					case '3':
-						skillLevelResource = skillLevel3Resource;
-						break;
-					default:
-						System.out.println("Could not create resource placement (" + skillLevel + ") for personal id: " + personalId);
-						return false;
+			boolean createSkillLevelResource = useSkillLevel.equals("X");
+			char level = skillLevel.charAt(0);
+			Resource skillLevelResource = null;
+			switch (level) {
+				case '0':
+					skillLevelResource = skillLevel0Resource;
+					break;			
+				case '1':
+					skillLevelResource = skillLevel1Resource;
+					break;			
+				case '2':
+					skillLevelResource = skillLevel2Resource;
+					break;			
+				case '3':
+					skillLevelResource = skillLevel3Resource;
+					break;
+				default:
+					System.out.println("Could not create resource placement (" + skillLevel + ") for personal id: " + personalId);
+					return false;
+			}
+			resourceId = ((Integer) skillLevelResource.getPrimaryKey()).intValue();
+
+			rm = resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
+			rmIter = rm.iterator();
+			while (rmIter.hasNext()) {
+				ResourceClassMember m = (ResourceClassMember) rmIter.next();
+				int mId = ((Integer) m.getPrimaryKey()).intValue();
+				if ((mId == RESOURCE_ID_SKILL_LEVEL_0) || 
+						(mId == RESOURCE_ID_SKILL_LEVEL_1) ||
+						(mId == RESOURCE_ID_SKILL_LEVEL_2) ||
+						(mId == RESOURCE_ID_SKILL_LEVEL_3)) {
+					if (resourceId != mId) {
+						IWTimestamp yesterday = new IWTimestamp();
+						yesterday.addDays(-1);
+						m.setEndDate(yesterday.getDate());
+						m.store();											
+					} else {
+						createSkillLevelResource = false;
+					}
 				}
-				resourceId = ((Integer) skillLevelResource.getPrimaryKey()).intValue();
+			}
+			if (createSkillLevelResource) {
 				try {
 					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
 				} catch (Exception e) {
