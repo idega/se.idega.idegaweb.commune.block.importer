@@ -84,8 +84,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //home = biz.getUserHome();
       comUserBiz = (CommuneUserBusiness)IBOLookup.getServiceInstance(this.getIWApplicationContext(),CommuneUserBusiness.class);
 
-      comUserBiz.getRootCitizenGroup();
-      biz.getUserHome().create();
+      //comUserBiz.getRootCitizenGroup();
+      //biz.getUserHome().create();
 
       //groupHome = biz.getGroupHome();
 
@@ -98,7 +98,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       int count = 0;
       while ( !(item=(String)file.getNextRecord()).equals("") ) {
         count++;
-       // processRecord(item);
+        processRecord(item);
 
         /**if(test && count == 100){
           System.out.println(" TEST DONE 100 users");
