@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.10 2003/10/23 12:22:08 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.11 2003/10/23 13:58:25 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -65,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/23 12:22:08 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/23 13:58:25 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -605,7 +605,10 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			}
 			
 			boolean createSkillLevelResource = useSkillLevel.equals("X");
-			char level = skillLevel.charAt(0);
+			char level = '4';
+			try {
+				level = skillLevel.charAt(0);
+			} catch (Exception e) {}
 			Resource skillLevelResource = null;
 			switch (level) {
 				case '0':
@@ -620,11 +623,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				case '3':
 					skillLevelResource = skillLevel3Resource;
 					break;
-				default:
-					System.out.println("Could not create resource placement (" + skillLevel + ") for personal id: " + personalId);
-					return false;
+//				default:
+//					System.out.println("Could not create resource placement (" + skillLevel + ") for personal id: " + personalId);
+//					return false;
 			}
-			resourceId = ((Integer) skillLevelResource.getPrimaryKey()).intValue();
+			if (skillLevelResource != null) {
+				resourceId = ((Integer) skillLevelResource.getPrimaryKey()).intValue();
+			}
 
 			rm = resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
 			rmIter = rm.iterator();
