@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.1 2003/11/06 14:12:15 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.2 2003/11/11 10:24:26 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -40,6 +40,10 @@ import com.idega.block.school.data.SchoolTypeHome;
 import com.idega.block.school.data.SchoolYear;
 import com.idega.block.school.data.SchoolYearHome;
 import com.idega.business.IBOServiceBean;
+import com.idega.core.location.data.Commune;
+import com.idega.core.location.data.CommuneHome;
+import com.idega.user.data.Gender;
+import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
@@ -56,10 +60,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/06 14:12:15 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/11 10:24:26 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -71,6 +75,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private SchoolYearHome schoolYearHome = null;
 	private SchoolClassHome schoolClassHome = null;
 	private SchoolClassMemberHome schoolClassMemberHome = null;
+	private CommuneHome communeHome = null;
 
 	private SchoolSeason season = null;
     
@@ -87,20 +92,23 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private final static String LOC_KEY_SPECIAL_HIGH_SCHOOL = "sch_type.school_type_gymnasiesarskola";
 	
 	private final static int COLUMN_PROVIDER_NAME = 0;
-//	private final static int COLUMN_PERIOD = 1;
-	private final static int COLUMN_SCHOOL_CLASS = 2;
-	private final static int COLUMN_SCHOOL_YEAR = 3;
-	private final static int COLUMN_STUDY_PATH = 4;
-	private final static int COLUMN_PERSONAL_ID = 5;
-	private final static int COLUMN_STUDENT_NAME = 6;
-	private final static int COLUMN_HOME_COMMUNE = 7;
-//	private final static int COLUMN_UPDATED_DATE = 8;
-	private final static int COLUMN_ADDRESS = 9;
-	private final static int COLUMN_CO_ADDRESS = 10;
-	private final static int COLUMN_ZIP_CODE = 11;
-	private final static int COLUMN_ZIP_AREA = 12;	
-	private final static int COLUMN_HIGH_SCHOOL_TYPE = 13; // Maybe modify! Check where in the import file this column is
-		
+	private final static int COLUMN_HIGH_SCHOOL_TYPE = 1;
+//	private final static int COLUMN_PERIOD = 2;
+	private final static int COLUMN_SCHOOL_CLASS = 3;
+	private final static int COLUMN_SCHOOL_YEAR = 4;
+	private final static int COLUMN_STUDY_PATH = 5;
+	private final static int COLUMN_PERSONAL_ID = 6;
+	private final static int COLUMN_STUDENT_NAME = 7;
+	private final static int COLUMN_HOME_COMMUNE = 8;
+//	private final static int COLUMN_UPDATED_DATE = 9;
+	private final static int COLUMN_ADDRESS = 10;
+	private final static int COLUMN_CO_ADDRESS = 11;
+	private final static int COLUMN_ZIP_CODE = 12;
+	private final static int COLUMN_ZIP_AREA = 13;	
+
+	private Gender female = null;
+	private Gender male = null;
+	
 	/**
 	 * Default constructor.
 	 */
@@ -128,6 +136,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			schoolYearHome = schoolBusiness.getSchoolYearHome();
 			schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
 
 			try {
 				season = schoolBusiness.getCurrentSchoolSeason();    	
@@ -219,7 +228,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 
 		if (!errorLog.isEmpty()) {
-			System.out.println("Errors in import:\n");
+			System.out.println("Errors during import:\n");
 		}
 		Iterator rowIter = errorLog.keySet().iterator();
 		
@@ -235,7 +244,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 */
 	protected boolean storeUserInfo(int row) throws RemoteException {
 
-		User child = null;
+		User user = null;
 		SchoolType schoolType = null;
 		School school = null;
 
@@ -271,10 +280,19 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		if (studentName == null) {
 			studentName = "";
 		}
+		String studentFirstName = "";
+		String studentLastName = "";		
+		if (studentName.length() > 0) {
+			int cutPos = studentName.indexOf(',');
+			if (cutPos != -1) {
+				studentFirstName = studentName.substring(cutPos + 1).trim();
+				studentLastName = studentName.substring(0, cutPos).trim(); 
+			}
+		}
 		
-		String homeCommune = getUserProperty(COLUMN_HOME_COMMUNE);
-		if (homeCommune == null) {
-			homeCommune = "";
+		String homeCommuneCode = getUserProperty(COLUMN_HOME_COMMUNE);
+		if (homeCommuneCode == null) {
+			homeCommuneCode = "";
 		}
 
 		String address = getUserProperty(COLUMN_ADDRESS);
@@ -303,17 +321,43 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			return false;
 		}
 				
-		// user
+		// user		
+		boolean isNewUser = false;
 		try {
-			child = communeUserBusiness.getUserHome().findByPersonalID(personalId);
+			user = communeUserBusiness.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
-			errorLog.put(new Integer(row), "Child not found for personal ID: " + personalId);
-			return false;
-		}
+			System.out.println("User not found for PIN : " + personalId + " CREATING");
+			
+			try {
+				user = communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(
+						studentFirstName, 
+						"",
+						studentLastName,
+						personalId,
+						getGenderFromPin(personalId),
+						getBirthDateFromPin(personalId));
+				isNewUser = true;
+			} catch (Exception e2) {
+				e2.printStackTrace();
+				return false;
+			}
+		}	
 		
+		if (isNewUser) {
+			try {
+				Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+				Integer communeId = (Integer) homeCommune.getPrimaryKey();
+				communeUserBusiness.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), address, zipCode, zipArea, communeId);
+			} catch (FinderException e) {
+				errorLog.put(new Integer(row), "Commune not found: " + homeCommuneCode);
+				return false;
+			}
+			user.store();
+		}
+				
 		// school type
 		String typeKey = null;
-		if (highSchoolType.substring(2).equals("rskoleklassomsorg")) {
+		if (highSchoolType.equals("GY")) {
 			typeKey = LOC_KEY_HIGH_SCHOOL;
 		} else {
 			typeKey = LOC_KEY_SPECIAL_HIGH_SCHOOL;
@@ -398,7 +442,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			} catch (Exception e2) {}
 
 			if (schoolClass == null) {
-				System.out.println("Could not create school Class: " + schoolClassName);
+				errorLog.put(new Integer(row), "Could not create school Class: " + schoolClassName);
 				return false;
 			}				
 		}
@@ -407,7 +451,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		int schoolClassId = ((Integer) schoolClass.getPrimaryKey()).intValue();
 		SchoolClassMember member = null;
 		try {
-			Collection placements = schoolClassMemberHome.findByStudent(child);
+			Collection placements = schoolClassMemberHome.findByStudent(user);
 			if (placements != null) {
 				Iterator placementsIter = placements.iterator();
 				while (placementsIter.hasNext()) {
@@ -439,9 +483,9 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		} catch (FinderException f) {}
 
 		if (member == null) {			
-			member = schoolBusiness.storeSchoolClassMember(schoolClass, child);
+			member = schoolBusiness.storeSchoolClassMember(schoolClass, user);
 			if (member == null) {
-				System.out.println("School Class member could not be created for personal id: " + personalId);	
+				errorLog.put(new Integer(row), "School Class member could not be created for personal id: " + personalId);	
 				return false;
 			}
 		}
@@ -497,5 +541,37 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 */
 	public List getFailedRecords(){
 		return failedRecords;	
+	}
+
+	private IWTimestamp getBirthDateFromPin(String pin){
+		//pin format = 190010221208 yyyymmddxxxx
+		int dd = Integer.parseInt(pin.substring(6,8));
+		int mm = Integer.parseInt(pin.substring(4,6));
+		int yyyy = Integer.parseInt(pin.substring(0,4));
+		IWTimestamp dob = new IWTimestamp(dd,mm,yyyy);
+		return dob;
+	}
+	
+	private Gender getGenderFromPin(String pin) {
+		//pin format = 190010221208 second last number is the gender
+		//even number = female
+		//odd number = male
+		try {
+			GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
+			if (Integer.parseInt(pin.substring(10, 11)) % 2 == 0) {
+				if (female == null) {
+					female = home.getFemaleGender();
+				}
+				return female;
+			} else {
+				if (male == null) {
+					male = home.getMaleGender();
+				}
+				return male;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
