@@ -1,6 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
 import is.idega.block.family.business.FamilyLogic;
-
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.rmi.RemoteException;
@@ -11,16 +10,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.ejb.CreateException;
+import javax.ejb.EJBException;
 import javax.ejb.FinderException;
 import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
-
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import se.idega.util.PIDChecker;
-
 import com.idega.block.importer.data.ImportFile;
 import com.idega.business.IBOLookup;
 import com.idega.business.IBOLookupException;
@@ -1455,7 +1452,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 				if (addressKeyCode != null) {
 					address.setCoordinate(addressKeyCode);
-					System.out.println("Setting coordinates ("+addressKeyCode+") for address "+address.getStreetAddress());
+//					System.out.println("Setting coordinates ("+addressKeyCode+") for address "+address.getStreetAddress());
 				}
 				
 				address.store();
@@ -1605,6 +1602,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			 * catch (FinderException e) { e.printStackTrace();
 			 */
 			catch (CreateException e) {
+				e.printStackTrace();
+				logError("NackaImportHandler Failed to create parent relation");
+			}
+			catch (EJBException e) {
 				e.printStackTrace();
 				logError("NackaImportHandler Failed to create parent relation");
 			}
