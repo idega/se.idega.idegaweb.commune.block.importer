@@ -1,5 +1,8 @@
 package se.idega.idegaweb.commune.block.importer.business;
 
+import com.idega.util.text.TextSoap;
+import com.idega.business.IBOLookup;
+import java.rmi.RemoteException;
 import java.util.Collection;
 import se.idega.idegaweb.commune.block.importer.data.ImportFile;
 import com.idega.business.IBOServiceBean;
@@ -18,27 +21,21 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
   public ImportBusinessBean() {
   }
 
-  public ImportFileHandler getHandlerForImportFile(Class importFileClass){
-    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
-     *
-     */
-    return new NackaImportFileHandler();
+  public ImportFileHandler getHandlerForImportFile(Class importFileClass) throws RemoteException{
+    return (ImportFileHandler)getServiceInstance(importFileClass);
   }
 
-  public ImportFileHandler getHandlerForImportFile(String importFileClassName){
-    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
-     *
-     */
-    return new NackaImportFileHandler();
+  public ImportFileHandler getHandlerForImportFile(String importFileClassName)  throws RemoteException, ClassNotFoundException{
+    return getHandlerForImportFile(Class.forName( TextSoap.findAndReplace(importFileClassName,".data.",".business.")+"Handler"));
   }
 
-  public boolean importRecords(ImportFile file){
+  public boolean importRecords(ImportFile file) throws RemoteException{
     /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
      *
      */
     try{
       boolean status = false;
-      ImportFileHandler handler = getHandlerForImportFile(file.getClass());
+      ImportFileHandler handler = getHandlerForImportFile(file.getClass().getName());
 
       Collection col = file.getRecords();
       if( col == null ) return false;
@@ -48,6 +45,10 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
       return status;
     }
     catch(NoRecordsException ex){
+     ex.printStackTrace();
+     return false;
+    }
+    catch(ClassNotFoundException ex){
      ex.printStackTrace();
      return false;
     }

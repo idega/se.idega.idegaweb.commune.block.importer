@@ -1,4 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import java.rmi.RemoteException;
 import java.util.Collection;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Collection;
 
 public interface ImportFileHandler {
 
-public boolean handleRecords(Collection records);
+public boolean handleRecords(Collection records) throws RemoteException;
 
 
 
