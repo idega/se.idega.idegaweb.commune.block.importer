@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.4 2003/12/02 10:06:12 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.5 2003/12/02 12:20:12 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -62,10 +62,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/02 10:06:12 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/02 12:20:12 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -388,15 +388,18 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 		
 		// school type
-		Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
 		boolean hasSchoolType = false;
-		while (schoolTypeIter.hasNext()) {
-			SchoolType st = (SchoolType) schoolTypeIter.next();
-			if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
-				hasSchoolType = true;
-				break;
+		try {
+		Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
+			while (schoolTypeIter.hasNext()) {
+				SchoolType st = (SchoolType) schoolTypeIter.next();
+				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+					hasSchoolType = true;
+					break;
+				}
 			}
-		}
+		} catch (Exception e) {}
+		
 		if (!hasSchoolType) {
 			errorLog.put(new Integer(row), "School type '" + highSchoolType + "' not found in high school: " + providerName);
 			return false;
@@ -412,7 +415,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 		boolean schoolYearFoundInSchool = false;
 		Map m = schoolBusiness.getSchoolRelatedSchoolYears(school);
-		schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());
+		try {
+			schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());
+		} catch (Exception e) {}
+		
 		if (!schoolYearFoundInSchool) {
 			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + providerName  + "'.");
 			return false;
