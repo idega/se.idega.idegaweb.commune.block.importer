@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.3 2003/12/04 17:49:02 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.4 2003/12/05 07:58:01 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -63,10 +63,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/04 17:49:02 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/05 07:58:01 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -395,7 +395,10 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		}
 		boolean schoolYearFoundInSchool = false;
 		Map m = schoolBusiness.getSchoolRelatedSchoolYears(school);
-		schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());
+		try {
+			schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());			
+		} catch (Exception e) {}
+		
 		if (!schoolYearFoundInSchool) {
 			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + SCHOOL_NAME  + "'.");
 			return false;
