@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.11 2004/02/02 13:58:25 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.12 2004/04/01 13:29:41 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -11,6 +11,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
 
 import java.rmi.RemoteException;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,12 +26,15 @@ import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
+import se.idega.idegaweb.commune.block.importer.data.PlacementImportDate;
+import se.idega.idegaweb.commune.block.importer.data.PlacementImportDateHome;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.business.SchoolBusiness;
 import com.idega.block.school.data.School;
+import com.idega.block.school.data.SchoolCategory;
 import com.idega.block.school.data.SchoolClass;
 import com.idega.block.school.data.SchoolClassHome;
 import com.idega.block.school.data.SchoolClassMember;
@@ -64,10 +68,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/02/02 13:58:25 $ by $Author: anders $
+ * Last modified: $Date: 2004/04/01 13:29:41 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -81,6 +85,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private SchoolClassMemberHome schoolClassMemberHome = null;
 	private CommuneHome communeHome = null;
 	private SchoolStudyPathHome studyPathHome = null;
+	private PlacementImportDateHome placementImportDateHome = null;
 
 	private SchoolSeason season = null;
     
@@ -93,6 +98,8 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	
 	private Timestamp firstDayInCurrentMonth = null;
 	private Timestamp lastDayInPreviousMonth = null;
+	
+	private Date today = null;
 
 	private final static Timestamp REGISTER_DATE = (new IWTimestamp("2003-07-01")).getTimestamp(); 
 	
@@ -132,6 +139,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		
 		IWTimestamp t = IWTimestamp.RightNow();
 		t.setAsDate();
+		today = t.getDate();
 		t.setDay(1);
 		firstDayInCurrentMonth = t.getTimestamp();
 		t.addDays(-1);
@@ -154,6 +162,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
 			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
 			studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
+			placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
 
 			try {
 				season = schoolBusiness.getCurrentSchoolSeason();    	
@@ -185,7 +194,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				
 				item = null;
 			}
-      
+
+			if (!failed) {
+				if (!terminateOldPlacements()) {
+					failed = true;
+				}
+			}
+			
 			printFailedRecords();
 
 			clock.stop();
@@ -553,10 +568,96 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			member.setStudyPathId(((Integer) studyPath.getPrimaryKey()).intValue());
 			member.store();
 		}
-
+		
+		PlacementImportDate p = null;
+		try {
+			p = (PlacementImportDate) placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+		} catch (FinderException e) {}
+		if (p == null) {
+			try {
+				p = placementImportDateHome.create();
+				p.setSchoolClassMemberId(((Integer) member.getPrimaryKey()).intValue());
+			} catch (CreateException e) {
+				errorLog.put(new Integer(row), "Could not create import date from school class memeber: " + member.getPrimaryKey());	
+				return false;								
+			}
+		}
+		p.setImportDate(today);
+		p.store();
+		
 		return true;
 	}
 
+	/**
+	 * Terminates all all high school placements not included in the import (except Nacka Gymnasium placements). 
+	 */
+	protected boolean terminateOldPlacements() {
+		System.out.println("NackaHighSchoolPlacementHandler: Starting termination of old placements...");
+		boolean success = true;
+		School schoolA = null;
+		School schoolB = null;
+		School schoolC = null;
+		try {
+			schoolA = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
+		} catch (FinderException e) {
+			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A + "' not found.");
+			return false;
+		}
+		try {
+			schoolB = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
+		} catch (FinderException e) {
+			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B + "' not found.");
+			return false;
+		}
+		try {
+			schoolC = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
+		} catch (FinderException e) {
+			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C + "' not found.");
+			return false;
+		}
+		int schoolIdA = ((Integer) schoolA.getPrimaryKey()).intValue();
+		int schoolIdB = ((Integer) schoolB.getPrimaryKey()).intValue();
+		int schoolIdC = ((Integer) schoolC.getPrimaryKey()).intValue();
+		String[] schoolIds = new String[] {String.valueOf(schoolIdA), String.valueOf(schoolIdB), String.valueOf(schoolIdC)};
+
+		
+		SchoolCategory highSchoolCategory = null;
+		try {
+			highSchoolCategory = schoolBusiness.getCategoryHighSchool();
+		} catch (RemoteException e) {
+			System.out.println("NackaHighSchoolPlacementHandler: High school category not found.");
+			return false;			
+		}
+		
+		Collection placements = null;
+		try {
+			placements = schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, season, schoolIds, true); 
+		} catch (FinderException e) {
+			System.out.println("NackaHighSchoolPlacementHandler: Error finding placements.");
+			return false;			
+		}
+		
+		Iterator iter = placements.iterator();
+		IWTimestamp now = IWTimestamp.RightNow();
+		now.setAsDate();
+		while (iter.hasNext()) {
+			SchoolClassMember member = (SchoolClassMember) iter.next();
+			IWTimestamp placementDate = null;
+			try {
+				PlacementImportDate p = placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+				placementDate = new IWTimestamp(p.getImportDate());
+				placementDate.setAsDate();
+			} catch (FinderException e) {}
+			if (placementDate == null || placementDate.isEarlierThan(now)) {
+				member.setRemovedDate(lastDayInPreviousMonth);
+				member.store();				
+			}
+		}
+
+		System.out.println("NackaHighSchoolPlacementHandler: Termination of old placements finished.");
+		return success;
+	}
+	
 	/*
 	 * Returns the property for the specified column from the current record. 
 	 */
