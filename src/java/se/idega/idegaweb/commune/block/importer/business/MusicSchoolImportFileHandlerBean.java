@@ -182,7 +182,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			}
 		}		
 		
-		student = processStudent(studentSSN, studentTelNr, musicSchool, mainClass);
+		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, firstInstrument, secondInstrument, thirdInstrument);
 
 		if(student != null) {
 			if(instrument1 != null && !instrument1.equals("")) {
@@ -210,7 +210,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @return student (SchoolClassMember) - null if failed to create student
 	 * @throws RemoteException
 	 */
-	private SchoolClassMember processStudent(String studentSSN, String studentTelNr, School musicSchool, SchoolClass mainClass) throws RemoteException {
+	private SchoolClassMember processStudent(String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath firstInstrument, SchoolStudyPath secondInstrument, SchoolStudyPath thirdInstrument) throws RemoteException {
 		SchoolClassMemberHome studentHome = schoolBiz.getSchoolClassMemberHome();
 		UserBusiness userBiz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
 		SchoolClassMember student = null;
@@ -229,7 +229,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			
 		}
 		if(studentUser != null) {
-			Integer studentID = (Integer) studentUser.getPrimaryKey();
+			Integer userID = (Integer) studentUser.getPrimaryKey();
 			PhoneHome phHome = userBiz.getPhoneHome();
 			try {
 				if(studentTelNr != null && !studentTelNr.equals("")) {
@@ -241,21 +241,39 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 					studentUser.store();
 					
 				}
-				
-				Integer musicSchoolID = (Integer) musicSchool.getPrimaryKey();
+				Integer musicSchoolID = new Integer(-1);
+				Integer seasonID = new Integer(-1);
+				String firstInstrumentID = null;
+				String secondInstrumentID = null;
+				String thirdInstrumentID = null;
+				if(musicSchool != null) {
+					musicSchoolID = (Integer) musicSchool.getPrimaryKey();
+				}
+				if(schoolSeason != null) {
+					seasonID = (Integer) schoolSeason.getPrimaryKey();
+				}
+				if(firstInstrument != null) {
+					firstInstrumentID = (String) firstInstrument.getPrimaryKey();
+				}
+				if(secondInstrument != null) {
+					secondInstrumentID = (String) secondInstrument.getPrimaryKey();
+				}
+				if(thirdInstrument != null) {
+					thirdInstrumentID = (String) thirdInstrument.getPrimaryKey();
+				}
+				String[] instrumentIDs = {firstInstrumentID, secondInstrumentID, thirdInstrumentID};
 				try {
-					student = studentHome.findByUserAndSchool(studentID.intValue(),musicSchoolID.intValue());
+					student = studentHome.findByUserAndSchoolAndSeasonAndStudyPath(userID.intValue(),musicSchoolID.intValue(),seasonID.intValue(),instrumentIDs);
 				}catch(FinderException fEx) {
 					student = studentHome.create();
-					student.setClassMemberId(studentID.intValue());
+					student.setClassMemberId(userID.intValue());
 				}
 				if(mainClass != null) {
 					Integer mainClassID = (Integer) mainClass.getPrimaryKey();
+					//SchoolClassmember (many-to-one) SchoolClass
 					student.setSchoolClassId(mainClassID.intValue());					
 				}
 				student.store();
-				
-				
 			}catch(CreateException crEx) {
 				student = null;
 			}catch(IDOAddRelationshipException idoex) {
@@ -309,8 +327,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 					//SchoolStudyPath (many-to-many) School
 					instrument.addSchool(musicSchool);
 				}			
-				//SchoolClassMember (many-to-many) SchoolStudyPath
-				student.addToSchoolStudyPath(instrument);	
+				Integer instrumentID = (Integer) instrument.getPrimaryKey();
 				Collection in = mainClass.findRelatedStudyPaths();
 				Iterator inIter = in.iterator();
 				while(inIter.hasNext()) {
@@ -321,6 +338,10 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				}
 				//SchoolClass (many-to-many) SchoolStudyPath
 				mainClass.addStudyPath(instrument);
+				
+				student.setStudyPathId(instrumentID.intValue());
+				student.store();
+				
 			}catch(IDOAddRelationshipException idoEx) {				
 			}	catch(IDORelationshipException iEx) {
 				
@@ -333,10 +354,9 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 					level.store();
 					//SchoolClass (many-to-many) SchoolYear
 					mainClass.addSchoolYear(level);
-					//SchoolStudyPath (many-to-many) SchoolYear
-					instrument.addSchoolYear(level);
-					//SchoolClassMember (many-to-many) SchoolYear
-					student.addSchoolYear(level);
+					Integer levelID = (Integer) level.getPrimaryKey();
+					//SchoolClassMember (many-to-one) SchoolYear
+					student.setSchoolYear(levelID.intValue());
 
 				}
 				if(levelString != null && !levelString.equals("")) {
@@ -347,13 +367,12 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 					if(level == null) {
 						//SchoolClass (many-to-many) SchoolYear (only if levelNr is empty)
 						mainClass.addSchoolYear(levelStr);
-						//SchoolStudyPath (many-to-many) SchoolYear
-						instrument.addSchoolYear(levelStr);
+						Integer levelStrID = (Integer) levelStr.getPrimaryKey();
 						//SchoolClassMember (many-to-many) SchoolYear
-						student.addSchoolYear(levelStr);
+						student.setSchoolYear(levelStrID.intValue());
 					}
 				}
-				
+
 				
 			}catch(CreateException crEx) {
 				
