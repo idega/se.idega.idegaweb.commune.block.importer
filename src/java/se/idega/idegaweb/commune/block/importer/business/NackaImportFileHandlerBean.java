@@ -1447,24 +1447,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					
 					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN);
 					
-					if (firstPartOfLast == null || "".equals(firstPartOfLast) || EMPTY_FIELD_CHARACTER.equals(firstPartOfLast)) {
-						int index = lastName.indexOf(" ");
-						if (index != -1 && lastName.length() > 0) {
-							lastName = lastName.substring(index +1);
-						}
-					} else {
-						int index = lastName.indexOf(firstPartOfLast+" ");
-						while (index == 0) {
-							// Removing previous instances of firstPartOfLastNaem
-							lastName = lastName.substring(index + firstPartOfLast.length()+1);
-							index = lastName.indexOf(firstPartOfLast+" ");
-						}
-						if (lastName != null && lastName.length() > 0) {
-							lastName = firstPartOfLast + " " + lastName;
-						} else {
-							lastName = firstPartOfLast;
-						}
-					}
+					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
 					handleNames(user, firstName, middleName, lastName, true);
 				} else if (action.equals(ACTION_TYPE_LAST_NAME)) {
@@ -1475,9 +1458,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					
 					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
-					if (firstPartOfLast != null) {
-						lastName = firstPartOfLast + " " + lastName;
-					}
+					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
 					handleNames(user, firstName, middleName, lastName, true);
 				} else if (action.equals(ACTION_TYPE_MARRIAGE)) {
@@ -1586,6 +1567,33 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 ///////////////////////////////////////////////////
 //            handlers
 ///////////////////////////////////////////////////
+
+	/**
+	 * @param lastName
+	 * @param firstPartOfLast
+	 * @return
+	 */
+	private String handleDoubleLastName(String lastName, String firstPartOfLast) {
+		if (firstPartOfLast == null || "".equals(firstPartOfLast) || EMPTY_FIELD_CHARACTER.equals(firstPartOfLast)) {
+			int index = lastName.indexOf(" ");
+			if (index != -1 && lastName.length() > 0) {
+				lastName = lastName.substring(index +1);
+			}
+		} else {
+			int index = lastName.indexOf(firstPartOfLast+" ");
+			while (index == 0) {
+				// Removing previous instances of firstPartOfLastNaem
+				lastName = lastName.substring(index + firstPartOfLast.length()+1);
+				index = lastName.indexOf(firstPartOfLast+" ");
+			}
+			if (lastName != null && lastName.length() > 0) {
+				lastName = firstPartOfLast + " " + lastName;
+			} else {
+				lastName = firstPartOfLast;
+			}
+		}
+		return lastName;
+	}
 
 	/**
 	 * @param user
