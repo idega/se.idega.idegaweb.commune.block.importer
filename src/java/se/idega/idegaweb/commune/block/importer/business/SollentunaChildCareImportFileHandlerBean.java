@@ -492,14 +492,20 @@ implements ImportFileHandler
 					member.setRegisterDate(placementFrom.getTimestamp());
 					if (placementTo != null) {
 						member.setRemovedDate(placementTo.getTimestamp());
-						try {
-							SchoolClassMemberLog log = schoolBiz.getSchoolClassMemberLogHome().findOpenLogByUser(member);
-							if (log != null) {
-								log.setEndDate(placementTo.getDate());
-								log.store();
-							}
-						} catch (Exception e) {}
+					} else {
+						member.setRemovedDate(null);
 					}
+					try {
+						SchoolClassMemberLog log = schoolBiz.getSchoolClassMemberLogHome().findOpenLogByUser(member);
+						if (log != null) {
+							if (placementTo != null) {
+								log.setEndDate(placementTo.getDate());
+							} else {
+								log.setEndDate(null);
+							}
+							log.store();
+						}
+					} catch (Exception e) {}
 					member.store();
 					
 //					SchoolClassMemberLog log = sClassMemberLogHome.create();
