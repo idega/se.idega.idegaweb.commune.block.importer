@@ -25,7 +25,7 @@ import se.idega.idegaweb.commune.school.business.*;
 
 
 /**
- * <p>Title: KRImportFileHandlerBean</p>
+ * <p>Title: NackaStudentImportFileHandlerBean</p>
  * <p>Description: </p>
  * <p>Copyright (c) 2002</p>
  * <p>Company: Idega Software</p>
@@ -35,7 +35,7 @@ import se.idega.idegaweb.commune.school.business.*;
 
 
 
-public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements ImportFileHandler{
+public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements NackaStudentImportFileHandler{
 
 
   private UserBusiness biz;
