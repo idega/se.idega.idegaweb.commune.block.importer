@@ -69,9 +69,15 @@ public class GenericImportFile implements ImportFile{
 
         buf.append(line);
 
+        /**@todo this should be an option with a setMethod?**/
+        buf.append('\n');
+
         if( line.indexOf(getRecordDilimiter())!= -1 ){
           records++;
-          System.out.println("Record nr.: "+records);
+          if( (records % 1000) == 0 ){
+            System.out.println("Importer: Reading record nr.: "+records+" from file "+getFile().getName());
+          }
+
          list.add(buf.toString());
          buf = null;
         }

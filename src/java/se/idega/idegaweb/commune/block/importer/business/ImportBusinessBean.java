@@ -36,16 +36,16 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
     /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
      *
      */
-    /* if( file == null ){
-      System.out.println("FÆL ER NULL!");
-     }*/
     try{
+      boolean status = false;
       ImportFileHandler handler = getHandlerForImportFile(file.getClass());
 
       Collection col = file.getRecords();
       if( col == null ) return false;
 
-      return handler.handleRecords(col);
+      status = handler.handleRecords(col);
+
+      return status;
     }
     catch(NoRecordsException ex){
      ex.printStackTrace();
