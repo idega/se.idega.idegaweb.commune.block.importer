@@ -96,17 +96,24 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 			if( !list.isEmpty()){
 				int userId = Integer.parseInt((String)list.get(0));
 				
-				String PIN = (String) list.get(1);
+				String PIN = "";
+				IWTimestamp dateOfBirth = null;
+				if(list.size()>=2){
+					PIN = (String) list.get(1);
+					dateOfBirth = getBirthDateFromPin(PIN);
+				}
 				
-				IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
-				System.out.println("userid : "+userId+" personalId : "+PIN);
+				
+				//System.out.println("userid : "+userId+" personalId : "+PIN);
 				
 				
 				user = comUserBiz.getUser(userId);
 				
 				user.setPersonalID(PIN);
+				
 				user.setDateOfBirth(dateOfBirth.getDate());
 				
+
 				/**
 				 * Save the user to the database
 				 */
