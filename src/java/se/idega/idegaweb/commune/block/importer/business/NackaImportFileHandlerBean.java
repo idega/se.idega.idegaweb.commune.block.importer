@@ -1123,8 +1123,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					else {
 						comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), IWTimestamp.RightNow().getDate());
 					}
-					// Removing all relations
-					relationBiz.removeAllFamilyRelationsForUser(user);
 				}
 				log(
 						"NackaImportFileHandler stored deceased relations : Total = ["
