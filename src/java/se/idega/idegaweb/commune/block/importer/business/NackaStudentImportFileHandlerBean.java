@@ -203,10 +203,9 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	try{
 		//school
 		//this can only work if there is only one school with this name. add more parameters for other areas
-		school = (School) sHome.findAllBySchoolName(schoolName).iterator().next();
-		if( school == null ) return false;
+		school = sHome.findBySchoolName(schoolName);
 	}
-	catch (Exception e) {
+	catch (FinderException e) {
 		System.out.println("School not found : "+schoolName);
 		return false;
 	}		

@@ -53,7 +53,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
   private ArrayList failedRecords = new ArrayList();
   
   private boolean isPreSchoolFile = false;
-  private boolean checkIfPreSchool = false;  
+  private boolean checkIfPreSchool = true;  
 
 //The columns in the file are in this order
 //first the regual school or preschool
@@ -96,7 +96,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
   	
   public NackaSchoolImportFileHandlerBean(){}
   
-  public boolean handleRecords() throws RemoteException{
+  public synchronized boolean handleRecords() throws RemoteException{
     transaction =  this.getSessionContext().getUserTransaction();
     
     Timer clock = new Timer();
@@ -134,6 +134,9 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
       }
       
       printFailedRecords();
+      
+      checkIfPreSchool = true;
+      isPreSchoolFile = false;
 
       clock.stop();
       System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
@@ -221,7 +224,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		try{
 			//create or find the school and update min data
 			//this can only work if there is only one school with this name. add more parameters for other areas
-			school = (School) (sHome.findAllBySchoolName(schoolName).iterator().next());//halló steikt!!! -eiki til sjálfs míns						
+			school = sHome.findBySchoolName(schoolName);
 			school.setSchoolAddress(schoolAddress);
 			school.setSchoolZipCode(schoolPostalCode);
 			school.setSchoolZipArea(schoolPostalName);
