@@ -65,8 +65,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private UserTransaction transaction2;
 
   private boolean importUsers = true;
-  private boolean importAddresses = true;
-  private boolean importRelations = true;
+  private boolean importAddresses = false;//temp
+  private boolean importRelations = false;//temp
 
   private int startRecord = 0;
 
@@ -316,7 +316,33 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     */
     try{
       //System.err.println(firstName);
-      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
+     // commented out while doing fix. user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
+    
+    //temporary
+    ///////////////////////////////////
+    //remove!
+    UserHome home = comUserBiz.getUserHome();
+	user = home.findByPersonalID(PIN);
+		
+	//update if found
+	StringBuffer fullName = new StringBuffer();
+
+	firstName = (firstName==null) ? "" : firstName;
+	middleName = (middleName==null) ? "" : middleName;
+	lastName = (lastName==null) ? "" : lastName;
+
+	fullName.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+
+	user.setFullName(fullName.toString());
+	user.setGender( (Integer)gender.getPrimaryKey() );
+	user.setDateOfBirth(dateOfBirth.getDate());
+	user.store();
+      		
+      
+    
+    
+    
+    
     }
     catch(Exception e){
       e.printStackTrace();
