@@ -34,6 +34,7 @@ import com.idega.core.location.data.Country;
 import com.idega.core.location.data.CountryHome;
 import com.idega.core.location.data.PostalCode;
 import com.idega.data.IDORemoveRelationshipException;
+import com.idega.data.IDOStoreException;
 import com.idega.presentation.IWContext;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
@@ -2040,7 +2041,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		}
 
 		if (store) {
+			try {
 			user.store();
+			} catch (IDOStoreException e) {
+				e.printStackTrace(System.err);
+				System.out.println("FirstName = "+firstName);
+				System.out.println("MiddleName = "+middleName);
+				System.out.println("LastName = "+lastName);
+			}
 		}
 		return user;
 	}
