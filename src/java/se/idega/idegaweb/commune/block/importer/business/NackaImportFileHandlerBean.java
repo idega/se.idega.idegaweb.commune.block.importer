@@ -263,6 +263,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		 * basic user info
 		 */
 
+		System.out.println("fullImport : firstName = " + firstName);
+		System.out.println("fullImport : middleName = " + middleName);
+		System.out.println("fullImport : lastName = " + lastName);
+
 		try {
 			user = comUserBiz.createOrUpdateCitizenByPersonalID(firstName, middleName, lastName, PIN, gender, dateOfBirth);
 		}
@@ -271,8 +275,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			return false;
 		}
 
-		user = getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, false);
+		System.out.println("fullImport before handle : user.firstName = " + user.getFirstName());
+		System.out.println("fullImport before handle : user.middleName = " + user.getMiddleName());
+		System.out.println("fullImport before handle : user.lastName = " + user.getLastName());
 
+		
+		user = getImportBusiness().handleNames(user, user.getFirstName(), user.getMiddleName(), user.getLastName(), preferredNameIndex, false);
+
+		System.out.println("fullImport after handle : user.firstName = " + user.getFirstName());
+		System.out.println("fullImport after handle : user.middleName = " + user.getMiddleName());
+		System.out.println("fullImport after handle : user.lastName = " + user.getLastName());
+		
 		if (!secretPerson) {
 			if (!handleAddress(user, countyNumber, commune)) {
 				return false;
@@ -1340,11 +1353,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					} else {
 						unhandledActions.put(actions[i][3], new Integer(1));
 					}
-					if (!"99".equals(action)) {
+//					if (!"99".equals(action)) {
 						if (!fullImport()) {
 							return false;
 						}
-					}
+//					}
 				}
 			}
 			

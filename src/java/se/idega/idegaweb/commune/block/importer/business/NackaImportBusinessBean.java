@@ -19,7 +19,7 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 	public User handleNames(User user, String firstName, String middleName, String lastName, String preferredNameIndex, boolean store) {
 		boolean updateName = false;
 		
-		if (firstName == null) {
+		if (firstName == null || firstName.trim().equals("")) {
 			if (user.getFirstName() != null) {
 				firstName = user.getFirstName();
 			} else {
@@ -34,7 +34,7 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 			middleName = "";
 		}
 		
-		if (lastName == null) {
+		if (lastName == null || lastName.trim().equals("")) {
 			if (user.getLastName() != null) {
 				lastName = user.getLastName();
 			} else {
@@ -106,7 +106,6 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 	
 					updateName = true;
 				}
-
 		}
 
 		if (lastName.startsWith("Van ") && !updateName) {
@@ -152,45 +151,7 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 		if (store) {
 			try {
 				user.store();
-				/*if (firstName.indexOf(middleName) > -1) {
-					int index = Integer.parseInt(preferredNameIndex);
-					int refName1 = index / 10;
-					int refName2 = index % 10;
-					
-					String fullName = fullname.toString();
-					
-					String preferredName = getValueAtIndexFromNameString(refName1, fullName);
-					
-					System.out.println("fullName = "+fullName);
-					System.out.println("preferredName = '"+preferredName+"'");
-					System.out.println("refName1 = "+refName1);
-					System.out.println("refName2 = "+refName2);
-					
-					System.out.println("FirstName = "+firstName);
-					System.out.println("MiddleName = '"+middleName+"'");
-					middleName = TextSoap.findAndCut(middleName, preferredName);
-					System.out.println("MiddleName = '"+middleName+"'");
-					System.out.println("LastName = "+lastName);
-				}
-				*/
 			} catch (IDOStoreException e) {
-				/*
-				int index = Integer.parseInt(preferredNameIndex);
-				int refName1 = index / 10;
-				int refName2 = index % 10;
-				
-				String fullName = fullname.toString();
-				
-				String preferredName = getValueAtIndexFromNameString(refName1, fullName);
-				
-				System.out.println("fullName = "+fullName);
-				System.out.println("preferredName = "+preferredName);
-				System.out.println("refName1 = "+refName1);
-				System.out.println("refName2 = "+refName2);
-				System.out.println("FirstName = "+firstName);
-				System.out.println("MiddleName = "+middleName);
-				System.out.println("LastName = "+lastName);
-				*/
 				throw e;
 			}
 		}
