@@ -207,7 +207,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		if( school == null ) return false;
 	}
 	catch (Exception e) {
-		System.out.println("School not found for PIN : "+PIN);
+		System.out.println("School not found : "+schoolName);
 		return false;
 	}		
 	
@@ -217,7 +217,10 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		year = sYearHome.findByYearName(schoolYear);
 	}
 	catch (FinderException e) {
-		System.out.println("SchoolYear not found for PIN : "+PIN);
+		System.out.println("SchoolYear not found : "+schoolYear);
+		//TODO CREATE THE YEAR
+		
+		
 		return false;
 	}	
 		
@@ -226,7 +229,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		school.addSchoolYear(year);
 	}
 	catch(IDOAddRelationshipException aEx){
-		aEx.printStackTrace();
+		//aEx.printStackTrace();
 			
 	}
 	

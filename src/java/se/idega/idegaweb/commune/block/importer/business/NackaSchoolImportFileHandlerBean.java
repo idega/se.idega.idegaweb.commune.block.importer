@@ -40,23 +40,18 @@ import se.idega.idegaweb.commune.school.business.*;
 public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implements NackaSchoolImportFileHandler{
 
 
-  private UserBusiness biz;
-  private UserHome home;
-  private SchoolYearBusiness schoolYearBiz;
-  private SchoolBusiness schoolBiz;
-  
-  private SchoolYearHome sYearHome;
-  private SchoolHome sHome;
-  private SchoolClassHome sClassHome;
-  private SchoolClassMemberHome sClassMemberHome;
 
-  private SchoolSeason season = null;
+  private SchoolBusiness schoolBiz;
+  private SchoolHome sHome;
     
   private ImportFile file;
   private UserTransaction transaction;
   
-  private ArrayList userValues;
+  private ArrayList schoolValues;
   private ArrayList failedRecords = new ArrayList();
+  
+  private boolean isPreSchoolFile = false;
+  private boolean checkIfPreSchool = false;  
 
 //The columns in the file are in this order
 //first the regual school or preschool
@@ -95,35 +90,14 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
   public boolean handleRecords() throws RemoteException{
     transaction =  this.getSessionContext().getUserTransaction();
     
-    try{
-    	season = ((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class)).getCurrentSeason();
-    }
-    catch(FinderException ex){
-    	ex.printStackTrace();
-    	System.err.println("NackaStudentHandler:Current School season is not defined");
-    	return false;
-    }
-    
     Timer clock = new Timer();
     clock.start();
 
     try {
-      //initialize business beans and data homes
-      biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
-      home = biz.getUserHome();
-      
-      
+      //initialize business beans and data homes           
       schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
       sHome = schoolBiz.getSchoolHome();
-           
-      schoolYearBiz = (SchoolYearBusiness) this.getServiceInstance(SchoolYearBusiness.class);
-      sYearHome = schoolYearBiz.getSchoolYearHome();
       
-      sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
- 	  
- 	  sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
-      
-  
       //if the transaction failes all the users and their relations are removed
       transaction.begin();
 
@@ -133,12 +107,11 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
       int count = 0;
       while ( !(item=(String)file.getNextRecord()).equals("") ) {
         count++;
-
-		
-           if( ! processRecord(item) ) failedRecords.add(item);
+        		
+        if( ! processRecord(item) ) failedRecords.add(item);
 
         if( (count % 500) == 0 ){
-          System.out.println("NackaStudentHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
+          System.out.println("NackaSchoolHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
         }
         
         item = null;
@@ -151,9 +124,9 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
 
       // System.gc();
       //success commit changes
+      
       transaction.commit();
-
-
+      
       return true;
     }
     catch (Exception ex) {
@@ -172,12 +145,12 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
   }
 
   private boolean processRecord(String record) throws RemoteException{
-    userValues = file.getValuesFromRecordString(record);
+    schoolValues = file.getValuesFromRecordString(record);
     //System.out.println("THE RECORD = "+record);
-
-	boolean success = storeUserInfo();
+    
+	boolean success = storeSchoolInfo();
   
-    userValues = null;
+    schoolValues = null;
 
     return success;
   }
@@ -191,111 +164,42 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
 	}
   }
 
-  protected boolean storeUserInfo() throws RemoteException{
+  protected boolean storeSchoolInfo() throws RemoteException{
 
-    User user = null;
+    School school = null;
 
-    //variables
-   /* 
-    String PIN = getUserProperty(this.COLUMN_PERSONAL_ID);  
-    if(PIN == null ) return false;
-        
-    String schoolName = getUserProperty(this.COLUMN_SCHOOL_NAME);
+//variables
+    String schoolName = getProperty(this.COLUMN_SCHOOL_NAME);
+    String caretakerName = getProperty(COLUMN_CARETAKER_NAME);
+    
+    
+    
+    
     if(schoolName == null ) return false;
 
-	String schoolYear = getUserProperty(this.COLUMN_SCHOOL_YEAR);
-    if(schoolYear == null ) return false;
 
-	String schoolClass = getUserProperty(this.COLUMN_CLASS);
-    if(schoolClass == null ) return false;
-
-	//database stuff
-	School school;
-	SchoolYear year; 
-	
-	// user
-	try {
-		user = biz.getUserHome().findByPersonalID(PIN);
-		//debug
-		if( user == null ) System.out.println(" USER IS NULL!!??? should cast finderexception");
+	if( checkIfPreSchool ){
+		if(caretakerName!=null) isPreSchoolFile = true;
 		
+		checkIfPreSchool = false;	
 	}
-	catch (FinderException e) {
-		System.out.println("User not found for PIN : "+PIN);
-		return false;
-	}	
-	
+    
+	//database stuff
 	try{
 		//school
 		//this can only work if there is only one school with this name. add more parameters for other areas
-		school = (School) sHome.findAllBySchoolName(schoolName).iterator().next();
+		school = (School) (sHome.findAllBySchoolName(schoolName).iterator().next());
 		if( school == null ) return false;
 	}
-	catch (Exception e) {
-		System.out.println("School not found for PIN : "+PIN);
-		return false;
-	}		
-	
-	try{
-		//school year	
-		if( schoolYear.equals("0") ) schoolYear = "F";
-		year = sYearHome.findByYearName(schoolYear);
-	}
 	catch (FinderException e) {
-		System.out.println("SchoolYear not found for PIN : "+PIN);
-		return false;
-	}	
-		
-	//add year to school
-	try{
-		school.addSchoolYear(year);
-	}
-	catch(IDOAddRelationshipException aEx){
-		aEx.printStackTrace();
-			
-	}
-	
-	//school class		
-	SchoolClass sClass = null;
-	
-	try {	
-		sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
-	}catch (FinderException e) {
-		//e.printStackTrace();
-		System.out.println("School class not found creating...");	
-		
-		sClass = schoolBiz.createSchoolClass(schoolClass,school,year,season);
-		sClass.store();
-		if (sClass == null)
-			return false;
-			
-	}
-	
-	//school class member
-	SchoolClassMember member = null;
-	try {
-		
-		member = sClassMemberHome.findByUserAndSchoolClass(user,sClass);
-		
-	}catch (FinderException e) {
-		//e.printStackTrace();
-		//System.out.println("School class member not found creating...");	
-		
-
-		member = schoolBiz.createSchoolClassMember(sClass, user);
-		member.store();
-		if (member == null)
-			return false;
-
-	
-	}
-	
-	
+		System.out.println("School not found creating : "+schoolName);	
+		school = schoolBiz.createSchool(schoolName,"","","","",-1);
+		return true;
+	}		
 
     //finished with this user
-    user = null;
+    school = null;
     
-    */
     return true;
   }
 
@@ -303,13 +207,13 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
     this.file = file;
   }
 
-	private String getUserProperty(int columnIndex){
+	private String getProperty(int columnIndex){
 		String value = null;
 		
-		if( userValues!=null ){
+		if( schoolValues!=null ){
 		
 			try {
-				value = (String)userValues.get(columnIndex);
+				value = (String)schoolValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
