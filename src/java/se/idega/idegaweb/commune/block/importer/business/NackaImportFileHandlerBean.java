@@ -80,6 +80,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
 	private static final String SECRECY_MARKING_COLUMN = "01003";
 	
+	private static final String FOREIGN_ADDRESS_1_COLUMN = "01071";
+	private static final String FOREIGN_ADDRESS_2_COLUMN = "01072";
+	private static final String FOREIGN_ADDRESS_3_COLUMN = "01073";
+	private static final String FOREIGN_ADDRESS_COUNTRY_COLUMN = "01077";
+
+	
 	private static final String COUNTY_CODE_COLUMN = "01022";// for stockholmarea 01
 	private static final String COMMUNE_CODE_COLUMN = "01023";// for nacka 82
 	
@@ -368,6 +374,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     Gender gender = getGenderFromPin(PIN);
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
     
+    boolean updateName = false;
+    
+    
+		StringBuffer fullname = new StringBuffer();
+		fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+
+		System.out.println("Name : "+fullname.toString());
+    
+    
     //preferred name handling.
     if(!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
     	String preferredName = getPreferredName(preferredNameIndex,firstName,middleName,lastName);
@@ -390,22 +405,44 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				lastName = TextSoap.findAndCut(lastName,preferredName);
 				lastName = TextSoap.findAndReplace(lastName,"  "," ");
 				
+			updateName = true;
 			
-			StringBuffer full = new StringBuffer();
-			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-
-			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
+			
     }
     else if( "12".equals(preferredNameIndex) ){
-    	//stupid rule
+    	//stupid rule set first name as firstname AND Second name
+			StringBuffer full = new StringBuffer();
+			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+			String fullName = full.toString();
+			fullName = TextSoap.findAndReplace(fullName,"  "," ");
+    	
+			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
+			String preferredName2 = getValueAtIndexFromNameString(2,fullName);
+			
+			//firstName = 
+   
+  
+    	
+    	updateName = true;
     }
     else if( "13".equals(preferredNameIndex) ){
-    	//even stupider
+    	//even stupider set first name as firstname AND third name
+			StringBuffer full = new StringBuffer();
+			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+			String fullName = full.toString();
+			fullName = TextSoap.findAndReplace(fullName,"  "," ");
+    	
+			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
+			String preferredName2 = getValueAtIndexFromNameString(3,fullName);
+    	
+    	updateName= true;
     
     }
     
-    
-    //check if any parts of name are null
+		fullname = new StringBuffer();
+		fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+
+		System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
     
 
     /**
@@ -413,32 +450,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     */
     
     try{
-      //System.err.println(firstName);
-     // commented out while doing fix. 
      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
-    
-		    //temporary to only update gender and dateofbirth
-		    //remove!
-		   /* UserHome home = comUserBiz.getUserHome();
-			user = home.findByPersonalID(PIN);
-				
-			//update if found
-			StringBuffer fullName = new StringBuffer();
-			firstName = (firstName==null) ? "" : firstName;
-			middleName = (middleName==null) ? "" : middleName;
-			lastName = (lastName==null) ? "" : lastName;
-			fullName.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-			user.setFullName(fullName.toString());
-			user.setGender( (Integer)gender.getPrimaryKey() );
-			user.setDateOfBirth(dateOfBirth.getDate());
-			user.store();
-      */    
     }
     catch(Exception e){
       e.printStackTrace();
       return false;
     }
     
+    if(updateName){//needed because createUser uses the method setFullName that splits the name with it's own rules
+    	user.setFirstName(firstName);
+    	user.setMiddleName(middleName);
+    	user.setLastName(lastName);
+    }
     
 
     /**
@@ -448,6 +471,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //country id 187 name Sweden isoabr: SE
 
       String addressLine = getUserProperty(ADDRESS_COLUMN);
+      
+			String foreignAddressLine1 = getUserProperty(FOREIGN_ADDRESS_1_COLUMN);
+			
+		
+			
       if( (addressLine!=null) && importAddresses ){
         try{
 
@@ -487,18 +515,65 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
           user.addAddress(address);
         }
 
-    }
-     catch(Exception e){
-      e.printStackTrace();
-      return false;
-    }
+	    }
+	     catch(Exception e){
+	      e.printStackTrace();
+	      return false;
+	    }
 
+    }    //foreign adress
+    else if (foreignAddressLine1!=null){
+			String foreignAddressLine2 = getUserProperty(FOREIGN_ADDRESS_2_COLUMN,"");
+			String foreignAddressLine3 = getUserProperty(FOREIGN_ADDRESS_3_COLUMN,"");
+			String foreignAddressCountry = getUserProperty(FOREIGN_ADDRESS_COUNTRY_COLUMN,"");
+			final String space = " ";
+			StringBuffer addressBuf = new StringBuffer();
+			addressBuf.append(foreignAddressLine1).append(space).append(foreignAddressLine2)
+			.append(space).append(foreignAddressLine3).append(space)
+			.append(foreignAddressCountry);
+			
+			
+			try{
+
+					String streetName = TextSoap.findAndReplace(addressBuf.toString(), "  "," ");
+
+
+					Address address = comUserBiz.getUsersMainAddress(user);
+					
+			
+					boolean addAddress = false;/**@todo is this necessary?**/
+
+					if( address == null ){
+						AddressHome addressHome = addressBiz.getAddressHome();
+						address = addressHome.create();
+						AddressType mainAddressType = addressHome.getAddressType1();
+						address.setAddressType(mainAddressType);
+						addAddress = true;
+					}
+
+				
+					address.setStreetName(streetName);
+					address.setStreetNumber("");
+					
+					
+					address.store();
+
+					if(addAddress){
+						user.addAddress(address);
+					}
+
+				}
+				 catch(Exception e){
+					e.printStackTrace();
+					return false;
+				}
+	
+    	
     }
 
     //extra address
     //special address
     //special extra address
-    //foreign adress
     //previous address
 
     /**
@@ -913,6 +988,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	
 
 	}
+	
+private String getValueAtIndexFromNameString(int index , String name){		
+	int i = 1;
+	StringTokenizer tokens = new StringTokenizer(name);
+	String value = null;
+	while( tokens.hasMoreTokens() && i<=index ){
+		value = tokens.nextToken();	
+		i++;
+	}
+
+	return value;
+} 
 	
 
 }
