@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/06/11 09:08:16 $ by $Author: laddi $
+ * Last modified: $Date: 2003/11/24 07:45:07 $ by $Author: staffan $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -53,7 +53,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
      * prior to invocation of this method.
      */
     public boolean handleRecords () throws RemoteException {
-        System.err.println ("Importing records: " + getClass ().getName ());
+        log ("Importing records: " + getClass ().getName ());
         boolean readSuccess = true;
         failedRecords.clear ();
         final SessionContext sessionContext = getSessionContext();
@@ -95,7 +95,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                         if (ssn.length () == 12 && pidChecker.isValid (ssn)) {
                             user = communeUserBusiness .createSpecialCitizenByPersonalIDIfDoesNotExist(ssn, "", "", ssn);
                         }
-                        System.err.println
+                        logWarning
                                 ("NackaStudentTimeImportFileHandlerget: created"
                                  + " new special citizen with ssn " + ssn);
                     }
@@ -113,7 +113,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                         }
                     }
                     if (school == null) {
-                        System.err.println (record + " - Unknown school");
+                        logWarning (record + " - Unknown school");
                         failedRecords.add (record + " - Unknown school");
                         unknownSchools.add (schoolName);
                         readSuccess = false;
@@ -144,19 +144,19 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                 if (readSuccess) {
                     transaction.commit ();
                 } else {
-                    System.err.println (getClass ().getName ()
+                    logWarning (getClass ().getName ()
                                         + " import failed:");
                     for (Iterator i = failedRecords.iterator ();
                          i.hasNext ();) {
                         final String message = (String) i.next ();
-                        System.err.println ("> " + message);
+                        logWarning ("> " + message);
                     }
 
-                    System.err.println ("Unknown Schools:");
+                    logWarning ("Unknown Schools:");
                     for (Iterator i = unknownSchools.iterator ();
                          i.hasNext ();) {
                         final String message = (String) i.next ();
-                        System.err.println ("> " + message);
+                        logWarning ("> " + message);
                     }
 
                     transaction.rollback ();
