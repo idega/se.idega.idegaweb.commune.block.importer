@@ -71,7 +71,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private static final String ADDRESS_COLUMN = "01033";
 	private static final String PIN_COLUMN = "01001";
 	private static final String LAST_NAME_COLUMN = "01014";
-	private static final String MIDDLE_NAME_COLUMN = "01013";
+	private static final String FIRST_PART_OF_LAST_NAME_COLUMN = "01013";
 	private static final String FIRST_NAME_COLUMN = "01012";
 	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
 	private static final String SECRECY_MARKING_COLUMN = "01003";
@@ -422,8 +422,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		//variables
 		String firstName = getUserProperty(FIRST_NAME_COLUMN, "");
-		String middleName = getUserProperty(MIDDLE_NAME_COLUMN, "");
-		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		//String middleName = getUserProperty(MIDDLE_NAME_COLUMN, "");
+		String middleName = "";
+		String lastName = "";
+		if (getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null) != null) {
+			lastName = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, "") + " " + getUserProperty(LAST_NAME_COLUMN, "");
+		} else {
+			lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		}
+		//String lastName = getUserProperty(LAST_NAME_COLUMN, "");
 		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
 		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
 		IWTimestamp dateOfRegistration = null;
