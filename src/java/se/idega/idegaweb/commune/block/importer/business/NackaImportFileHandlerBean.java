@@ -78,7 +78,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       biz = (UserBusiness) IBOLookup.getServiceInstance(iwac,UserBusiness.class);
       relationBiz = (MemberFamilyLogic) IBOLookup.getServiceInstance(iwac,MemberFamilyLogic.class);
       home = biz.getUserHome();
-      groupHome = biz.getGroupHome();
+      //groupHome = biz.getGroupHome();
 
       //if the transaction failes all the users and their relations are removed
       //transaction.begin();
