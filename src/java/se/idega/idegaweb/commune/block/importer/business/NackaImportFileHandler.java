@@ -17,25 +17,22 @@ import java.io.*;
 
 public class NackaImportFileHandler implements ImportFileHandler{
 
-  private Map propertiesMap,multiValuePropertiesMap;
+  private Map propertiesMap;
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
   private final String RELATIONAL_SECTION_ENDS = "02999";
-
-  private final String USER_SECTION_STARTS = "01001";
-  private final String USER_SECTION_ENDS = RELATIONAL_SECTION_STARTS;
-
   private final String CITIZEN_INFO_SECTION_STARTS = "03000";
   private final String CITIZEN_INFO_SECTION_ENDS = "03999";
-
   private final String HISTORIC_SECTION_STARTS = "04000";
   private final String HISTORIC_SECTION_ENDS = "04999";
-
   private final String SPECIALCASE_RELATIONAL_SECTION_STARTS = "06000";
   private final String SPECIALCASE_RELATIONAL_SECTION_ENDS = "06999";
 
+  //not needed..yet?
+  /*private final String USER_SECTION_STARTS = "01001";
+  private final String USER_SECTION_ENDS = RELATIONAL_SECTION_STARTS;
   private final String IMMIGRATION_SECTION_STARTS = "05001";
-  private final String IMMIGRATION_SECTION_ENDS = SPECIALCASE_RELATIONAL_SECTION_STARTS;
+  private final String IMMIGRATION_SECTION_ENDS = SPECIALCASE_RELATIONAL_SECTION_STARTS;*/
 
 
 
@@ -78,24 +75,33 @@ public class NackaImportFileHandler implements ImportFileHandler{
   }
 
   private boolean processRecord(String record){
+    propertiesMap = new HashMap();
+
     record = TextSoap.findAndCut(record,"#UP ");
 
+    //Family relations
+    propertiesMap.put(RELATIONAL_SECTION_STARTS,getAndCutFragmentFromRecord(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
+    //Special case relations
+    propertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getAndCutFragmentFromRecord(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
+    //Citizen info
+    propertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getAndCutFragmentFromRecord(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
+    //Historic info
+    propertiesMap.put(HISTORIC_SECTION_STARTS,getAndCutFragmentFromRecord(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
 
+    //the rest e.g. User info and immigration stuff
+    propertiesMap.putAll(getPropertiesMapFromString(record," "));
 
-    propertiesMap = getPropertiesMapFromString(record," ");
+    /**@todo
+     *  do database stuff for this user
+     */
 
-
-/*
-    RELATIONAL_SECTION_STARTS.la
-    CITIZEN_INFO_SECTION_STARTS
-    HISTORIC_SECTION_STARTS
-    IMMIGRATION_SECTION_STARTS
-    SPECIALCASE_RELATIONAL_SECTION_STARTS
-    OTHER_ADDRESSES_SECTION_STARTS
-*/
-
+    propertiesMap = null;
 
     return true;
+  }
+
+  protected void getArrayListMapFromString(String propsString, String seperator){
+
   }
 
   protected Map getPropertiesMapFromString(String propsString, String seperator){
@@ -119,30 +125,47 @@ public class NackaImportFileHandler implements ImportFileHandler{
         }
       }
 
+      reader.close();
+      reader = null;
     }
     catch (Exception ex) {
       ex.printStackTrace();
     }
 
-
-
-
     return map;
   }
 
-  private String addToMultyPropertiesMapAndCutFragment(String record, String start, String end){
+  private String getAndCutFragmentFromRecord(String record, String start, String end){
     int startIndex = record.indexOf(start);
     int endIndex = record.lastIndexOf(end);
 
     String fragment = null;
     if( (startIndex != -1) && (endIndex != -1) ){
-
       StringBuffer buf = new StringBuffer();
-
+      buf.append(record.substring(0,startIndex));
+      buf.append(record.substring(endIndex,record.length()));
+      fragment = record.substring(startIndex,endIndex+end.length());
+      record = buf.toString();
     }
 
+    return fragment;
+  }
 
-    return record;
+  public void storeUserInfo(Map userMap){
+    //user info
+
+    //address
+    //main address
+    //extra address
+    //special address
+    //special extra address
+    //foreign adress
+    //previous address
+
+
+    //citizen info (commune stuff)
+
+    //family and other releation stuff
 
   }
 
