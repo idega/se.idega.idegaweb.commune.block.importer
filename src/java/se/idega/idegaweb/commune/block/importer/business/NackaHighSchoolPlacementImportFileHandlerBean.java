@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.13 2004/04/01 20:09:46 laddi Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.14 2004/04/07 09:15:58 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -29,6 +29,7 @@ import javax.transaction.UserTransaction;
 import se.idega.idegaweb.commune.block.importer.data.PlacementImportDate;
 import se.idega.idegaweb.commune.block.importer.data.PlacementImportDateHome;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import se.idega.util.Report;
 
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
@@ -68,10 +69,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/04/01 20:09:46 $ by $Author: laddi $
+ * Last modified: $Date: 2004/04/07 09:15:58 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.13 $
+ * @version $Revision: 1.14 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -124,7 +125,9 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 	private Gender female = null;
 	private Gender male = null;
-	
+
+	private Report report = null;
+
 	/**
 	 * Default constructor.
 	 */
@@ -136,6 +139,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	public boolean handleRecords(){
 		failedRecords = new ArrayList();
 		errorLog = new TreeMap();
+		report = new Report(file.getFile().getName());	// Create a report file. It will be located in the Report dir
 		
 		IWTimestamp t = IWTimestamp.RightNow();
 		t.setAsDate();
@@ -168,7 +172,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				season = schoolBusiness.getCurrentSchoolSeason();    	
 			} catch(FinderException e) {
 				e.printStackTrace();
-				System.out.println("NackaHighSchoolPlacementHandler: School season is not defined.");
+				println("NackaHighSchoolPlacementHandler: School season is not defined.");
 				return false;
 			}
             		
@@ -189,7 +193,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				} 
 
 				if ((count % 100) == 0 ) {
-					System.out.println("NackaHighSchoolHandler processing RECORD [" + count + "] time: " + IWTimestamp.getTimestampRightNow().toString());
+					println("NackaHighSchoolHandler processing RECORD [" + count + "] time: " + IWTimestamp.getTimestampRightNow().toString());
 				}
 				
 				item = null;
@@ -204,8 +208,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			printFailedRecords();
 
 			clock.stop();
-			System.out.println("Number of records handled: " + (count - 1));
-			System.out.println("Time to handle records: " + clock.getTime() + " ms  OR " + ((int)(clock.getTime()/1000)) + " s");
+			println("Number of records handled: " + (count - 1));
+			println("Time to handle records: " + clock.getTime() + " ms  OR " + ((int)(clock.getTime()/1000)) + " s");
+
+			report.store();
 
 			//success commit changes
 			if (!failed) {
@@ -247,31 +253,31 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 * @see com.idega.block.importer.business.ImportFileHandler#printFailedRecords() 
 	 */
 	public void printFailedRecords() {
-		System.out.println("\n----------------------------------------------\n");
+		println("\n----------------------------------------------\n");
 		if (failedRecords.isEmpty()) {
-			System.out.println("All records imported successfully.");
+			println("All records imported successfully.");
 		} else {
-			System.out.println("Import failed for these records, please fix and import again:\n");
+			println("Import failed for these records, please fix and import again:\n");
 		}
   
 		Iterator iter = failedRecords.iterator();
 
 		while (iter.hasNext()) {
-			System.out.println((String) iter.next());
+			println((String) iter.next());
 		}
 
 		if (!errorLog.isEmpty()) {
-			System.out.println("Errors during import:\n");
+			println("Errors during import:\n");
 		}
 		Iterator rowIter = errorLog.keySet().iterator();
 		
 		while (rowIter.hasNext()) {
 			Integer row = (Integer) rowIter.next(); 
 			String message = (String) errorLog.get(row);
-			System.out.println("Line " + row + ": " + message);
+			println("Line " + row + ": " + message);
 		}	
 		
-		System.out.println();
+		println("");
 	}
 
 	/**
@@ -361,7 +367,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			user = communeUserBusiness.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
-			System.out.println("User not found for PIN : " + personalId + " CREATING");
+			println("User not found for PIN : " + personalId + " CREATING");
 			
 			try {
 				user = communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(
@@ -479,7 +485,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				throw new FinderException();
 			}				
 		} catch (Exception e) {
-			System.out.println("School Class not found, creating '" + schoolClassName + "' for high school '" + providerName + "'.");	
+			println("School Class not found, creating '" + schoolClassName + "' for high school '" + providerName + "'.");	
 			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
 			int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
 			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
@@ -578,7 +584,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				p = placementImportDateHome.create();
 				p.setSchoolClassMemberId(((Integer) member.getPrimaryKey()).intValue());
 			} catch (CreateException e) {
-				errorLog.put(new Integer(row), "Could not create import date from school class memeber: " + member.getPrimaryKey());	
+				errorLog.put(new Integer(row), "Could not create import date from school class member: " + member.getPrimaryKey());	
 				return false;								
 			}
 		}
@@ -592,7 +598,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 * Terminates all all high school placements not included in the import (except Nacka Gymnasium placements). 
 	 */
 	protected boolean terminateOldPlacements() {
-		System.out.println("NackaHighSchoolPlacementHandler: Starting termination of old placements...");
+		println("NackaHighSchoolPlacementHandler: Starting termination of old placements...");
 		boolean success = true;
 		School schoolA = null;
 		School schoolB = null;
@@ -600,19 +606,19 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			schoolA = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
 		} catch (FinderException e) {
-			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A + "' not found.");
+			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A + "' not found.");
 			return false;
 		}
 		try {
 			schoolB = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
 		} catch (FinderException e) {
-			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B + "' not found.");
+			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B + "' not found.");
 			return false;
 		}
 		try {
 			schoolC = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
 		} catch (FinderException e) {
-			System.out.println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C + "' not found.");
+			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C + "' not found.");
 			return false;
 		}
 		int schoolIdA = ((Integer) schoolA.getPrimaryKey()).intValue();
@@ -625,7 +631,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			highSchoolCategory = schoolBusiness.getCategoryHighSchool();
 		} catch (RemoteException e) {
-			System.out.println("NackaHighSchoolPlacementHandler: High school category not found.");
+			println("NackaHighSchoolPlacementHandler: High school category not found.");
 			return false;			
 		}
 		
@@ -633,7 +639,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			placements = schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, season, schoolIds, true); 
 		} catch (FinderException e) {
-			System.out.println("NackaHighSchoolPlacementHandler: Error finding placements.");
+			println("NackaHighSchoolPlacementHandler: Error finding placements.");
 			return false;			
 		}
 		
@@ -651,11 +657,20 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			if (placementDate == null || placementDate.isEarlierThan(now)) {
 				member.setRemovedDate(lastDayInPreviousMonth);
 				member.store();				
+				println("Terminating placement with id: " + member.getPrimaryKey());
 			}
 		}
 
-		System.out.println("NackaHighSchoolPlacementHandler: Termination of old placements finished.");
+		println("NackaHighSchoolPlacementHandler: Termination of old placements finished.");
 		return success;
+	}
+	
+	/*
+	 * Prints the specified string to standard output and to import log.
+	 */
+	private void println(String s) {
+		System.out.println(s);
+		report.append(s);
 	}
 	
 	/*
