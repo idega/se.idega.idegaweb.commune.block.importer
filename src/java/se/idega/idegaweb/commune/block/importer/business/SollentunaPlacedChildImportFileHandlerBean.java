@@ -224,6 +224,8 @@ implements ImportFileHandler
 			report.append("Personal ID is invalid: " + PIN);
 			return false;
 		}
+		PIN = PIDChecker.getInstance().trim(PIN);
+
 		String childName = getUserProperty(COLUMN_CHILD_NAME);
 		if (childName == null)
 		{
