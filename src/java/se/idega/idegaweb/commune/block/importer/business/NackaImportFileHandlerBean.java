@@ -1453,6 +1453,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 							lastName = lastName.substring(index +1);
 						}
 					} else {
+						int index = lastName.indexOf(firstPartOfLast+" ");
+						while (index == 0) {
+							// Removing previous instances of firstPartOfLastNaem
+							lastName = lastName.substring(index + firstPartOfLast.length()+1);
+							index = lastName.indexOf(firstPartOfLast+" ");
+						}
 						if (lastName != null && lastName.length() > 0) {
 							lastName = firstPartOfLast + " " + lastName;
 						} else {
@@ -2044,10 +2050,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			try {
 			user.store();
 			} catch (IDOStoreException e) {
-				e.printStackTrace(System.err);
 				System.out.println("FirstName = "+firstName);
 				System.out.println("MiddleName = "+middleName);
 				System.out.println("LastName = "+lastName);
+				throw e;
 			}
 		}
 		return user;
