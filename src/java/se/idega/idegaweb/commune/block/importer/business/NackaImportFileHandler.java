@@ -26,7 +26,7 @@ public class NackaImportFileHandler implements ImportFileHandler{
         count++;
         String item = (String) iter.next();
         //if( this.importAtATimeLimit >= count ){
-        System.out.println("RECORD ["+count+"]");
+        System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
         //}
       }
 
