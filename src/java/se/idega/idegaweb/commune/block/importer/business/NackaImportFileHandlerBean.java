@@ -344,6 +344,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
                       relationBiz.setAsChildFor(user,relative);
                     }
                     else if( relationType.equals(this.RELATION_TYPE_CUSTODY) ){//custody
+                    /**
+                     * @todo custodian stuff?
+                     */
                       relationBiz.setAsChildFor(relative,user);
                     }
 
