@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.6 2003/10/21 15:17:12 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.7 2003/10/22 09:26:31 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -65,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/21 15:17:12 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/22 09:26:31 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -119,6 +119,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private final int COLUMN_SKILL_LEVEL = 13;  
 	private final int COLUMN_USE_SKILL_LEVEL = 14;  
 
+	private final int RESOURCE_ID_SKILL_LEVEL_0 = 1;
+	private final int RESOURCE_ID_SKILL_LEVEL_1 = 2;
+	private final int RESOURCE_ID_SKILL_LEVEL_2 = 3;
+	private final int RESOURCE_ID_SKILL_LEVEL_3 = 4;
+	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 5;
+	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 6;
+	
 	private Gender female;
 	private Gender male;
   
@@ -162,32 +169,40 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			}
       
       		// Get resources (change primary keys to the correct values)
-			skillLevel0Resource = resourceBiz.getResourceByPrimaryKey(new Integer(1));
+      		
+			System.out.println("ID for resource language skill level 0 = " + RESOURCE_ID_SKILL_LEVEL_0);
+			System.out.println("ID for resource language skill level 1 = " + RESOURCE_ID_SKILL_LEVEL_1);
+			System.out.println("ID for resource language skill level 2 = " + RESOURCE_ID_SKILL_LEVEL_2);
+			System.out.println("ID for resource language skill level 3 = " + RESOURCE_ID_SKILL_LEVEL_3);
+			System.out.println("ID for resource native language 1-5 = " + RESOURCE_ID_NATIVE_LANGUAGE_1);
+			System.out.println("ID for resource native language 6-9 = " + RESOURCE_ID_NATIVE_LANGUAGE_2);
+			
+			skillLevel0Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_SKILL_LEVEL_0));
 			if (skillLevel0Resource == null) {
 				System.out.println("Resource for language skill level 0 not found.");
 				return false;
 			}
-			skillLevel1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(2));
+			skillLevel1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_SKILL_LEVEL_1));
 			if (skillLevel1Resource == null) {
 				System.out.println("Resource for language skill level 1 not found.");
 				return false;
 			}
-			skillLevel2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(3));
+			skillLevel2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_SKILL_LEVEL_2));
 			if (skillLevel2Resource == null) {
 				System.out.println("Resource for language skill level 2 not found.");
 				return false;
 			}
-			skillLevel3Resource = resourceBiz.getResourceByPrimaryKey(new Integer(4));
+			skillLevel3Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_SKILL_LEVEL_3));
 			if (skillLevel3Resource == null) {
 				System.out.println("Resource for language skill level 4 not found.");
 				return false;
 			}
-			motherTongue1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(5));
+			motherTongue1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_NATIVE_LANGUAGE_1));
 			if (motherTongue1Resource == null) {
 				System.out.println("Resource for mother tongue 1-5 not found.");
 				return false;
 			}
-			motherTongue2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(6));
+			motherTongue2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_NATIVE_LANGUAGE_2));
 			if (motherTongue2Resource == null) {
 				System.out.println("Resource for mother tongue 6-9 not found.");
 				return false;
@@ -378,6 +393,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		}
 			
 		// user
+		boolean isNewUser = false;
+		boolean updateUser = false;
 		try {
 			user = biz.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
@@ -391,44 +408,40 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 						personalId,
 						getGenderFromPin(personalId),
 						getBirthDateFromPin(personalId));
+				isNewUser = true;
 			} catch (Exception e2) {
 				e2.printStackTrace();
 				return false;
 			}
 		}	
 		
-		if (studentFirstName.length() > 0) {
-			user.setFirstName(studentFirstName);
-		}
-				
-		if (studentLastName.length() > 0) {
-			user.setLastName(studentLastName);
-		}
-				
-		if (studentAddress.length() > 0) {
+		if (isNewUser) {
 			biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea);
+			try {
+				Commune homeCommune = communeHome.findByCommuneName(homeCommuneName);
+				homeCommune.toString(); // REMOVE THIS WHEN SET COMMUNE FIXED
+//				user.setHomeCommune(...)
+			} catch (FinderException e) {
+				System.out.println("Commune not found: " + homeCommuneName);
+				return false;
+			}
+			updateUser = true;
 		}
 
 		if (useMotherTongue.equals("X")) {
 			try {
 				ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
-				user.setNativeLanguage(nativeLanguage);		
+				user.setNativeLanguage(nativeLanguage);
+				updateUser = true;		
 			} catch (FinderException e) {
 				System.out.println("Language with code: " + motherTongue + " not found.");
 				return false;
 			}
 		}
 		
-		try {
-			Commune homeCommune = communeHome.findByCommuneName(homeCommuneName);
-			homeCommune.toString(); // REMOVE THIS WHEN SET COMMUNE FIXED
-//			user.setHomeCommune(...)
-		} catch (FinderException e) {
-			System.out.println("Commune not found: " + homeCommuneName);
-			return false;
+		if (updateUser) {
+			user.store();
 		}
-		
-		user.store();
 				
 		String description = user.getDescription();
 		if (description == null) {
