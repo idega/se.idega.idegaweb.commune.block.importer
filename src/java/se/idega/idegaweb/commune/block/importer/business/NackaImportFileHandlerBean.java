@@ -140,6 +140,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	private Map userPropertiesMap;
 	private Map relationsMap;
+	private Map deceasedMap;
 	private UserHome home;
 	private AddressBusiness addressBiz;
 	private MemberFamilyLogic relationBiz;
@@ -207,6 +208,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			failedRecords = new ArrayList();
 			//citizenIds = new ArrayList();
 			relationsMap = new HashMap();
+			deceasedMap = new HashMap();
 
 			//nackaGroup = comUserBiz.getRootCitizenGroup();
 			//nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
@@ -329,8 +331,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		/**
 		 * family and other releation stuff
 		 */
-		if (importRelations && !secretPerson)
+		if (importRelations && !secretPerson) {
 			addRelations();
+		}
 
 		userPropertiesMap = null;
 		record = null;
@@ -437,6 +440,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String lastNameFirstPart = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null); 
 		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
 		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+		String PIN = getUserProperty(PIN_COLUMN);
 		
 		if (lastNameFirstPart != null ) {
 			if (preferredNameIndex == null) {
@@ -453,7 +457,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		String deactivationType = getUserProperty(DEACTIVATE_TYPE_COLUMN);
 		IWTimestamp dateOfDeactivation = null;
-		boolean personHasDied = false;
+		//boolean personHasDied = false;
 		boolean isMovingFromHomeCommune = false;
 		if (deactivationType != null) {
 			String dateOfDeactiovationString = getUserProperty(DEACTIVATE_DATE_COLUMN);
@@ -465,7 +469,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			if (deactivationType.endsWith(DEACTIVATION_CONCERNS_CURRENT_PERSON)) {
 				//why is this person deactivated
 				if (deactivationType.startsWith(DEACTIVATION_TYPE_DEATH)) {
-					personHasDied = true;
+					//personHasDied = true;
+					deceasedMap.put(PIN, dateOfDeactivation);
 				}
 				else if (deactivationType.startsWith(DEACTIVATION_TYPE_MOVED_TO_ANOTHER_COMMUNE)) {
 					isMovingFromHomeCommune = true;
@@ -495,7 +500,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//TODO should not be necessary because of deactivation check
 		isMovingFromHomeCommune = isMovingFromHomeCommune || !HOME_COMMUNE_CODE.equals(communeCode);
 
-		String PIN = getUserProperty(PIN_COLUMN);
 		//System.out.println(" ...PIN = "+PIN);
 		if (secrecy != null && !secrecy.equals(""))
 			log("SECRET PERSON = " + PIN + " Code :" + secrecy + ".");
@@ -885,7 +889,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			 * (Exception ex) { ex.printStackTrace(); }
 			 */
 		}
-
+		
+		/*
 		if (personHasDied) {
 			if (dateOfDeactivation != null) {
 				comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), dateOfDeactivation.getDate());
@@ -893,7 +898,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			else {
 				comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), IWTimestamp.RightNow().getDate());
 			}
-		}
+		}*/
 
 		/**
 		 * Save the user to the database
@@ -1137,6 +1142,42 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			log("NackaImporter : No relations read");
 		}
 
+		log("NackaImportFileHandler [STARTING - DECEASED RELATIONS] (without transaction) time: " + IWTimestamp.getTimestampRightNow().toString());
+		if (deceasedMap != null) {
+			Iterator iter = deceasedMap.keySet().iterator();
+			User user;
+			IWTimestamp dateOfDeactivation = null;
+			String PIN;
+			try {
+				while (iter.hasNext()) {
+					++count;
+					if ((count % 250) == 0) {
+						log(
+								"NackaImportFileHandler storing deceased relations ["
+								+ count
+								+ "] time: "
+								+ IWTimestamp.getTimestampRightNow().toString());
+					}
+					//objects = (Object[]) iter.next();
+					PIN = (String) iter.next();
+					dateOfDeactivation = (IWTimestamp) deceasedMap.get(PIN);
+					user = home.findByPersonalID(PIN);
+					//log("NackaImportFileHandler - setUserAsDeceased ( "+user.getPrimaryKey()+" )");
+					if (dateOfDeactivation != null) {
+						comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), dateOfDeactivation.getDate());
+					}
+					else {
+						comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), IWTimestamp.RightNow().getDate());
+					}
+				}
+			} catch (FinderException e) {
+				e.printStackTrace();
+			}
+		}		else {
+			log("NackaImporter : No deceased relations read");
+		}
+			
+			
 		clock.stop();
 		log("Time to store relations: " + clock.getTime() + " ms  OR " + ((int) (clock.getTime() / 1000)) + " s");
 
