@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.5 2003/10/21 14:30:54 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.6 2003/10/21 15:17:12 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -43,6 +43,8 @@ import com.idega.block.school.data.SchoolTypeHome;
 import com.idega.block.school.data.SchoolYear;
 import com.idega.block.school.data.SchoolYearHome;
 import com.idega.business.IBOServiceBean;
+import com.idega.core.localisation.data.ICLanguage;
+import com.idega.core.localisation.data.ICLanguageHome;
 import com.idega.core.location.data.Commune;
 import com.idega.core.location.data.CommuneHome;
 import com.idega.user.data.Gender;
@@ -63,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/21 14:30:54 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/21 15:17:12 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -80,6 +82,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private SchoolClassHome sClassHome = null;
 	private SchoolClassMemberHome sClassMemberHome = null;
 	private CommuneHome communeHome = null;
+	private ICLanguageHome languageHome = null;
 
 	private SchoolSeason season = null;
     
@@ -148,7 +151,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
 			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
-			
+			languageHome = (ICLanguageHome) this.getIDOHome(ICLanguage.class);			
 
 			try {
 				season = schoolBiz.getCurrentSchoolSeason();    	
@@ -407,8 +410,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		}
 
 		if (useMotherTongue.equals("X")) {
-//			ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
-//			user.setNativeLanguage(nativeLanguage);		
+			try {
+				ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
+				user.setNativeLanguage(nativeLanguage);		
+			} catch (FinderException e) {
+				System.out.println("Language with code: " + motherTongue + " not found.");
+				return false;
+			}
 		}
 		
 		try {
