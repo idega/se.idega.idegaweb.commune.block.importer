@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.8 2004/01/14 12:06:48 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.9 2004/01/14 17:22:24 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.ejb.CreateException;
 import javax.ejb.FinderException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
@@ -62,10 +63,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/14 12:06:48 $ by $Author: anders $
+ * Last modified: $Date: 2004/01/14 17:22:24 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -521,12 +522,15 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			}
 		} catch (FinderException f) {}
 
-		if (member == null) {			
-			member = schoolBusiness.storeSchoolClassMember(schoolClass, user);
-			if (member == null) {
+		if (member == null) {		
+			try {
+				member = schoolClassMemberHome.create();
+			} catch (CreateException e) {
 				errorLog.put(new Integer(row), "School Class member could not be created for personal id: " + personalId);	
-				return false;
+				return false;				
 			}
+			member.setSchoolClassId(((Integer) schoolClass.getPrimaryKey()).intValue());
+			member.setClassMemberId(((Integer) user.getPrimaryKey()).intValue());
 			member.setRegisterDate(registerDate);
 			member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
 			member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
