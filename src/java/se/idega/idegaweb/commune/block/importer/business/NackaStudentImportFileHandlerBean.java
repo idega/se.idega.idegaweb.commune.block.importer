@@ -265,9 +265,14 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		String value = null;
 		
 		if( userValues!=null ){
-			value = (String)userValues.get(columnIndex);
-	 		//System.out.println("Index: "+columnIndex+" Value: "+value);
-	 		if( value.equals( file.getEmptyValueString() ) ) return null;
+		
+			try {
+				value = (String)userValues.get(columnIndex);
+			} catch (RuntimeException e) {
+				return null;
+			}
+	 			//System.out.println("Index: "+columnIndex+" Value: "+value);
+	 		if( file.getEmptyValueString().equals( value ) ) return null;
 		 	else return value;
   		}
   		else return null;
