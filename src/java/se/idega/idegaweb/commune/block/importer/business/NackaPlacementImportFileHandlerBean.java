@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.9 2003/10/23 11:58:41 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.10 2003/10/23 12:22:08 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -65,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/23 11:58:41 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/23 12:22:08 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -582,9 +582,9 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			Iterator rmIter = rm.iterator();
 			while (rmIter.hasNext()) {
 				ResourceClassMember m = (ResourceClassMember) rmIter.next();
-				int mId = ((Integer) m.getPrimaryKey()).intValue();
+				int mId = m.getResourceFK();
 				if ((mId == RESOURCE_ID_NATIVE_LANGUAGE_1) || (mId == RESOURCE_ID_NATIVE_LANGUAGE_2)) {
-					if (resourceId != mId) {
+					if ((resourceId != mId) || !createMotherTongueResource) {
 						IWTimestamp yesterday = new IWTimestamp();
 						yesterday.addDays(-1);
 						m.setEndDate(yesterday.getDate());
@@ -630,12 +630,12 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			rmIter = rm.iterator();
 			while (rmIter.hasNext()) {
 				ResourceClassMember m = (ResourceClassMember) rmIter.next();
-				int mId = ((Integer) m.getPrimaryKey()).intValue();
+				int mId = m.getResourceFK();
 				if ((mId == RESOURCE_ID_SKILL_LEVEL_0) || 
 						(mId == RESOURCE_ID_SKILL_LEVEL_1) ||
 						(mId == RESOURCE_ID_SKILL_LEVEL_2) ||
 						(mId == RESOURCE_ID_SKILL_LEVEL_3)) {
-					if (resourceId != mId) {
+					if ((resourceId != mId) || !createSkillLevelResource) {
 						IWTimestamp yesterday = new IWTimestamp();
 						yesterday.addDays(-1);
 						m.setEndDate(yesterday.getDate());
