@@ -263,9 +263,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     User user = null;
 
     //variables
-    String firstName = getUserProperty("01012");
-    String middleName = getUserProperty("01013");
-    String lastName = getUserProperty("01014");
+    String firstName = getUserProperty("01012","");
+    String middleName = getUserProperty("01013","");
+    String lastName = getUserProperty("01014","");
     String PIN = getUserProperty("01001");
 
     /**
@@ -292,7 +292,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     /**
      * citizen info (commune stuff)
+     * longitude/lattitude
      */
+     String longAndLat = getUserProperty("01025");
+
 
 
     /**
