@@ -382,11 +382,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     		
     	}
 			firstName = preferredName;
+				
+				middleName = TextSoap.findAndCut(middleName,preferredName);
+				middleName = TextSoap.findAndReplace(middleName,"  "," ");
+				lastName = TextSoap.findAndCut(lastName,preferredName);
+				lastName = TextSoap.findAndReplace(lastName,"  "," ");
+				
 			
 			StringBuffer full = new StringBuffer();
 			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
 
-			System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
+			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
     }
 
     /**
@@ -544,7 +550,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		StringBuffer full = new StringBuffer();
 		full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
 		
-		System.out.println("Original name : "+full.toString());
+		//System.out.println("Original name : "+full.toString());
 		
 		StringTokenizer tokens = new StringTokenizer(full.toString());
 		int pos = 1;
