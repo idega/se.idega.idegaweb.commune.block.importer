@@ -3,11 +3,16 @@ import is.idega.idegaweb.member.business.MemberFamilyLogic;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.rmi.RemoteException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 
 import javax.ejb.CreateException;
@@ -16,6 +21,7 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import sun.tools.tree.ThisExpression;
 
 import com.idega.block.importer.data.ImportFile;
 import com.idega.business.IBOLookup;
@@ -27,14 +33,21 @@ import com.idega.core.data.AddressType;
 import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
 import com.idega.core.data.PostalCode;
+import com.idega.data.IDOUtil;
+import com.idega.idegaweb.IWApplicationContext;
+import com.idega.idegaweb.IWMainApplicationSettings;
+import com.idega.user.business.GroupBusiness;
 import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
 import com.idega.user.data.GroupHome;
+import com.idega.user.data.GroupType;
+import com.idega.user.data.GroupTypeHome;
 import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
+import com.idega.util.database.ConnectionBroker;
 import com.idega.util.text.TextSoap;
 import com.idega.util.Timer;
 
@@ -44,22 +57,40 @@ import com.idega.util.Timer;
  * <p>Copyright (c) 2002</p>
  * <p>Company: Idega Software</p>
  * @author <a href="mailto:eiki@idega.is"> Eirikur Sveinn Hrafnsson</a>
- * @version 1.0tran
+ * @version 1.1
  */
 
 
 
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler{
 
-  private Map userPropertiesMap;
+  private static final String RELATIVE_TYPE_COLUMN = "02003";
+	private static final String RELATIVE_PIN_COLUMN = "02001";
+	private static final String LONG_LAT_COLUMN = "01025";
+	private static final String POSTAL_NAME_COLUMN = "01035";
+	private static final String POSTAL_CODE_COLUMN = "01034";
+	private static final String ADDRESS_COLUMN = "01033";
+	private static final String PIN_COLUMN = "01001";
+	private static final String LAST_NAME_COLUMN = "01014";
+	private static final String MIDDLE_NAME_COLUMN = "01013";
+	private static final String FIRST_NAME_COLUMN = "01012";
+	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
+	
+	private static final String COUNTY_CODE_COLUMN = "01022";// for stockholmarea 01
+	private static final String COMMUNE_CODE_COLUMN = "01023";// for nacka 81
+	
+	private static final String NACKA_CODE="0181";
+	
+	
+	private Map userPropertiesMap;
   private Map relationsMap;
-  private UserBusiness biz;
   private UserHome home;
   private AddressBusiness addressBiz;
   private MemberFamilyLogic relationBiz;
   private CommuneUserBusiness comUserBiz;
   private GroupHome groupHome;
   private Group nackaGroup;
+  private Group nackaSpecialGroup;
   private ImportFile file;
   private UserTransaction transaction;
   private UserTransaction transaction2;
@@ -67,30 +98,36 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private boolean importUsers = true;
   private boolean importAddresses = true;
   private boolean importRelations = true;
+  private boolean moveNonCitizensToTestGroup = true;
+  
+	private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
+  
   //private boolean importAddresses = false;//temp
   //private boolean importRelations = false;//temp
 
   private int startRecord = 0;
 
-  private final String RELATIONAL_SECTION_STARTS = "02000";
-  private final String RELATIONAL_SECTION_ENDS = "02999";
-  private final String CITIZEN_INFO_SECTION_STARTS = "03000";
-  private final String CITIZEN_INFO_SECTION_ENDS = "03999";
-  private final String HISTORIC_SECTION_STARTS = "04000";
-  private final String HISTORIC_SECTION_ENDS = "04999";
-  private final String SPECIALCASE_RELATIONAL_SECTION_STARTS = "06000";
-  private final String SPECIALCASE_RELATIONAL_SECTION_ENDS = "06999";
+  private static final String RELATIONAL_SECTION_STARTS = "02000";
+  private static final String RELATIONAL_SECTION_ENDS = "02999";
+  private static final String CITIZEN_INFO_SECTION_STARTS = "03000";
+  private static final String CITIZEN_INFO_SECTION_ENDS = "03999";
+  private static final String HISTORIC_SECTION_STARTS = "04000";
+  private static final String HISTORIC_SECTION_ENDS = "04999";
+  private static final String SPECIALCASE_RELATIONAL_SECTION_STARTS = "06000";
+  private static final String SPECIALCASE_RELATIONAL_SECTION_ENDS = "06999";
 
-  private final String RELATION_TYPE_CHILD = "B";
-  private final String RELATION_TYPE_SPOUSE = "M";
-  private final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
-  private final String RELATION_TYPE_FATHER = "FA";
-  private final String RELATION_TYPE_MOTHER = "MO";
+  private static final String RELATION_TYPE_CHILD = "B";
+  private static final String RELATION_TYPE_SPOUSE = "M";
+  private static final String RELATION_TYPE_CUSTODY = "VF"; //custody relation (child?)
+  private static final String RELATION_TYPE_FATHER = "FA";
+  private static final String RELATION_TYPE_MOTHER = "MO";
   
   private ArrayList failedRecords = new ArrayList();
+  private ArrayList citizenIds = new ArrayList();
 
   private Gender male;
   private Gender female;
+
 
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
@@ -117,17 +154,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     try {
       //initialize business beans and data homes
-      biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
+      comUserBiz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
       relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
-      home = biz.getUserHome();
+      home = comUserBiz.getUserHome();
       addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
-      comUserBiz = (CommuneUserBusiness)IBOLookup.getServiceInstance(this.getIWApplicationContext(),CommuneUserBusiness.class);
-
-      //comUserBiz.getRootCitizenGroup();
-      //biz.getUserHome().create();
-
-      //groupHome = biz.getGroupHome();
-
+     
+			nackaGroup = comUserBiz.getRootCitizenGroup();
+			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
+			
+      //comUserBiz.getUserHome().create();
+      //groupHome = comUserBiz.getGroupHome();
       //if the transaction failes all the users and their relations are removed
       //transaction.begin();
 
@@ -303,48 +339,73 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     User user = null;
 
     //variables
-    String firstName = getUserProperty("01012","");
-    String middleName = getUserProperty("01013","");
-    String lastName = getUserProperty("01014","");
-    String PIN = getUserProperty("01001");
+    String firstName = getUserProperty(FIRST_NAME_COLUMN,"");
+    String middleName = getUserProperty(MIDDLE_NAME_COLUMN,"");
+    String lastName = getUserProperty(LAST_NAME_COLUMN,"");
+    String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+		
+		String county = getUserProperty(COUNTY_CODE_COLUMN);
+		String commune = getUserProperty(COMMUNE_CODE_COLUMN);
+
+		boolean isMovingFromNacka = !NACKA_CODE.equals(county+commune);
+		
+    
+    String PIN = getUserProperty(PIN_COLUMN);
+    
     
     if(PIN == null ) return false;
 
     Gender gender = getGenderFromPin(PIN);
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
+    
+    //preferred name handling.
+    if( preferredNameIndex!=null && !preferredNameIndex.equals("10") ){
+    	String preferredName = removePreferredNameFromStringsAndReturnIt(preferredNameIndex,firstName,middleName,lastName);
+    	if(middleName.equals("")){
+    		middleName = firstName;
+    	}
+    	else{
+				if(middleName.startsWith(" ")){
+					middleName = firstName + middleName;
+				}
+				else{
+					middleName = firstName + " "+ middleName;
+				}
+    		
+    	}
+			firstName = preferredName;
+			
+			StringBuffer full = new StringBuffer();
+			full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+
+			System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
+    }
 
     /**
     * basic user info
     */
+    
     try{
       //System.err.println(firstName);
      // commented out while doing fix. 
      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
     
-    //temporary to only update gender and dateofbirth
-    //remove!
-   /* UserHome home = comUserBiz.getUserHome();
-	user = home.findByPersonalID(PIN);
-		
-	//update if found
-	StringBuffer fullName = new StringBuffer();
-
-	firstName = (firstName==null) ? "" : firstName;
-	middleName = (middleName==null) ? "" : middleName;
-	lastName = (lastName==null) ? "" : lastName;
-
-	fullName.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-
-	user.setFullName(fullName.toString());
-	user.setGender( (Integer)gender.getPrimaryKey() );
-	user.setDateOfBirth(dateOfBirth.getDate());
-	user.store();
-      		
-      */
-    
-    
-    
-    
+		    //temporary to only update gender and dateofbirth
+		    //remove!
+		   /* UserHome home = comUserBiz.getUserHome();
+			user = home.findByPersonalID(PIN);
+				
+			//update if found
+			StringBuffer fullName = new StringBuffer();
+			firstName = (firstName==null) ? "" : firstName;
+			middleName = (middleName==null) ? "" : middleName;
+			lastName = (lastName==null) ? "" : lastName;
+			fullName.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+			user.setFullName(fullName.toString());
+			user.setGender( (Integer)gender.getPrimaryKey() );
+			user.setDateOfBirth(dateOfBirth.getDate());
+			user.store();
+      */    
     }
     catch(Exception e){
       e.printStackTrace();
@@ -357,16 +418,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //main address
     //country id 187 name Sweden isoabr: SE
 
-      String addressLine = getUserProperty("01033");
+      String addressLine = getUserProperty(ADDRESS_COLUMN);
       if( (addressLine!=null) && importAddresses ){
         try{
 
         String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
         String streetNumber = addressBiz.getStreetNumberFromAddressString(addressLine);
-        String postalCode = getUserProperty("01034");
-        String postalName = getUserProperty("01035");
+        String postalCode = getUserProperty(POSTAL_CODE_COLUMN);
+        String postalName = getUserProperty(POSTAL_NAME_COLUMN);
 
-        Address address = biz.getUsersMainAddress(user);
+        Address address = comUserBiz.getUsersMainAddress(user);
         Country sweden = ((CountryHome)getIDOHome(Country.class)).findByIsoAbbreviation("SE");
         PostalCode code = addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode,postalName,sweden);
 
@@ -382,8 +443,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
         address.setCountry(sweden);
         address.setPostalCode(code);
-        address.setProvince("Nacka");
-        address.setCity("Stockholm");
+        address.setProvince("Nacka");//set as 01 ?
+        address.setCity("Stockholm");//set as 81?
         address.setStreetName(streetName);
         address.setStreetNumber(streetNumber);
 
@@ -401,8 +462,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     }
 
-
-
     //extra address
     //special address
     //special extra address
@@ -413,30 +472,75 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
      * citizen info (commune stuff)
      * longitude/lattitude
      */
-     String longAndLat = getUserProperty("01025");
-
-
+     String longAndLat = getUserProperty(LONG_LAT_COLUMN);
 
     /**
      * Save the user to the database
      */
-    //user.store();
+    user.store();
 
     /**
     * Main group relation
     * add to the Nacka root group
+    * or move from it
     */
     //nackaGroup.addUser(user);
+    if( isMovingFromNacka ){
+			comUserBiz.moveCitizenFromCommune(user);
+    }
+    else{
+			comUserBiz.moveCitizenToCommune(user);    	
+    }
+    
+    
+    //get rid of test data
+		if( moveNonCitizensToTestGroup ){
+			citizenIds.add(user.getPrimaryKey());
+		}
+    
 
     //finished with this user
     user = null;
     return true;
   }
+	/**
+	 * Method removePreferredNameFromStringsAndReturnIt searches for the preffered
+	 * name by the supplied index and removes it from the names and then returns
+	 * it.
+	 * @param fullName
+	 * @return the prefferedName
+	 */
+	private String removePreferredNameFromStringsAndReturnIt(String preferredNameIndex, String firstName,String middleName, String lastName) {
+		String preferredName = null;
+		int index = Integer.parseInt(preferredNameIndex);
+		index = index/10;
+		
+		if(index==1) return firstName; // if the first name is the preferred name
+		
+		StringBuffer full = new StringBuffer();
+		full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+		
+		System.out.println("Original name : "+full.toString());
+		
+		StringTokenizer tokens = new StringTokenizer(full.toString());
+		int pos = 1;
+		while( tokens.hasMoreTokens() && (pos<=index) ){
+			preferredName = tokens.nextToken();
+			pos++;
+		}
+		
+		middleName = TextSoap.findAndCut(middleName,preferredName);
+		middleName = TextSoap.findAndReplace(middleName,"  "," ");
+		lastName = TextSoap.findAndCut(lastName,preferredName);
+		lastName = TextSoap.findAndReplace(lastName,"  "," ");
+		
+		return preferredName;
+	}
 
   protected void addRelations(){
     if( relationsMap == null ) relationsMap = new HashMap();
     ArrayList relatives = (ArrayList)userPropertiesMap.get(RELATIONAL_SECTION_STARTS);
-    relationsMap.put(getUserProperty("01001"),relatives);
+    relationsMap.put(getUserProperty(PIN_COLUMN),relatives);
   }
 
   protected void storeRelations() throws RemoteException{
@@ -482,8 +586,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
               Iterator iter2 = relatives.iterator();
               while (iter2.hasNext()) {
                 Map relativeMap = (Map) iter2.next();
-                relativePIN = (String) relativeMap.get("02001");
-                relationType = (String) relativeMap.get("02003");
+                relativePIN = (String) relativeMap.get(RELATIVE_PIN_COLUMN);
+                relationType = (String) relativeMap.get(RELATIVE_TYPE_COLUMN);
 
                 /**
                  * @todo use this second parameter if first is missing??? ask kjell
@@ -663,5 +767,110 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	public List getFailedRecords(){
 		return failedRecords;	
 	}
+	
+	
+	
+	private Group getCitizenTestGroup() {
+		
+		Group rootGroup = null;
+		
+		try{
+		
+			//create the default group
+			final IWApplicationContext iwc = getIWApplicationContext();
+			final IWMainApplicationSettings settings = iwc.getApplicationSettings();
+			String groupId = (String) settings.getProperty(TEST_GROUP_ID_PARAMETER_NAME);
+			if (groupId != null) {
+				final GroupHome groupHome = comUserBiz.getGroupHome();
+				rootGroup = groupHome.findByPrimaryKey(new Integer(groupId));
+			}
+			else {
+				System.err.println("trying to store Citizen Test group");
+				/**@todo this seems a wrong way to do things**/
+				final GroupTypeHome typeHome = (GroupTypeHome) getIDOHome(GroupType.class);
+				final GroupType type = typeHome.create();
+				final GroupBusiness groupBusiness = comUserBiz.getGroupBusiness();
+				rootGroup =
+					groupBusiness.createGroup(
+						"Citizen Test",
+						"The Citizen Test Group.",
+						type.getGeneralGroupTypeString());
+				settings.setProperty(TEST_GROUP_ID_PARAMETER_NAME, (Integer) rootGroup.getPrimaryKey());
+			}
+			
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+			
+		return rootGroup;
+	}
+	
+	private void moveNonCitizensToTestGroup(){
+		//breyta grouprelationidinu i id test gruppunnar
+		
+		//gera frekar aukadalk merkja tha sem eru inni
+		Group testGroup = getCitizenTestGroup();
+		
+		if(testGroup!=null  && !citizenIds.isEmpty()){
+			
+			String testGroupId = ((Integer)testGroup.getPrimaryKey()).toString();
+			StringBuffer sql = new StringBuffer();
+					sql.append("update table ic_group_relation").
+					append(" set IC_GROUP_ID =").append(testGroupId).
+					append(" where RELATED_IC_GROUP_ID not in (").
+					append(IDOUtil.getInstance().convertListToCommaseparatedString(citizenIds)).
+					append(") and IC_GROUP_ID=").
+					append(nackaGroup.getPrimaryKey().toString());
+					
+					Connection conn= null;
+					Statement stmt= null;
+					
+					javax.transaction.TransactionManager t = com.idega.transaction.IdegaTransactionManager.getInstance();
+
+					try {
+						t.begin();
+
+						conn = ConnectionBroker.getConnection();
+						stmt = conn.createStatement();
+						ResultSet RS = stmt.executeQuery(sql.toString());
+						
+						RS.close();
+						stmt.close();
+
+						t.commit();
+						//t.rollback();
+					}
+					catch(Exception e) {
+						try {
+							t.rollback();
+						}
+						catch(javax.transaction.SystemException ex) {
+							ex.printStackTrace();
+						}
+						e.printStackTrace();
+					}
+					finally{
+						if(stmt != null){
+							try {
+								stmt.close();
+							}
+							catch (SQLException e) {
+								e.printStackTrace();
+							}
+						}
+						if (conn != null){
+							ConnectionBroker.freeConnection(conn);
+						}
+					}
+
+			
+		}else{
+			System.err.println("NackaImporter: Test Group is NULL!");
+		}
+	
+
+	}
+	
 
 }
