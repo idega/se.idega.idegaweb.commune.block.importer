@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-//import javax.ejb.CreateException;
 import javax.ejb.FinderException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
@@ -25,8 +24,7 @@ import com.idega.block.school.data.SchoolClass;
 import com.idega.block.school.data.SchoolClassHome;
 import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
-//import com.idega.block.school.data.SchoolClassMemberLog;
-//import com.idega.block.school.data.SchoolClassMemberLogHome;
+import com.idega.block.school.data.SchoolClassMemberLog;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.block.school.data.SchoolType;
 import com.idega.business.IBOServiceBean;
@@ -494,6 +492,13 @@ implements ImportFileHandler
 					member.setRegisterDate(placementFrom.getTimestamp());
 					if (placementTo != null) {
 						member.setRemovedDate(placementTo.getTimestamp());
+						try {
+							SchoolClassMemberLog log = schoolBiz.getSchoolClassMemberLogHome().findOpenLogByUser(member);
+							if (log != null) {
+								log.setEndDate(placementTo.getDate());
+								log.store();
+							}
+						} catch (Exception e) {}
 					}
 					member.store();
 					
