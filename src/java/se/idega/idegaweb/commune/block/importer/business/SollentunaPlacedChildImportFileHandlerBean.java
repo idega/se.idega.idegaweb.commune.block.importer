@@ -26,6 +26,7 @@ import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.business.IBOServiceBean;
+import com.idega.idegaweb.IWBundle;
 import com.idega.idegaweb.UnavailableIWContext;
 import com.idega.presentation.IWContext;
 import com.idega.user.data.Gender;
@@ -81,6 +82,7 @@ implements ImportFileHandler
 	private Report report;
 	private int successCount, failCount, alreadyChoosenCount, count;
 	String item;
+	int schoolTypeID = -1;
 	
 	public SollentunaPlacedChildImportFileHandlerBean() {
 	}
@@ -93,6 +95,8 @@ implements ImportFileHandler
 		transaction = this.getSessionContext().getUserTransaction();
 		report = new Report(file.getFile().getName());	//Create a report file. I will be located in the Report dir
 		//Cero all counters used just for reporting purposes
+		IWBundle bundle = getIWMainApplication().getBundle("se.idega.idegaweb.commune");
+		schoolTypeID = Integer.parseInt(bundle.getProperty("child_care_school_type", "2"));
 		count = 0;
 		failCount = 0;
 		successCount = 0;
@@ -405,7 +409,7 @@ implements ImportFileHandler
 				
 			int schoolID = Integer.parseInt(school.getPrimaryKey().toString());
 			int classID = Integer.parseInt(sClass.getPrimaryKey().toString());
-			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, -1, null, sDateT, placementTo,
+			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, schoolTypeID, null, sDateT, placementTo,
 				locale, parent, performer);
 			if (importDone) {
 				try {
