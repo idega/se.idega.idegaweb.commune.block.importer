@@ -1,5 +1,5 @@
 /*
- * $Id: PlacementImportDateBMPBean.java,v 1.2 2004/04/15 07:33:32 anders Exp $
+ * $Id: PlacementImportDateBMPBean.java,v 1.3 2004/04/15 11:47:11 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -17,14 +17,14 @@ import com.idega.data.GenericEntity;
 /**
  * Entity bean holding import date values flr student placements.
  * <p>
- * Last modified: $Date: 2004/04/15 07:33:32 $ by $Author: anders $
+ * Last modified: $Date: 2004/04/15 11:47:11 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class PlacementImportDateBMPBean extends GenericEntity implements PlacementImportDate {
 
-	private static final String ENTITY_NAME = "comm_placement_import_date";
+	private static final String ENTITY_NAME = "comm_placement_imp_date";
 
 	private static final String COLUMN_SCH_CLASS_MEMBER_ID = "sch_class_member_id";
 	private static final String COLUMN_IMPORT_DATE = "import_date";
