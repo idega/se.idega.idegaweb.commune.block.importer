@@ -21,7 +21,7 @@ import com.idega.business.IBOLookup;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.business.AddressBusiness;
 import com.idega.core.data.Address;
-import com.idega.core.data.AddressHome;
+import com.idega.core.data.AddressHome; 
 import com.idega.core.data.AddressType;
 import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
@@ -609,5 +609,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     IWTimestamp dob = new IWTimestamp(dd,mm,yyyy);
     return dob;
   }
+  
+  public void setRootGroup(Group group){}
+  
 
   }
