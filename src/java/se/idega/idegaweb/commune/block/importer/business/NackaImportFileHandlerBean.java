@@ -1385,7 +1385,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		if (user == null) {
 			/** FULL IMPORT */
 			System.out.println("FullImport, user = "+user);
-			fullImport();
+			return fullImport();
 		} else if (secretPerson) {
 			/** SECRET */
 			//System.out.println("Secret person, actionType = "+actionType);
