@@ -37,6 +37,7 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
       /**@todo temporary workaround**/
       //((NackaImportFileHandler)handler).setOnlyImportRelations(true);
       //((NackaImportFileHandler)handler).setStartRecord(52000);
+      ((NackaImportFileHandler)handler).setImportRelations(false);
       status = handler.handleRecords();
 
       /*Collection col = file.getRecords();
