@@ -6,7 +6,7 @@ import java.io.File;
 
 public interface ImportFile{
 
-  //public Collection getRecords();
+  public Collection getRecords();
   //public Object getRecordAtIndex(int index);
-  public boolean parse();
+ // public boolean parse();
 }

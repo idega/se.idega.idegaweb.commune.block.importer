@@ -1,5 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
 
+import java.util.Collection;
+import se.idega.idegaweb.commune.block.importer.data.ImportFile;
 import com.idega.business.IBOServiceBean;
 
 /**
@@ -14,6 +16,43 @@ import com.idega.business.IBOServiceBean;
 public class ImportBusinessBean extends IBOServiceBean {
 
   public ImportBusinessBean() {
+  }
+
+  public ImportFileHandler getHandlerForImportFile(Class importFileClass){
+    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
+     *
+     */
+    return new NackaImportFileHandler();
+  }
+
+  public ImportFileHandler getHandlerForImportFile(String importFileClassName){
+    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
+     *
+     */
+    return new NackaImportFileHandler();
+  }
+
+  public boolean importRecords(ImportFile file){
+    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
+     *
+     */
+     if( file == null ){
+
+      System.out.println("FÆL ER NULL!");
+
+     }
+    try{
+      ImportFileHandler handler = getHandlerForImportFile(file.getClass());
+
+      Collection col = file.getRecords();
+      if( col == null ) return false;
+
+      return handler.handleRecords(col);
+    }
+    catch(NoRecordsException ex){
+     ex.printStackTrace();
+     return false;
+    }
   }
 
 
