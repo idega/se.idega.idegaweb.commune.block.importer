@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 import javax.ejb.CreateException;
 import javax.ejb.EJBException;
 import javax.ejb.FinderException;
@@ -17,7 +18,6 @@ import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
-import se.idega.util.PIDChecker;
 import com.idega.block.importer.data.ImportFile;
 import com.idega.business.IBOLookup;
 import com.idega.business.IBOLookupException;
@@ -76,25 +76,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private Map deceasedMap;
 	private ArrayList failedRecords;
 	private Gender female;
-	//private CaseBusiness caseBiz;
-	//private GroupHome groupHome;
-	//private Group nackaGroup;
-	//private Group nackaSpecialGroup;
+
 	private ImportFile file;
-	//private boolean importAddresses = false;//temp
-	//private boolean importRelations = false;//temp
+
 	private boolean fix = false;
 	private UserHome home;
-	// relation ,
-	// usually a
-	// newborn
-	// refering to
-	// his parents
-	// (reverse
-	// custodian)
-	
-	
-	//private static final String NACKA_CODE="0182";
+
 	private String HOME_COMMUNE_CODE;
 	Commune homeCommune;
 	private boolean importAddresses = true;
@@ -115,13 +102,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private User performer = null;
 	
 	private Map coordinateMap = null;
-	//not needed..yet?
-	/*
-	 * private final String USER_SECTION_STARTS = "01001"; private final String
-	 * USER_SECTION_ENDS = RELATIONAL_SECTION_STARTS; private final String
-	 * IMMIGRATION_SECTION_STARTS = "05001"; private final String
-	 * IMMIGRATION_SECTION_ENDS = SPECIALCASE_RELATIONAL_SECTION_STARTS;
-	 */
+	private Collection TFlist = null;
+
 
 	public NackaImportFileHandlerBean() {
 	}
@@ -268,9 +250,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		 * basic user info
 		 */
 
-		System.out.println("fullImport : firstName = " + firstName);
-		System.out.println("fullImport : middleName = " + middleName);
-		System.out.println("fullImport : lastName = " + lastName);
+//		System.out.println("fullImport : firstName = " + firstName);
+//		System.out.println("fullImport : middleName = " + middleName);
+//		System.out.println("fullImport : lastName = " + lastName);
 
 		try {
 			user = comUserBiz.createOrUpdateCitizenByPersonalID(firstName, middleName, lastName, PIN, gender, dateOfBirth);
@@ -280,16 +262,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			return false;
 		}
 
-		System.out.println("fullImport before handle : user.firstName = " + user.getFirstName());
-		System.out.println("fullImport before handle : user.middleName = " + user.getMiddleName());
-		System.out.println("fullImport before handle : user.lastName = " + user.getLastName());
+//		System.out.println("fullImport before handle : user.firstName = " + user.getFirstName());
+//		System.out.println("fullImport before handle : user.middleName = " + user.getMiddleName());
+//		System.out.println("fullImport before handle : user.lastName = " + user.getLastName());
 
 		
 		user = getImportBusiness().handleNames(user, user.getFirstName(), user.getMiddleName(), user.getLastName(), preferredNameIndex, false);
 
-		System.out.println("fullImport after handle : user.firstName = " + user.getFirstName());
-		System.out.println("fullImport after handle : user.middleName = " + user.getMiddleName());
-		System.out.println("fullImport after handle : user.lastName = " + user.getLastName());
+//		System.out.println("fullImport after handle : user.firstName = " + user.getFirstName());
+//		System.out.println("fullImport after handle : user.middleName = " + user.getMiddleName());
+//		System.out.println("fullImport after handle : user.lastName = " + user.getLastName());
 		
 		if (!secretPerson) {
 			if (!handleAddress(user, countyNumber, commune)) {
@@ -702,6 +684,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			relationsMap = new HashMap();
 			deceasedMap = new HashMap();
 			unhandledActions = new HashMap();
+			TFlist = new Vector();
+			
+			Collection row1 = new Vector();
+			row1.add("Personal ID changes");
+			TFlist.add(row1);
+
 			//nackaGroup = comUserBiz.getRootCitizenGroup();
 			//nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
 			String fixer = this.getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
@@ -775,6 +763,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 				logString.append(  "\nTotal unhandled actions : "+totalValue+" (were handled with the default action)");
 				log(logString.toString());
+			}
+			if (TFlist.size() > 1) {
+				// Header is line 1... if nothing else... then nothing to report
+				getImportBusiness().addExcelReport(file.getFile(), "report", TFlist, "\n");
 			}
 			return true;
 		}
@@ -1305,19 +1297,30 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					handleNames(user, true);
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_NEW_PERSONAL_ID)) {
 					String newPIN = getUserProperty(ImportFileFieldConstants.REFERENCE_PIN_COLUMN);
-					if(newPIN != null) {
-						if (PIDChecker.getInstance().isValid(newPIN, true)) {
-							try {
-								user.setPersonalID(newPIN);
-								user.store();
-							} catch (Exception e) {
-								logError("NackaImportFileHandler : cannot change personalID for user");
-								return false;
-							}
-						}
-						
+//					if(newPIN != null) {
+//						if (PIDChecker.getInstance().isValid(newPIN, true)) {
+//							try {
+//								user.setPersonalID(newPIN);
+//								user.store();
+//							} catch (Exception e) {
+//								logError("NackaImportFileHandler : cannot change personalID for user");
+//								return false;
+//							}
+//						}
+//					}
+					Address address = comUserBiz.getUsersMainAddress(user);
+
+					Collection coll = new Vector();
+					coll.add(newPIN + "\t(new PID)");
+					coll.add(user.getName());
+					if (address != null) {
+						coll.add(address.getStreetAddress());
+					} else {
+						coll.add("");
 					}
-				
+					coll.add(user.getPersonalID() + "\t(old PID)");
+					TFlist.add(coll);
+				// TODO repps
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_DIVORCE)) {
 					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
