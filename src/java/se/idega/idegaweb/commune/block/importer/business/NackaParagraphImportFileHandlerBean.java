@@ -1,5 +1,5 @@
 /*
- * $Id: NackaParagraphImportFileHandlerBean.java,v 1.1 2003/10/24 12:40:41 anders Exp $
+ * $Id: NackaParagraphImportFileHandlerBean.java,v 1.2 2003/10/27 07:57:28 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -24,14 +24,9 @@ import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
-import com.idega.block.school.business.SchoolBusiness;
-import com.idega.block.school.data.SchoolClass;
-import com.idega.block.school.data.SchoolClassHome;
 import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
-import com.idega.block.school.data.SchoolHome;
 import com.idega.block.school.data.SchoolType;
-import com.idega.block.school.data.SchoolTypeHome;
 import com.idega.business.IBOServiceBean;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
@@ -49,19 +44,19 @@ import com.idega.util.Timer;
  * Note that the "9" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/24 12:40:41 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/27 07:57:28 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implements NackaParagraphImportFileHandler, ImportFileHandler {
 
 	private CommuneUserBusiness biz = null;
-	private SchoolBusiness schoolBiz = null;
+	//private SchoolBusiness schoolBiz = null;
   
-	private SchoolTypeHome sTypeHome = null;
-	private SchoolHome sHome = null;
-	private SchoolClassHome sClassHome = null;
+	//private SchoolTypeHome sTypeHome = null;
+	//private SchoolHome sHome = null;
+	//private SchoolClassHome sClassHome = null;
 	private SchoolClassMemberHome sClassMemberHome = null;
     
 	private ImportFile file;
@@ -92,11 +87,11 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 			//initialize business beans and data homes
 			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
 			//home = biz.getUserHome();      
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			//schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
 
-			sHome = schoolBiz.getSchoolHome();           
-			sTypeHome = schoolBiz.getSchoolTypeHome();
-			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			//sHome = schoolBiz.getSchoolHome();           
+			//sTypeHome = schoolBiz.getSchoolTypeHome();
+			//sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
             		
 			transaction.begin();
