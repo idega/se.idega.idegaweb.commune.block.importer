@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.7 2004/07/22 13:11:16 aron Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.8 2004/08/06 10:14:02 aron Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -14,6 +14,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -68,10 +69,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/07/22 13:11:16 $ by $Author: aron $
+ * Last modified: $Date: 2004/08/06 10:14:02 $ by $Author: aron $
  *
  * @author Anders Lindman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -119,6 +120,14 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	
 	private Gender female;
 	private Gender male;
+	
+	//////// cache added by aron //////////
+	private Map mapOfSchoolTypes = null;
+	private Map mapOfCommunes = null;
+	private Map mapOfSchools = null;
+	private Map mapOfSchoolRelatedTypes = null;
+	private Map mapOfSchoolYears = null;
+	private Map mapOfSchoolYearMaps = null;
   
   	/**
   	 * Default constructor.
@@ -132,6 +141,15 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		failedRecords = new ArrayList();
 		failedSchools = new TreeMap();
 		errorLog = new TreeMap();
+		
+		// cache initialization 
+		mapOfSchoolTypes = new HashMap();
+		mapOfCommunes = new HashMap();
+		mapOfSchools = new HashMap();
+		mapOfSchoolRelatedTypes = new HashMap();
+		mapOfSchoolYears = new HashMap();
+		mapOfSchoolYearMaps = new HashMap();
+		
 		transaction = this.getSessionContext().getUserTransaction();
         
 		Timer clock = new Timer();
@@ -185,7 +203,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 				if(!processRecord(item, count)) {
 					failedRecords.add(item);
 					failed = true;
-//					break;
+					break;
 				} 
 
 				if ((count % 200) == 0 ) {
@@ -204,8 +222,10 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			//success commit changes
 			if (!failed) {
 				transaction.commit();
+				System.out.println("Imported data committed to database");
 			} else {
 				transaction.rollback(); 
+				System.out.println("Imported data rollbacked from database");
 			}
 			
 			return !failed;
@@ -367,6 +387,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		// school type
 		String typeKey = null;
 		String schoolYearPrefix = "";
+				
 		if (schoolYearName.equals("F")) {
 			typeKey = "sch_type.school_type_forskoleklass";
 		} else if (schoolTypeName.equals("GR")) {
@@ -380,11 +401,18 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			return false;
 		}
 		
-		try {
-			schoolType = sTypeHome.findByTypeKey(typeKey);
-		} catch (FinderException e) {
-			log(row, "School type: " + schoolTypeName + " not found in database (key = " + typeKey + ").");
-			return false;
+		// caching of schooltype
+		if(mapOfSchoolTypes.containsKey(typeKey)){
+			schoolType = (SchoolType) mapOfSchoolTypes.get(typeKey);
+		}
+		else{
+			try {
+				schoolType = sTypeHome.findByTypeKey(typeKey);
+				mapOfSchoolTypes.put(typeKey,schoolType);
+			} catch (FinderException e) {
+				log(row, "School type: " + schoolTypeName + " not found in database (key = " + typeKey + ").");
+				return false;
+			}
 		}
 			
 		// user
@@ -420,8 +448,15 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			try {
 				Integer communeId = null;
 				if (!homeCommuneCode.equals("") && !homeCommuneCode.equals("0")) {
-					Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
-					communeId = (Integer) homeCommune.getPrimaryKey();
+					// caching added
+					if(mapOfCommunes.containsKey(homeCommuneCode)){
+						communeId = (Integer) mapOfCommunes.get(homeCommuneCode);
+					}
+					else{
+						Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+						communeId = (Integer) homeCommune.getPrimaryKey();
+						mapOfCommunes.put(homeCommuneCode,communeId);
+					}
 				}
 				biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
 			} catch (FinderException e) {
@@ -451,16 +486,32 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			description = "";	
 		}
 		if (!"secret".equals(description)) {
-			try {
-				//this can only work if there is only one school with this name. add more parameters for other areas
-				school = sHome.findBySchoolName(schoolName);
-			} catch (FinderException e) {
-				failedSchools.put(schoolName,schoolName);
-				return false;
-			}		
+			if(mapOfSchools.containsKey(schoolName)){
+				school = (School) mapOfSchools.get(schoolName);
+			}
+			else{
+				try {
+					//this can only work if there is only one school with this name. add more parameters for other areas
+					school = sHome.findBySchoolName(schoolName);
+					mapOfSchools.put(schoolName,school);
+				} catch (FinderException e) {
+					failedSchools.put(schoolName,schoolName);
+					return false;
+				}
+			}
 
+			String schoolKey = school.getPrimaryKey().toString();
 			boolean hasSchoolType = false;
 			try {
+				Map types = null;
+				if(mapOfSchoolRelatedTypes.containsKey(schoolKey)){
+					types = (Map) mapOfSchoolRelatedTypes.get(schoolKey);
+				}
+				else{
+					 types = schoolBiz.getSchoolRelatedSchoolTypes(school);
+					 mapOfSchoolRelatedTypes.put(schoolKey,types);
+				}
+				/*
 				Iterator schoolTypeIter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
 				while (schoolTypeIter.hasNext()) {
 					SchoolType st = (SchoolType) schoolTypeIter.next();
@@ -469,7 +520,8 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 						hasSchoolType = true;
 						break;
 					}
-				}
+				}*/
+				hasSchoolType = types.containsKey(schoolType.getPrimaryKey());
 			} catch (Exception e) {}
 			
 			if (!hasSchoolType) {
@@ -482,15 +534,31 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			} else {
 				schoolYearName = schoolYearPrefix + schoolYearName; 
 			}
-			try {
-				//school year	
-				schoolYear = sYearHome.findByYearName(schoolYearName);
-			} catch (FinderException e) {
-				log(row, "School year not found: " + schoolYearName);
-				return false;
+			// caching added 
+			if(mapOfSchoolYears.containsKey(schoolYearName)){
+				schoolYear = (SchoolYear) mapOfSchoolYears.get(schoolYearName);
+			}
+			else{
+				try {
+					//school year	
+					schoolYear = sYearHome.findByYearName(schoolYearName);
+					mapOfSchoolYears.put(schoolYearName,schoolYear);
+				} catch (FinderException e) {
+					log(row, "School year not found: " + schoolYearName);
+					return false;
+				}
 			}
 
-			Map schoolYears = schoolBiz.getSchoolRelatedSchoolYears(school);
+			// caching added
+			Map schoolYears = null;
+			if(mapOfSchoolYearMaps.containsKey(schoolKey)){
+				schoolYears = (Map) mapOfSchoolYearMaps.get(schoolKey);
+			}
+			else{
+				schoolYears =schoolBiz.getSchoolRelatedSchoolYears(school);
+				mapOfSchoolYearMaps.put(schoolKey,schoolYears);
+			}
+			
 			Iterator schoolYearIter = schoolYears.values().iterator();
 			boolean schoolYearFound = false;
 			while (schoolYearIter.hasNext()) {
@@ -500,6 +568,8 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 					break;
 				}
 			}
+			
+			
 			if (!schoolYearFound) {
 				log(row, "School year '" + schoolYear + "' not found in school: " + schoolName);
 				return false;
