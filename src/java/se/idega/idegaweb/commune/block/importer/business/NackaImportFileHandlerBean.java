@@ -303,11 +303,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         Country sweden = ((CountryHome)getIDOHome(Country.class)).findByIsoAbbreviation("SE");
         PostalCode code = addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode,postalName,sweden);
 
+        boolean addAddress = false;/**@todo is this necessary?**/
+
         if( address == null ){
           AddressHome addressHome = addressBiz.getAddressHome();
           address = addressHome.create();
           AddressType mainAddressType = addressHome.getAddressType1();
           address.setAddressType(mainAddressType);
+          addAddress = true;
         }
 
         address.setCountry(sweden);
@@ -318,6 +321,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         address.setStreetNumber(streetNumber);
 
         address.store();
+
+        if(addAddress){
+          user.addAddress(address);
+        }
+
     }
      catch(Exception e){
       e.printStackTrace();
