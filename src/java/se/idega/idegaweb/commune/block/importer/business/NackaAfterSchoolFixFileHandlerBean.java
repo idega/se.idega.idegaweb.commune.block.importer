@@ -1,5 +1,5 @@
 /*
- * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.8 2004/10/07 13:42:32 thomas Exp $
+ * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.9 2004/10/14 10:22:53 thomas Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -23,9 +23,9 @@ import javax.ejb.FinderException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import se.idega.idegaweb.commune.accounting.childcare.data.ChildCareContract;
-import se.idega.idegaweb.commune.accounting.childcare.data.ChildCareContractHome;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import se.idega.idegaweb.commune.childcare.data.ChildCareContract;
+import se.idega.idegaweb.commune.childcare.data.ChildCareContractHome;
 //import se.idega.idegaweb.commune.childcare.business.ChildCareBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
@@ -60,10 +60,10 @@ import com.idega.util.Timer;
  * Note that the "14" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/10/07 13:42:32 $ by $Author: thomas $
+ * Last modified: $Date: 2004/10/14 10:22:53 $ by $Author: thomas $
  *
  * @author Anders Lindman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implements NackaAfterSchoolFixFileHandler, ImportFileHandler {
 
