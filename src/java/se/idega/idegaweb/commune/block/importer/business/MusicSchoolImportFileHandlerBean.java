@@ -2,10 +2,7 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
@@ -34,7 +31,6 @@ import com.idega.business.IBOServiceBean;
 import com.idega.core.contact.data.Phone;
 import com.idega.core.contact.data.PhoneHome;
 import com.idega.data.IDOAddRelationshipException;
-import com.idega.data.IDORelationshipException;
 import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
@@ -56,12 +52,13 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	
 	private SchoolType fullStudy;
 	private SchoolType halfStudy;
+	private SchoolSeason schoolSeason;
 	
 	private ImportFile file;
-	private String line;
-	private StringTokenizer tokenizer;
+	//private String line;
+	//private StringTokenizer tokenizer;
 		
-	private ArrayList schoolValues;
+	//private ArrayList schoolValues;
 	private ArrayList failedRecords = new ArrayList();
 	
 	public MusicSchoolImportFileHandlerBean() {}
@@ -75,16 +72,22 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			
 			fullStudy = getFullTimeStudySchoolType(schoolBiz);
 			halfStudy = getHalfTimeStudySchoolType(schoolBiz);
+			SchoolSeasonHome schoolSeasonHome = schoolBiz.getSchoolSeasonHome();
+			schoolSeason = schoolSeasonHome.findSeasonByDate(new IWTimestamp().getDate());
 			
 			transaction.begin();
 			
 			String item;
+			int count = 1;
 			
 			while ( !(item=(String)file.getNextRecord()).equals("") ) {
 				
 				if(!processRecord(item)) {
 					failedRecords.add(item);
-				}				
+				}
+				else {
+					System.out.println("Processed record number: "+ (count++));
+				}
 			}
 			
 			transaction.commit();
@@ -111,44 +114,47 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 */
 	private boolean processRecord(String record) throws RemoteException{
 		//data elements from file
-		String nr = file.getValueAtIndexFromRecordString(1,record);
-		String musicSchoolName = file.getValueAtIndexFromRecordString(2,record);
-		String studentSSN = file.getValueAtIndexFromRecordString(3,record);
-		String studentTelNr = file.getValueAtIndexFromRecordString(4,record);
-		String preSchool = file.getValueAtIndexFromRecordString(5,record);
-		String instrument1 = file.getValueAtIndexFromRecordString(6,record);
-		String singing = file.getValueAtIndexFromRecordString(7,record);
-		String level1 = file.getValueAtIndexFromRecordString(8,record);
-		String level1Nr = file.getValueAtIndexFromRecordString(9,record);
-		String instrument2 = file.getValueAtIndexFromRecordString(10,record);
-		String level2Nr = file.getValueAtIndexFromRecordString(11,record);
-		String level2 = file.getValueAtIndexFromRecordString(12,record);
-		String instrument3 = file.getValueAtIndexFromRecordString(13,record);
-		String level3Nr = file.getValueAtIndexFromRecordString(14,record);
-		String level3 = file.getValueAtIndexFromRecordString(15,record);
+		int index = 1;
+		index++;
+		String musicSchoolName = file.getValueAtIndexFromRecordString(index++,record);
+		String studentSSN = file.getValueAtIndexFromRecordString(index++,record);
+		String studentName = file.getValueAtIndexFromRecordString(index++,record);
+		index++;
+		index++;
+		String studentTelNr = file.getValueAtIndexFromRecordString(index++,record);
+		String preSchool = file.getValueAtIndexFromRecordString(index++,record);
+		String instrument1 = file.getValueAtIndexFromRecordString(index++,record);
+		String singing = file.getValueAtIndexFromRecordString(index++,record);
+		String level1 = file.getValueAtIndexFromRecordString(index++,record);
+		String level1Nr = file.getValueAtIndexFromRecordString(index++,record);
+		String instrument2 = file.getValueAtIndexFromRecordString(index++,record);
+		String level2Nr = file.getValueAtIndexFromRecordString(index++,record);
+		String level2 = file.getValueAtIndexFromRecordString(index++,record);
+		String instrument3 = file.getValueAtIndexFromRecordString(index++,record);
+		String level3Nr = file.getValueAtIndexFromRecordString(index++,record);
+		String level3 = file.getValueAtIndexFromRecordString(index++,record);
 
-		boolean success = storeInfo(nr,musicSchoolName,studentSSN,studentTelNr,preSchool,
+		boolean success = storeInfo(musicSchoolName,studentName,studentSSN,studentTelNr,preSchool,
 				instrument1,singing,level1,level1Nr,
 				instrument2,level2Nr,level2,
 				instrument3,level3Nr,level3);
 
 		return success;
 	}
-	protected boolean storeInfo(String nr,String musicSchoolName,
-			String studentSSN,String studentTelNr,String preSchool,
+	protected boolean storeInfo(String musicSchoolName,
+			String studentName,String studentSSN,String studentTelNr,String preSchool,
 			String instrument1,String singing,String level1,String level1Nr,
 			String instrument2,String level2Nr,String level2,
 			String instrument3,String level3Nr,String level3) throws RemoteException{
 		
 		School musicSchool = null;
 		SchoolClass mainClass = null;
-		SchoolSeason schoolSeason = null;
+		
 		SchoolStudyPath firstInstrument = null;
 		SchoolStudyPath secondInstrument = null;
 		SchoolStudyPath thirdInstrument = null;
 		String mainClassName = "mainClass";
 		SchoolClassHome schoolClassHome = schoolBiz.getSchoolClassHome();
-		SchoolSeasonHome schoolSeasonHome = schoolBiz.getSchoolSeasonHome();
 		
 		
 		try {
@@ -157,40 +163,51 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			try {
 				musicSchool = sHome.create();
 				musicSchool.setSchoolName(musicSchoolName);
+				musicSchool.store();
 				musicSchool.addSchoolType(fullStudy);
 				musicSchool.addSchoolType(halfStudy);
-				musicSchool.store();
-				try {
-					mainClass = schoolClassHome.create();
-					mainClass.setSchoolClassName(mainClassName);
-					Integer id = (Integer) musicSchool.getPrimaryKey();
-					mainClass.setSchoolId(id.intValue());
-					schoolSeason = schoolSeasonHome.findSeasonByDate(new IWTimestamp().getDate());
-					if(schoolSeason != null) {
-						Integer seaId = (Integer) schoolSeason.getPrimaryKey();
-						mainClass.setSchoolSeasonId(seaId.intValue());
-					}
-					mainClass.store();
-				}catch(CreateException cre) {
-					mainClass = null;
-				}catch(FinderException fex) {
-				}
 			}catch(CreateException ce) {
 				musicSchool = null;
 			}catch(IDOAddRelationshipException idoe) {
 			}
-		}		
+		}
+		
+		try {
+			mainClass = schoolClassHome.findByNameAndSchool(mainClassName, musicSchool);
+		}
+		catch(FinderException fex) {
+			try {
+				mainClass = schoolClassHome.create();
+				mainClass.setSchoolClassName(mainClassName);
+				Integer id = (Integer) musicSchool.getPrimaryKey();
+				mainClass.setSchoolId(id.intValue());
+				if(schoolSeason != null) {
+					Integer seaId = (Integer) schoolSeason.getPrimaryKey();
+					mainClass.setSchoolSeasonId(seaId.intValue());
+				}
+				mainClass.store();
+			}
+			catch(CreateException cre) {
+				mainClass = null;
+			}
+		}
+		
+		if (singing != null && !singing.equals(" ") && !(instrument1 != null && !instrument1.equals(" "))) {
+			instrument1 = singing;
+		}
+		if (preSchool != null && !preSchool.equals(" ")) {
+			level1 = preSchool;
+		}
 		
 //		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, instrument);
-
-		if(instrument1 != null && !instrument1.equals("")) {
-			processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentSSN, studentTelNr);
+		if(instrument1 != null && !instrument1.equals(" ")) {
+			processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentName, studentSSN, studentTelNr);
 		}
-		if(instrument2 != null && !instrument2.equals("")) {
-			processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentSSN, studentTelNr);
+		if(instrument2 != null && !instrument2.equals(" ")) {
+			processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentName, studentSSN, studentTelNr);
 		}
-		if(instrument3 != null && !instrument3.equals("")) {
-			processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentSSN, studentTelNr);
+		if(instrument3 != null && !instrument3.equals(" ")) {
+			processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentName, studentSSN, studentTelNr);
 		}
 		
 		return true;
@@ -207,7 +224,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @return student (SchoolClassMember) - null if failed to create student
 	 * @throws RemoteException
 	 */
-	private SchoolClassMember processStudent(String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath instrument) throws RemoteException {
+	private SchoolClassMember processStudent(String studentName, String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath instrument) throws RemoteException {
 		SchoolClassMemberHome studentHome = schoolBiz.getSchoolClassMemberHome();
 		UserBusiness userBiz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
 		SchoolClassMember student = null;
@@ -219,7 +236,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			//studentUser = null;
 			//this is temporary for testing on an empty database:
 			try {
-				studentUser = userBiz.createUserByPersonalIDIfDoesNotExist(null,studentSSN,null,null);
+				studentUser = userBiz.createUserByPersonalIDIfDoesNotExist(studentName,studentSSN,null,null);
 			}catch(CreateException crEx) {
 				studentUser = null;
 			}
@@ -229,7 +246,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			Integer userID = (Integer) studentUser.getPrimaryKey();
 			PhoneHome phHome = userBiz.getPhoneHome();
 			try {
-				if(studentTelNr != null && !studentTelNr.equals("")) {
+				if(studentTelNr != null && !studentTelNr.equals(" ")) {
 					studentPhone = phHome.create();
 					studentPhone.setNumber(studentTelNr);
 					studentPhone.store();
@@ -285,7 +302,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @param firstInstrument
 	 * @param instrumentHome
 	 */
-	private void processInstrument(String instrumentCode, School musicSchool, SchoolClass mainClass, SchoolSeason schoolSeason, SchoolStudyPath instrument, String levelNr, String levelString, String studentSSN, String studentTelNr) throws RemoteException{
+	private void processInstrument(String instrumentCode, School musicSchool, SchoolClass mainClass, SchoolSeason schoolSeason, SchoolStudyPath instrument, String levelNr, String levelString, String studentName, String studentSSN, String studentTelNr) throws RemoteException{
 		SchoolStudyPathHome instrumentHome = schoolBiz.getSchoolStudyPathHome();
 		SchoolYearHome levelHome = schoolBiz.getSchoolYearHome();
 		SchoolYear level = null;
@@ -298,77 +315,85 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			try {
 				instrument = instrumentHome.create();
 				instrument.setCode(instrumentCode);
+				instrument.setDescription(instrumentCode);
+				instrument.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
 				instrument.store();
-			}catch(CreateException crEx) {
+			}
+			catch(CreateException crEx) {
 				instrument = null;
 			}			
 		}
+		
 		if(instrument != null) {
-			student = processStudent(studentSSN,studentTelNr,musicSchool,schoolSeason,mainClass,instrument);
+			student = processStudent(studentName,studentSSN,studentTelNr,musicSchool,schoolSeason,mainClass,instrument);
 			try {
-				Collection i = musicSchool.findRelatedStudyPaths();
-				Iterator iIter = i.iterator();
-				boolean b = false;
-				while(iIter.hasNext()) {
-					SchoolStudyPath inst = (SchoolStudyPath) iIter.next();
-					if(inst.getCode() == instrument.getCode()) {
-						b = true;
-					}
-				}
-				if(!b) {
-					//SchoolStudyPath (many-to-many) School
-					instrument.addSchool(musicSchool);
-				}			
-				Integer instrumentID = (Integer) instrument.getPrimaryKey();
-				Collection in = mainClass.findRelatedStudyPaths();
-				Iterator inIter = in.iterator();
-				while(inIter.hasNext()) {
-					SchoolStudyPath inst = (SchoolStudyPath) inIter.next();
-					if(inst.getCode() == instrument.getCode()) {
-						instrument = inst;
-					}
-				}
-				//SchoolClass (many-to-many) SchoolStudyPath
-				mainClass.addStudyPath(instrument);
-				
-				student.setStudyPathId(instrumentID.intValue());
-				student.store();
-				
-			}catch(IDOAddRelationshipException idoEx) {				
-			}	catch(IDORelationshipException iEx) {
-				
+				instrument.addSchool(musicSchool);
+			}
+			catch(IDOAddRelationshipException idoEx) {				
 			}
 			try {
-				if(levelNr != null && !levelNr.equals("")) {
-					level = levelHome.create();
-					level.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
-					level.setSchoolYearName(levelNr);
-					level.store();
+				mainClass.addStudyPath(instrument);
+			}
+			catch(IDOAddRelationshipException idoEx) {
+				
+			}
+			
+			student.setStudyPathId(((Integer)instrument.getPrimaryKey()).intValue());
+			student.store();
+				
+			try {
+				if(levelNr != null && !levelNr.equals(" ")) {
+					try {
+						level = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelNr);
+					}
+					catch (FinderException fe) {
+						level = levelHome.create();
+						level.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
+						level.setSchoolYearName(levelNr);
+						level.setLocalizedKey("sch_year." + levelNr);
+						level.setIsSelectable(false);
+						level.store();
+					}
 					//SchoolClass (many-to-many) SchoolYear
-					mainClass.addSchoolYear(level);
+					try {
+						mainClass.addSchoolYear(level);
+					}
+					catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
+					
 					Integer levelID = (Integer) level.getPrimaryKey();
 					//SchoolClassMember (many-to-one) SchoolYear
 					student.setSchoolYear(levelID.intValue());
+					student.store();
 
 				}
-				if(levelString != null && !levelString.equals("")) {
-					levelStr = levelHome.create();
-					levelStr.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
-					levelStr.setSchoolYearName(levelString);
-					levelStr.store();
+				if(levelString != null && !levelString.equals(" ")) {
+					try {
+						level = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelString);
+					}
+					catch (FinderException fe) {
+						levelStr = levelHome.create();
+						levelStr.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
+						levelStr.setSchoolYearName(levelString);
+						levelStr.setLocalizedKey("sch_year." + levelString);
+						levelStr.setIsSelectable(false);
+						levelStr.store();
+					}
 					if(level == null) {
 						//SchoolClass (many-to-many) SchoolYear (only if levelNr is empty)
-						mainClass.addSchoolYear(levelStr);
+						try {
+							mainClass.addSchoolYear(levelStr);
+						}
+						catch (IDOAddRelationshipException iare) { /*Connection already exists...*/ }
+						
 						Integer levelStrID = (Integer) levelStr.getPrimaryKey();
 						//SchoolClassMember (many-to-many) SchoolYear
 						student.setSchoolYear(levelStrID.intValue());
+						student.store();
 					}
 				}
 
 				
 			}catch(CreateException crEx) {
-				
-			}catch(IDOAddRelationshipException idoEx) {
 				
 			}
 		}
