@@ -72,11 +72,10 @@ implements ImportFileHandler
 	private static final int COLUMN_CHILD_NAME = 1;
 	private static final int COLUMN_UNIT = 2;
 	private static final int COLUMN_GROUP_NAME = 3;
-	private static final int COLUMN_DBV = 4;
-	private static final int COLUMN_HOURS = 5;
-	private static final int COLUMN_PLACEMENT_FROM = 6;
-	private static final int COLUMN_PLACEMENT_TO = 7;
-	private static final int COLUMN_START_DATE = 8;
+	private static final int COLUMN_HOURS = 4;
+	private static final int COLUMN_PLACEMENT_FROM = 5;
+	private static final int COLUMN_PLACEMENT_TO = 6;
+	private static final int COLUMN_START_DATE = 7;
 //	private Gender female;
 //	private Gender male;
 	private Report report;
@@ -229,16 +228,13 @@ implements ImportFileHandler
 		}
 		String unit = getUserProperty(COLUMN_UNIT);
 		String groupName = getUserProperty(COLUMN_GROUP_NAME);
-		String dbv = getUserProperty(COLUMN_DBV);
 //		String dbvpid = getUserProperty(COLUMN_DBV_PERSONAL_ID);
 
 		if(unit != null){
 			isDBV = false;
 			caretaker = unit;
-		} else if(dbv != null){
-			caretaker = dbv;
-			isDBV = true;
-		} else {
+		}
+		else {
 			report.append("Could not read the childcaretaker for child "+PIN);
 			return false;
 		}
