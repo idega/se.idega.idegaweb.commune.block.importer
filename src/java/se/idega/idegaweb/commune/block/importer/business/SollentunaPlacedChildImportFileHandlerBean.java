@@ -73,12 +73,10 @@ implements ImportFileHandler
 	private static final int COLUMN_UNIT = 2;
 	private static final int COLUMN_GROUP_NAME = 3;
 	private static final int COLUMN_DBV = 4;
-	//private static final int COLUMN_DBV_PERSONAL_ID = 5; //Not used
-	private static final int COLUMN_HOURS = 6;
-	private static final int COLUMN_PLACEMENT_FROM = 7;
-	private static final int COLUMN_PLACEMENT_TO = 8;
-	private static final int COLUMN_START_DATE = 9;
-	private static final int COLUMN_END_DATE = 10;
+	private static final int COLUMN_HOURS = 5;
+	private static final int COLUMN_PLACEMENT_FROM = 6;
+	private static final int COLUMN_PLACEMENT_TO = 7;
+	private static final int COLUMN_START_DATE = 8;
 //	private Gender female;
 //	private Gender male;
 	private Report report;
@@ -245,34 +243,9 @@ implements ImportFileHandler
 			return false;
 		}
 		String hours = getUserProperty(COLUMN_HOURS);
-		String sDate = getUserProperty(COLUMN_START_DATE);
-		if (sDate == null) {
-			report.append("Failed parsing start date for " + childName);
-			return false;
-		}
-		IWTimestamp sDateT = new IWTimestamp();
-		try {
-			sDateT.setDate(sDate);
-		} catch (DateFormatException e1) {
-			report.append("Failed parsing start date "+sDate+" for " + childName);
-			return false;
-		}
-		String eDate = getUserProperty(COLUMN_END_DATE);
-		IWTimestamp eDateT = null;
-		if (eDate == null) {
-			eDateT = null;
-		}
-		else {
-			try {
-				eDateT = new IWTimestamp(eDate);
-			}
-			catch (Exception e) {
-				eDateT = null;
-			}
-		}
 		String placementDate = getUserProperty(COLUMN_PLACEMENT_FROM);
 		if (placementDate == null) {
-			report.append("Failed parsing start date for " + childName);
+			report.append("Failed parsing placement for " + childName);
 			return false;
 		}
 		IWTimestamp placementFrom = new IWTimestamp();
@@ -294,6 +267,18 @@ implements ImportFileHandler
 			catch (Exception e) {
 				placementTo = null;
 			}
+		}
+		String sDate = getUserProperty(COLUMN_START_DATE);
+		if (sDate == null) {
+			report.append("Failed parsing start date for " + childName);
+			return false;
+		}
+		IWTimestamp sDateT = new IWTimestamp();
+		try {
+			sDateT.setDate(sDate);
+		} catch (DateFormatException e1) {
+			report.append("Failed parsing start date "+sDate+" for " + childName);
+			return false;
 		}
 
 		//database stuff
@@ -424,7 +409,7 @@ implements ImportFileHandler
 				
 			int schoolID = Integer.parseInt(school.getPrimaryKey().toString());
 			int classID = Integer.parseInt(sClass.getPrimaryKey().toString());
-			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, -1, null, sDateT, eDateT,
+			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, -1, null, sDateT, placementTo,
 				locale, parent, performer);
 			if (importDone) {
 				try {
