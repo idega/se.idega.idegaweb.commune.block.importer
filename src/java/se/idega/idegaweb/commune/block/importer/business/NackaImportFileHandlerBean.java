@@ -1,4 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import javax.transaction.*;
 import se.idega.idegaweb.commune.block.importer.data.ImportFile;
 import com.idega.user.data.*;
@@ -36,12 +37,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private UserBusiness biz;
   private UserHome home;
   private MemberFamilyLogic relationBiz;
+  private CommuneUserBusiness comUserBiz;
   private GroupHome groupHome;
   private Group nackaGroup;
   private ImportFile file;
   private UserTransaction transaction;
   private UserTransaction transaction2;
 
+  private boolean onlyImportRelations = false;
+  private boolean test = true;
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
   private final String RELATIONAL_SECTION_ENDS = "02999";
@@ -58,9 +62,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String RELATION_TYPE_FATHER = "FA";
   private final String RELATION_TYPE_MOTHER = "MO";
 
-  private final String NACKA_ROOT_GROUP_ID_PARAMETER_NAME = "commune_id";
-
-
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
   private final String USER_SECTION_ENDS = RELATIONAL_SECTION_STARTS;
@@ -70,7 +71,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   public boolean handleRecords() throws RemoteException{
 
-    IWApplicationContext iwac = this.getIWApplicationContext();
     transaction =  this.getSessionContext().getUserTransaction();
     transaction2 =  this.getSessionContext().getUserTransaction();
 
@@ -79,9 +79,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     try {
       //initialize business beans and data homes
-      biz = (UserBusiness) IBOLookup.getServiceInstance(iwac,UserBusiness.class);
-      relationBiz = (MemberFamilyLogic) IBOLookup.getServiceInstance(iwac,MemberFamilyLogic.class);
-      home = biz.getUserHome();
+      biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
+      relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
+      //home = biz.getUserHome();
+      comUserBiz = (CommuneUserBusiness)IBOLookup.getServiceInstance(this.getIWApplicationContext(),CommuneUserBusiness.class);
+
+      comUserBiz.getRootCitizenGroup();
+      biz.getUserHome().create();
+
       //groupHome = biz.getGroupHome();
 
       //if the transaction failes all the users and their relations are removed
@@ -93,8 +98,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       int count = 0;
       while ( !(item=(String)file.getNextRecord()).equals("") ) {
         count++;
-        processRecord(item);
-        if( (count % 100) == 0 ){
+       // processRecord(item);
+
+        /**if(test && count == 100){
+          System.out.println(" TEST DONE 100 users");
+          break;
+        }*/
+
+        if( (count % 1000) == 0 ){
           System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
         }
         item = null;
@@ -110,8 +121,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
       //store family relations
       storeRelations();
-
-
 
       return true;
     }
@@ -135,19 +144,28 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
     record = TextSoap.findAndCut(record,"#UP ");
 
-    //Family relations
-    userPropertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
-    //Special case relations
-    userPropertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getArrayListWithMapsFromStringFragment(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
-    //Citizen info
-    userPropertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
-    //Historic info
-    userPropertiesMap.put(HISTORIC_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
+    if( !onlyImportRelations ){
+       //Family relations
+      userPropertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
+      //Special case relations
+      userPropertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getArrayListWithMapsFromStringFragment(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
+      //Citizen info
+      userPropertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
+      //Historic info
+      userPropertiesMap.put(HISTORIC_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
 
-    //the rest e.g. User info and immigration stuff
-    userPropertiesMap.putAll(getPropertiesMapFromString(record," "));
+      //the rest e.g. User info and immigration stuff
+      userPropertiesMap.putAll(getPropertiesMapFromString(record," "));
 
-    storeUserInfo();
+      //System.out.println("storeUserInfo");
+      storeUserInfo();
+    }
+    else{//only store relations
+      //the rest e.g. User info and immigration stuff
+      userPropertiesMap.putAll(getPropertiesMapFromString(record," "));//PIN number etc.
+      //Family relations
+      userPropertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
+    }
 
     /**
     * family and other releation stuff
@@ -158,24 +176,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     userPropertiesMap = null;
 
     return true;
-  }
-
-  protected void createDefaultRootGroup(IWApplicationContext iwac){
-    /**@todo should be in a separate transaction?**/
-      //create the default group
-     /* String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
-      if( groupId!=null ){
-        nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
-      }
-      else{
-        nackaGroup = groupHome.create();
-        nackaGroup.setDescription("The Nacka Commune Root Group.");
-        nackaGroup.setName("Nacka Commune Citizens");
-        nackaGroup.store();
-
-        iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
-      }
-      // end default group creation*/
   }
 
   protected ArrayList getArrayListWithMapsFromStringFragment(String record, String fragmentStart, String fragmentEnd){
@@ -261,35 +261,24 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   protected boolean storeUserInfo() throws RemoteException{
 
     User user = null;
-    String PIN = getUserProperty("01001");
-
-    try{
-      user = home.findByPersonalID(PIN);
-    }
-    catch(FinderException ex){
-      try {
-        user = home.create();
-      }
-      catch (CreateException e) {
-        e.printStackTrace();
-        return false;
-      }
-    }
-
-    /**
-     * basic user info
-     */
 
     //variables
     String firstName = getUserProperty("01012");
     String middleName = getUserProperty("01013");
     String lastName = getUserProperty("01014");
+    String PIN = getUserProperty("01001");
 
-    //variables-to-bean variables
-    user.setPersonalID(PIN);
-    user.setFirstName(firstName);
-    user.setMiddleName(middleName);
-    user.setLastName(lastName);
+    /**
+    * basic user info
+    */
+    try{
+      //System.err.println(firstName);
+      user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN);
+    }
+    catch(Exception e){
+      e.printStackTrace();
+      return false;
+    }
 
     /**
      * addresses
@@ -309,7 +298,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     /**
      * Save the user to the database
      */
-    user.store();
+    //user.store();
 
     /**
     * Main group relation
@@ -335,6 +324,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   //if found link with RelationBusiness
   //else skip relative and log somewhere
 
+    Timer clock = new Timer();
+    clock.start();
 
     if( relationsMap != null ){
       Iterator iter = relationsMap.keySet().iterator();
@@ -349,6 +340,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         transaction2.begin();
 
         while (iter.hasNext()) {
+
           PIN = (String) iter.next();
           user = null;
           /**@todo
@@ -433,6 +425,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
           }
         }
       }//end if relationmap !=null
+      else{
+        System.out.println("NackaImporter : No relations read");
+      }
+
+      clock.stop();
+      System.out.println("Time to store relations: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
+
   }
 
 
@@ -449,6 +448,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   public void setImportFile(ImportFile file){
     this.file = file;
+  }
+
+  public void setOnlyImportRelations(boolean onlyImportRelations){
+    this.onlyImportRelations = onlyImportRelations;
   }
 
   }

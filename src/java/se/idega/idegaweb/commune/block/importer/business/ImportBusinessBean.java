@@ -34,6 +34,8 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
       boolean status = false;
       ImportFileHandler handler = getHandlerForImportFile(file.getClass().getName());
       handler.setImportFile(file);
+      /**@todo temporary workaround**/
+      //((NackaImportFileHandler)handler).setOnlyImportRelations(true);
       status = handler.handleRecords();
 
       /*Collection col = file.getRecords();
