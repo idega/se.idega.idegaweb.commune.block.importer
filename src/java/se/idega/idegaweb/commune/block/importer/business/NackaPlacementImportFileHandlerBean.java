@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.19 2003/10/28 15:05:38 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.20 2003/11/03 13:22:10 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/28 15:05:38 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/03 13:22:10 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.19 $
+ * @version $Revision: 1.20 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -525,7 +525,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				}				
 			} catch (Exception e) {
 				//e.printStackTrace();
-				System.out.println("School class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
+//				System.out.println("School Class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
 				int schoolId = ((Integer) school.getPrimaryKey()).intValue();
 				int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
 				int seasonId = ((Integer) season.getPrimaryKey()).intValue();
@@ -590,7 +590,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			if (createNewPlacement) {			
 				member = schoolBiz.storeSchoolClassMember(sClass, user);
 				if (member == null) {
-					System.out.println("School class member could not be created for personal id: " + personalId);	
+					System.out.println("School Class member could not be created for personal id: " + personalId);	
 					return false;
 				}
 				IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
