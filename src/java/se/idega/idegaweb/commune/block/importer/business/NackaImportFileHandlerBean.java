@@ -304,7 +304,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				getArrayListWithMapsFromStringFragment(record, HISTORIC_SECTION_STARTS, HISTORIC_SECTION_ENDS));
 
 			//the rest e.g. User info and immigration stuff
-			userPropertiesMap.putAll(getPropertiesMapFromString(record, " "));
+			Map tmp = getPropertiesMapFromString(record, " ");
+			if (tmp == null || tmp.isEmpty()) {
+				return false;
+			}
+			userPropertiesMap.putAll(tmp);
 
 			//log("storeUserInfo");
 			storeUserInfo();
@@ -381,7 +385,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		try {
 
 			while ((line = reader.readLine()) != null) {
-
+				//TEMP HARDCODING ...
+				if (line.indexOf("#ANTAL_POSTER") != -1) {
+					return new HashMap();
+				}
+				//
+				
 				if ((index = line.indexOf(seperator)) != -1) {
 					property = line.substring(0, index);
 					value = line.substring(index + 1, line.length());
@@ -471,6 +480,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String countyNumber = getUserProperty(COUNTY_CODE_COLUMN);
 		String communeNumber = getUserProperty(COMMUNE_CODE_COLUMN);
 		String communeCode = countyNumber+communeNumber;
+		//System.out.println(firstName+" "+middleName+" "+lastName);
+		//System.out.print(" ...CommuneCode = "+communeCode);
 		Commune commune=null;
 		try {
 			commune = getCommuneHome().findByCommuneCode(communeCode);
@@ -485,7 +496,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		isMovingFromHomeCommune = isMovingFromHomeCommune || !HOME_COMMUNE_CODE.equals(communeCode);
 
 		String PIN = getUserProperty(PIN_COLUMN);
-		
+		//System.out.println(" ...PIN = "+PIN);
 		if (secrecy != null && !secrecy.equals(""))
 			log("SECRET PERSON = " + PIN + " Code :" + secrecy + ".");
 
@@ -585,19 +596,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 			else if ("10".equals(preferredNameIndex))
 			{
-				System.out.println("Testing preferredNameIndex = 10");
+				//System.out.println("Testing preferredNameIndex = 10");
 				String fullName = firstName;
 				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
 				
 				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
-				System.out.println("Testing preferredName1 = "+preferredName1);
+				//System.out.println("Testing preferredName1 = "+preferredName1);
 				firstName = preferredName1;
 
 				middleName = TextSoap.findAndCut(fullName, preferredName1);
 				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
-				System.out.println("Testing firstName = "+firstName);
-				System.out.println("Testing middleName = "+middleName);
-				System.out.println("Testing lastName = "+lastName);
+				//System.out.println("Testing firstName = "+firstName);
+				//System.out.println("Testing middleName = "+middleName);
+				//System.out.println("Testing lastName = "+lastName);
 				
 				updateName = true;
 				
@@ -690,9 +701,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					//address.setProvince("Nacka" );//set as 01 ?
 					//address.setCity("Stockholm" );//set as 81?
 					address.setProvince(countyNumber);
-					address.setCity(commune.getCommuneName());
-					address.setCommune(commune);
-
+					if (commune != null) {
+						address.setCity(commune.getCommuneName());
+						address.setCommune(commune);
+					}
+					
 					address.setStreetName(streetName);
 					address.setStreetNumber(streetNumber);
 
@@ -946,6 +959,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	protected void storeRelations() throws RemoteException {
 		ArrayList errors = new ArrayList();
 		HashtableMultivalued parentRelations = new HashtableMultivalued();
+		//log("Skipping relations ... : setting relationMap == null");
+		//relationsMap = null;
 		log("NackaImportFileHandler [STARTING - RELATIONS] time: " + IWTimestamp.getTimestampRightNow().toString());
 
 		//get keys <- pins
