@@ -23,6 +23,9 @@ import java.util.Map;
 import javax.ejb.FinderException;
 
 import com.idega.block.importer.data.ImportFile;
+import com.idega.business.IBOLookup;
+import com.idega.business.IBOLookupException;
+import com.idega.business.IBORuntimeException;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDOStoreException;
 import com.idega.user.data.Group;
@@ -69,15 +72,26 @@ public class MissingNamesImportFileHandlerBean extends IBOServiceBean implements
 				String pid = (String) fieldMap.get(ImportFileFieldConstants.PIN_COLUMN);
 				
 				String firstName = fieldMap.containsKey(ImportFileFieldConstants.FIRST_NAME_COLUMN)?(String)fieldMap.get(ImportFileFieldConstants.FIRST_NAME_COLUMN):null;
+				String middleName = null;
 				String lastName = fieldMap.containsKey(ImportFileFieldConstants.LAST_NAME_COLUMN)?(String)fieldMap.get(ImportFileFieldConstants.LAST_NAME_COLUMN):null;
+				String lastNameFirstPart = fieldMap.containsKey(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN)?(String)fieldMap.get(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN):null;
+				
+				String preferredNameIndex = fieldMap.containsKey(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN)?(String)fieldMap.get(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN):null;
+
+				if (lastNameFirstPart != null ) {
+					lastName = lastNameFirstPart + " " + lastName;
+				}
+				
+
 				if(firstName!=null || lastName!=null){
 					if(userMap.containsKey(pid)){
 						Integer userID = (Integer) userMap.get(pid);
 						log("update user "+userID+" with names "+firstName+" and "+lastName);
 						try {
 							User user = citizenHome.findByPrimaryKey(userID);
-							user.setFullName(firstName+" "+lastName);
-							user.store();
+							getImportBusiness().handleNames(user, firstName, middleName, lastName, preferredNameIndex, true);
+//							user.setFullName(firstName+" "+lastName);
+//							user.store();
 							fixcount++;
 						} catch (IDOStoreException e) {
 							e.printStackTrace();
@@ -174,4 +188,13 @@ public class MissingNamesImportFileHandlerBean extends IBOServiceBean implements
 	public void setRootGroup(Group rootGroup) throws RemoteException {
 		
 	}
+	
+	public NackaImportBusiness getImportBusiness() {
+		try {
+			return (NackaImportBusiness) IBOLookup.getServiceInstance(this.getIWApplicationContext(), NackaImportBusiness.class);
+		}
+		catch (IBOLookupException e) {
+			throw new IBORuntimeException(e);
+		}
+	}	
 }
