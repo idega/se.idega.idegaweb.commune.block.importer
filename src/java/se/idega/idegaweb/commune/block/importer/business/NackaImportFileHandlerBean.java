@@ -418,6 +418,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	protected boolean storeUserInfo() throws RemoteException {
 
+		boolean updateName = false;
 		User user = null;
 
 		//variables
@@ -426,12 +427,21 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String middleName = "";
 		String lastNameFirstPart = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null); 
 		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+		
 		if (lastNameFirstPart != null ) {
+			if (preferredNameIndex == null) {
+				preferredNameIndex = "10";
+			}
 			lastName = lastNameFirstPart + " " + lastName;
 		}
 
-		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
-
+		System.out.println("firstName = "+firstName);
+		System.out.println("middleName = "+middleName);
+		System.out.println("lastNameFirstPart = "+lastNameFirstPart);
+		System.out.println("lastName = "+lastName);
+		System.out.println("preferredNameIndex = "+preferredNameIndex);
+		
 		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
 		IWTimestamp dateOfRegistration = null;
 		if (dateOfRegistrationString != null) {
@@ -490,8 +500,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		Gender gender = getGenderFromPin(PIN);
 		IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
-
-		boolean updateName = false;
 
 		/**
 		 * basic user info
@@ -580,6 +588,25 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 				updateName = true;
 
+			}
+			else if ("10".equals(preferredNameIndex))
+			{
+				System.out.println("Testing preferredNameIndex = 10");
+				String fullName = firstName;
+				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
+				
+				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
+				System.out.println("Testing preferredName1 = "+preferredName1);
+				firstName = preferredName1;
+
+				middleName = TextSoap.findAndCut(fullName, preferredName1);
+				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
+				System.out.println("Testing firstName = "+firstName);
+				System.out.println("Testing middleName = "+middleName);
+				System.out.println("Testing lastName = "+lastName);
+				
+				updateName = true;
+				
 			}
 
 			//fullname = new StringBuffer();
