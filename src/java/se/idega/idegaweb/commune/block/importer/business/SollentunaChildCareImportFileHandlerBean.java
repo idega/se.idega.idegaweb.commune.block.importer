@@ -29,6 +29,7 @@ import com.idega.block.school.data.SchoolClassMemberLog;
 import com.idega.block.school.data.SchoolClassMemberLogHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.business.IBOServiceBean;
+import com.idega.data.IDORelationshipException;
 import com.idega.idegaweb.IWBundle;
 import com.idega.idegaweb.UnavailableIWContext;
 import com.idega.presentation.IWContext;
@@ -114,7 +115,7 @@ implements ImportFileHandler
 		report = new Report(file.getFile().getName());	//Create a report file. I will be located in the Report dir
 		//Cero all counters used just for reporting purposes
 		IWBundle bundle = getIWMainApplication().getBundle("se.idega.idegaweb.commune");
-		schoolTypeID = Integer.parseInt(bundle.getProperty("child_care_school_type", "2"));
+		//schoolTypeID =  Integer.parseInt(bundle.getProperty("child_care_school_type", "2"));
 		count = 0;
 		failCount = 0;
 		successCount = 0;
@@ -393,6 +394,22 @@ implements ImportFileHandler
 		if (school.getProviderStringId() == null || school.getProviderStringId().equals("null")) {
 			school.setProviderStringId(unitId);
 			school.store();
+		}
+		// set school type id
+		if (school != null){
+			try {
+				Collection schoolTypes = school.getSchoolTypes();
+				Iterator iterTypes = schoolTypes.iterator();
+				
+				//iterator through the school types but there is only one per provider :)
+				while (iterTypes.hasNext()) {
+					schoolTypeID = ((Integer) iterTypes.next()).intValue();
+				}
+				
+			}
+			catch (IDORelationshipException e){
+				log (e);
+			}
 		}
 		//school Class		
 		try {
