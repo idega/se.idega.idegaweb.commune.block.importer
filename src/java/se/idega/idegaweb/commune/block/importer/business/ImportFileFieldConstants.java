@@ -15,6 +15,10 @@ package se.idega.idegaweb.commune.block.importer.business;
  */
 public class ImportFileFieldConstants {
 
+	/* URL to the properties
+	 * http://skatteverket.se/folkbokforing/navet/tekniskbeskrivning.html#73
+	 */
+	
 	protected static final String ACTION_CONCERNS_CURRENT_PERSON =				"H";
 	protected static final String ACTION_CONCERNS_RELATIVE = 							"R";
 	protected static final String ACTION_PREFIX_CANCEL = 									"3";
@@ -34,8 +38,9 @@ public class ImportFileFieldConstants {
 	protected static final String ACTION_TYPE_SECRET = 										"3";
 	protected static final String ACTION_TYPE_SPECIAL_CO_ADDRESS = 				"45";
 	protected static final String ACTION_TYPE_SPECIAL_FIRST_NAME =				"29";
-	//protected static final String LONG_LAT_COLUMN = "01025";
-	protected static final String ADDRESS_COLUMN = 												"01033";
+
+	protected static final String ADDRESS_KEY_CODE = 											 "01025";
+	protected static final String ADDRESS_COLUMN = 											"01033";
 	protected static final String CITIZEN_INFO_SECTION_ENDS = 						"03999";
 	protected static final String CITIZEN_INFO_SECTION_STARTS = 					"03000";
 	//protected static final String CO_ADDRESS_NAME_COLUMN = 								"01051";
