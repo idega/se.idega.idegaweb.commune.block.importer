@@ -1,7 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import javax.transaction.*;
+import se.idega.idegaweb.commune.block.importer.data.ImportFile;
 import com.idega.user.data.*;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
 import com.idega.idegaweb.IWApplicationContext;
 import javax.ejb.CreateException;
 import java.rmi.RemoteException;
@@ -16,6 +16,7 @@ import java.io.LineNumberReader;
 import com.idega.util.text.TextSoap;
 import java.util.*;
 import java.io.*;
+import javax.transaction.HeuristicMixedException;
 
 /**
  * <p>Title: NackaImportFileHandlerBean</p>
@@ -23,7 +24,7 @@ import java.io.*;
  * <p>Copyright (c) 2002</p>
  * <p>Company: Idega Software</p>
  * @author <a href="mailto:eiki@idega.is"> Eirikur Sveinn Hrafnsson</a>
- * @version 1.0
+ * @version 1.0tran
  */
 
 
@@ -37,6 +38,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private MemberFamilyLogic relationBiz;
   private GroupHome groupHome;
   private Group nackaGroup;
+  private ImportFile file;
+  private UserTransaction transaction;
+  private UserTransaction transaction2;
 
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
@@ -64,14 +68,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String IMMIGRATION_SECTION_ENDS = SPECIALCASE_RELATIONAL_SECTION_STARTS;
   private final String OTHER_ADDRESSES_SECTION_STARTS = "07001";*/
 
-  public boolean handleRecords(Collection records) throws RemoteException{
+  public boolean handleRecords() throws RemoteException{
 
     IWApplicationContext iwac = this.getIWApplicationContext();
-    //UserTransaction transaction =  this.getSessionContext().getUserTransaction();
+    transaction =  this.getSessionContext().getUserTransaction();
+    transaction2 =  this.getSessionContext().getUserTransaction();
 
     Timer clock = new Timer();
     clock.start();
-
 
     try {
       //initialize business beans and data homes
@@ -81,63 +85,45 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //groupHome = biz.getGroupHome();
 
       //if the transaction failes all the users and their relations are removed
-      //transaction.begin();
-
-      /**@todo should be in a separate transaction?**/
-      //create the default group
-     /* String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
-      if( groupId!=null ){
-        nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
-      }
-      else{
-        nackaGroup = groupHome.create();
-        nackaGroup.setDescription("The Nacka Commune Root Group.");
-        nackaGroup.setName("Nacka Commune Citizens");
-        nackaGroup.store();
-
-        iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
-      }
-      // end default group creation*/
+      transaction.begin();
 
       //iterate through the records and process them
-      Iterator iter = records.iterator();
+      String item;
+
       int count = 0;
-      while (iter.hasNext()) {
+      while ( !(item=(String)file.getNextRecord()).equals("") ) {
         count++;
-        String item = (String) iter.next();
-
         processRecord(item);
-
-        if( (count % 1000) == 0 ){
+        if( (count % 100) == 0 ){
           System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
         }
+        item = null;
       }
 
-      //store family relations
-      storeRelations();
-
-      records = null;
       clock.stop();
       System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
 
       // System.gc();
       //success commit changes
-      //transaction.commit();
+      transaction.commit();
+
+
+      //store family relations
+      storeRelations();
+
+
 
       return true;
     }
     catch (Exception ex) {
-    /**@todo
-     * Email to the admin that importing failed?
-     */
      ex.printStackTrace();
 
-     /*try {
+     try {
       transaction.rollback();
      }
      catch (SystemException e) {
        e.printStackTrace();
-     }*/
+     }
 
      return false;
     }
@@ -172,6 +158,24 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     userPropertiesMap = null;
 
     return true;
+  }
+
+  protected void createDefaultRootGroup(IWApplicationContext iwac){
+    /**@todo should be in a separate transaction?**/
+      //create the default group
+     /* String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
+      if( groupId!=null ){
+        nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
+      }
+      else{
+        nackaGroup = groupHome.create();
+        nackaGroup.setDescription("The Nacka Commune Root Group.");
+        nackaGroup.setName("Nacka Commune Citizens");
+        nackaGroup.store();
+
+        iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
+      }
+      // end default group creation*/
   }
 
   protected ArrayList getArrayListWithMapsFromStringFragment(String record, String fragmentStart, String fragmentEnd){
@@ -325,47 +329,49 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   protected void storeRelations() throws RemoteException{
 
-  //get keys <- pins
+   //get keys <- pins
   //get user bean
   //get relative bean
   //if found link with RelationBusiness
   //else skip relative and log somewhere
+
 
     if( relationsMap != null ){
       Iterator iter = relationsMap.keySet().iterator();
       User user;
       User relative;
       String relativePIN;
-      String PIN;
+      String PIN="";
       String relationType;
 
-      while (iter.hasNext()) {
-        PIN = (String) iter.next();
-        user = null;
-        try{
-        /**@todo
-         * IS THE LIST EVER NULL?
-         */
-          ArrayList relatives = (ArrayList) relationsMap.get(PIN);
-          if(relatives!=null){
-            user = home.findByPersonalID(PIN);
+      try {
+        //begin transaction
+        transaction2.begin();
 
-            Iterator iter2 = relatives.iterator();
-            while (iter2.hasNext()) {
-              Map relativeMap = (Map) iter2.next();
-              relativePIN = (String) relativeMap.get("02001");
-              relationType = (String) relativeMap.get("02003");
+        while (iter.hasNext()) {
+          PIN = (String) iter.next();
+          user = null;
+          /**@todo
+           * IS THE LIST EVER NULL?
+           */
+            ArrayList relatives = (ArrayList) relationsMap.get(PIN);
+            if(relatives!=null){
+              user = home.findByPersonalID(PIN);
 
-              /**
-               * @todo use this second parameter if first is missing??? ask kjell
-               */
-              //if( relativePIN == null ) relativePIN = (String) item.get("02002"));
+              Iterator iter2 = relatives.iterator();
+              while (iter2.hasNext()) {
+                Map relativeMap = (Map) iter2.next();
+                relativePIN = (String) relativeMap.get("02001");
+                relationType = (String) relativeMap.get("02003");
 
-              if( relativePIN !=null ){
-                try {
-                  relative = home.findByPersonalID(relativePIN);
+                /**
+                 * @todo use this second parameter if first is missing??? ask kjell
+                 */
+                //if( relativePIN == null ) relativePIN = (String) item.get("02002"));
 
+                if( relativePIN !=null ){
                   try {
+                    relative = home.findByPersonalID(relativePIN);
 
                     if( relationType.equals(this.RELATION_TYPE_CHILD) ){
                       relationBiz.setAsChildFor(relative,user);
@@ -386,40 +392,49 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
                       relationBiz.setAsChildFor(relative,user);
                     }
 
-                    //other types
+                      //other types
                   }
                   catch (CreateException ex) {
                     System.out.println("NackaImporter : Error adding relation for user: "+PIN);
-                    ex.printStackTrace();
+                    //ex.printStackTrace();
                   }
-
+                  catch (FinderException ex) {
+                    System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+                    //ex.printStackTrace();
+                  }
+                }//if relativepin !=null
+                else{
+                  System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
                 }
-                catch (FinderException ex) {
-                  System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
-                  ex.printStackTrace();
-                }
+              }//end while iter2
+            }//end if relative
+          }//end while iter
 
+          //success commit
+          transaction2.commit();
 
-              }
-              else{
-                System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
-              }
-
-
+        }
+        catch(Exception e){
+          if(e instanceof RemoteException){
+            throw (RemoteException)e;
+          }
+          else if(e instanceof FinderException){
+            System.out.println("NackaImporter : Error user (pin "+PIN+") not found in database must be an incomplete database");
+            System.out.println("NackaImporter : Rollbacking");
+            try {
+              transaction2.rollback();
             }
-
-
-
-
-
+            catch (SystemException ec) {
+              ec.printStackTrace();
+            }
+          }
+          else{
+            e.printStackTrace();
           }
         }
-        catch(FinderException ex){
-          ex.printStackTrace();
-        }
-      }
-    }
+      }//end if relationmap !=null
   }
+
 
 
   protected String getUserProperty(String propertyName){
@@ -430,6 +445,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     String value = getUserProperty(propertyName);
     if(value==null) value = StringToReturnIfNotSet;
     return value;
+  }
+
+  public void setImportFile(ImportFile file){
+    this.file = file;
   }
 
   }

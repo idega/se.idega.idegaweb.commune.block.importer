@@ -17,8 +17,10 @@ import java.io.*;
 
 public class GenericImportFile implements ImportFile{
 
-  File file;
+  private File file;
   private String recordDilimiter = "\n";
+  private FileReader fr;
+  private BufferedReader br;
 
   public GenericImportFile(File file) {
     this.file = file;
@@ -44,14 +46,49 @@ public class GenericImportFile implements ImportFile{
  // public Collection getRecords(){return null;}
  // public Object getRecordAtIndex(int i){return null;}
 
- /** This method parses the file into records (ArrayList) and returns the complete list.<p>
+ /**
+  * This method works like an iterator but
+  */
+ public Object getNextRecord(){
+  String line;
+  StringBuffer buf = new StringBuffer();
+
+  try {
+    if( fr == null ){
+      fr = new FileReader(getFile());
+      br = new BufferedReader(fr);
+    }
+
+    while ( ( (line=br.readLine()) != null ) && ( line.indexOf(getRecordDilimiter())== -1 ) ){
+      buf.append(line);
+      /**@todo this should be an option with a setMethod?**/
+      buf.append('\n');
+    }
+
+    return buf.toString();
+  }
+  catch( FileNotFoundException ex ){
+    ex.printStackTrace(System.err);
+    return null;
+  }
+  catch( IOException ex ){
+    ex.printStackTrace(System.err);
+    return null;
+  }
+
+
+ }
+
+ /**
+  * @deprecated
+  * This method parses the file into records (ArrayList) and returns the complete list.<p>
   *  it throws a NoRecordsFoundException if no records where found.
   */
   public Collection getRecords() throws NoRecordsException{
 
     try{
-      FileReader fr = new FileReader(getFile());
-      BufferedReader br = new BufferedReader(fr);
+      fr = new FileReader(getFile());
+      br = new BufferedReader(fr);
       String line;
       StringBuffer buf = new StringBuffer();
       ArrayList list = new ArrayList();
@@ -116,6 +153,9 @@ public class GenericImportFile implements ImportFile{
     }
 
   }
+
+
+
 
   protected File getFile(){
     return file;

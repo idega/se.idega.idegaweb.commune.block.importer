@@ -30,17 +30,17 @@ public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness
   }
 
   public boolean importRecords(ImportFile file) throws RemoteException{
-    /** @todo use reflection to find the right handler => importFile.getClasshName+"Handler" -> instance
-     *
-     */
     try{
       boolean status = false;
       ImportFileHandler handler = getHandlerForImportFile(file.getClass().getName());
+      handler.setImportFile(file);
+      status = handler.handleRecords();
 
-      Collection col = file.getRecords();
+      /*Collection col = file.getRecords();
       if( col == null ) return false;
+      status = handler.handleRecords(col);*/
 
-      status = handler.handleRecords(col);
+
 
       return status;
     }
