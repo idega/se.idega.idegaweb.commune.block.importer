@@ -80,9 +80,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
 	
 	private static final String COUNTY_CODE_COLUMN = "01022";// for stockholmarea 01
-	private static final String COMMUNE_CODE_COLUMN = "01023";// for nacka 81
+	private static final String COMMUNE_CODE_COLUMN = "01023";// for nacka 82
 	
-	private static final String NACKA_CODE="0181";
+	private static final String NACKA_CODE="0182";
 	
 	
 	private Map userPropertiesMap;
@@ -102,10 +102,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private boolean importUsers = true;
   private boolean importAddresses = true;
   private boolean importRelations = true;
-  private boolean fix = true;
+  private boolean fix = false;
   
 	private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
-  
+	private static final String FIX_PARAMETER_NAME = "run_fix";
+	
   //private boolean importAddresses = false;//temp
   //private boolean importRelations = false;//temp
 
@@ -166,6 +167,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
      
 			nackaGroup = comUserBiz.getRootCitizenGroup();
 			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
+			String fixer = this.getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
+			if( "TRUE".equals(fixer) ) fix = true;
 			
       //comUserBiz.getUserHome().create();
       //groupHome = comUserBiz.getGroupHome();
@@ -367,7 +370,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
     
     //preferred name handling.
-    if( preferredNameIndex!=null && !preferredNameIndex.equals("10") ){
+/*    if( preferredNameIndex!=null && !preferredNameIndex.equals("10") ){
     	String preferredName = removePreferredNameFromStringsAndReturnIt(preferredNameIndex,firstName,middleName,lastName);
     	if(middleName.equals("")){
     		middleName = firstName;
@@ -381,8 +384,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
     		
     	}
-			firstName = preferredName;
-				
+    	
+				firstName = preferredName;
 				middleName = TextSoap.findAndCut(middleName,preferredName);
 				middleName = TextSoap.findAndReplace(middleName,"  "," ");
 				lastName = TextSoap.findAndCut(lastName,preferredName);
@@ -394,7 +397,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+full.toString());
     }
-
+*/
     /**
     * basic user info
     */
@@ -459,8 +462,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         address.setPostalCode(code);
         //address.setProvince("Nacka" );//set as 01 ?
         //address.setCity("Stockholm" );//set as 81?
-				address.setProvince(county );//set as 01 ?
-				address.setCity(commune );//set as 81?
+				address.setProvince(county );
+				address.setCity(commune );
         
         
         address.setStreetName(streetName);
@@ -558,11 +561,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			preferredName = tokens.nextToken();
 			pos++;
 		}
-		
-		middleName = TextSoap.findAndCut(middleName,preferredName);
-		middleName = TextSoap.findAndReplace(middleName,"  "," ");
-		lastName = TextSoap.findAndCut(lastName,preferredName);
-		lastName = TextSoap.findAndReplace(lastName,"  "," ");
 		
 		return preferredName;
 	}
