@@ -20,7 +20,7 @@ import javax.transaction.UserTransaction;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.data.ImportFile;
-import com.idega.block.process.business.CaseBusiness;
+//import com.idega.block.process.business.CaseBusiness;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.business.AddressBusiness;
 import com.idega.core.data.Address;
@@ -105,10 +105,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private AddressBusiness addressBiz;
 	private MemberFamilyLogic relationBiz;
 	private CommuneUserBusiness comUserBiz;
-	private CaseBusiness caseBiz;
+	//private CaseBusiness caseBiz;
 	//private GroupHome groupHome;
-	private Group nackaGroup;
-	private Group nackaSpecialGroup;
+	//private Group nackaGroup;
+	//private Group nackaSpecialGroup;
 	private ImportFile file;
 	//private UserTransaction transaction;
 	private UserTransaction transaction2;
@@ -122,7 +122,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private boolean secretPerson = false;
   
 	private ArrayList failedRecords;
-	private ArrayList citizenIds;  
+	//private ArrayList citizenIds;  
   
 
   private Gender male;
@@ -157,17 +157,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
       home = comUserBiz.getUserHome();
       addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
-			caseBiz = (CaseBusiness) this.getServiceInstance(CaseBusiness.class);
+			//caseBiz = (CaseBusiness) this.getServiceInstance(CaseBusiness.class);
 			
 			failedRecords = new ArrayList();
-			citizenIds = new ArrayList(); 
+			//citizenIds = new ArrayList(); 
 			relationsMap = new HashMap();
 			
 			
 			 
      
-			nackaGroup = comUserBiz.getRootCitizenGroup();
-			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
+			//nackaGroup = comUserBiz.getRootCitizenGroup();
+			//nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
 			String fixer = this.getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
 			
 			System.out.println("NackaImportFileHandler [STARTING] time: "+IWTimestamp.getTimestampRightNow().toString());

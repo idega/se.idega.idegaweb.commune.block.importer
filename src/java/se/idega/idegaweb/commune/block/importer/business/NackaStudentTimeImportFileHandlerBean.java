@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/04/14 06:27:45 $ by $Author: staffan $
+ * Last modified: $Date: 2003/06/11 09:08:16 $ by $Author: laddi $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -35,7 +35,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
     final private static int HOURS_COL = 2;   
 
     private ImportFile importFile = null;
-    private Group rootGroup = null;
+    public Group rootGroup = null;
     final private List failedRecords = new ArrayList ();
     
 
