@@ -140,8 +140,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private boolean fix = false;
 	private boolean secretPerson = false;
   
-	private ArrayList failedRecords = new ArrayList();
-	private ArrayList citizenIds = new ArrayList();  
+	private ArrayList failedRecords;
+	private ArrayList citizenIds;  
   
 
   private Gender male;
@@ -177,6 +177,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       home = comUserBiz.getUserHome();
       addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
 			caseBiz = (CaseBusiness) this.getServiceInstance(CaseBusiness.class);
+			
+			failedRecords = new ArrayList();
+			citizenIds = new ArrayList(); 
+			relationsMap = new HashMap();
+			
+			
+			 
      
 			nackaGroup = comUserBiz.getRootCitizenGroup();
 			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
@@ -738,7 +745,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 
   protected void addRelations(){
-    if( relationsMap == null ) relationsMap = new HashMap();
     ArrayList relatives = (ArrayList)userPropertiesMap.get(RELATIONAL_SECTION_STARTS);
     relationsMap.put(getUserProperty(PIN_COLUMN),relatives);
   }
