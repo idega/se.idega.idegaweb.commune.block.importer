@@ -42,7 +42,6 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
   private UserBusiness biz;
   private UserHome home;
-  private SchoolYearBusiness schoolYearBiz;
   private SchoolBusiness schoolBiz;
   
   private SchoolYearHome sYearHome;
@@ -91,8 +90,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
       schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
       sHome = schoolBiz.getSchoolHome();
            
-      schoolYearBiz = (SchoolYearBusiness) this.getServiceInstance(SchoolYearBusiness.class);
-      sYearHome = schoolYearBiz.getSchoolYearHome();
+      sYearHome = schoolBiz.getSchoolYearHome();
       
       sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
  	  
@@ -241,7 +239,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		//e.printStackTrace();
 		System.out.println("School class not found creating...");	
 		
-		sClass = schoolBiz.createSchoolClass(schoolClass,school,year,season);
+		sClass = schoolBiz.storeSchoolClass(schoolClass,school,year,season);
 		sClass.store();
 		if (sClass == null)
 			return false;
@@ -259,7 +257,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		//System.out.println("School class member not found creating...");	
 		
 
-		member = schoolBiz.createSchoolClassMember(sClass, user);
+		member = schoolBiz.storeSchoolClassMember(sClass, user);
 		member.store();
 		if (member == null)
 			return false;
