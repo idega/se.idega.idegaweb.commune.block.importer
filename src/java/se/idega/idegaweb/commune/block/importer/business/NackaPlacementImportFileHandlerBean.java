@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.16 2003/10/27 16:26:56 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.17 2003/10/27 16:31:49 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/27 16:26:56 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/27 16:31:49 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.16 $
+ * @version $Revision: 1.17 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -460,7 +460,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			boolean hasSchoolType = false;
 			while (schoolTypeIter.hasNext()) {
 				SchoolType st = (SchoolType) schoolTypeIter.next();
-				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+				
+				if (((Integer) st.getPrimaryKey()).equals((Integer) schoolType.getPrimaryKey())) {
 					hasSchoolType = true;
 					break;
 				}
@@ -468,7 +469,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			if (!hasSchoolType) {
 				String s = "School type '" + schoolTypeName + "' not found in school: " + schoolName;
 				System.out.println(s);
-				failedSchools.put(schoolName, s);
+				failedSchools.put(schoolName, schoolName);
 				return false;
 			}
 			
