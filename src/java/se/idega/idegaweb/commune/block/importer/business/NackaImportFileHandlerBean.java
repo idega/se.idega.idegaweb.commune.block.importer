@@ -22,7 +22,6 @@ import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
-import sun.tools.tree.ThisExpression;
 
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.process.business.CaseBusiness;
