@@ -4,24 +4,28 @@ import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.business.SchoolBusiness;
 import com.idega.block.school.data.*;
 import com.idega.business.IBOServiceBean;
+import com.idega.data.IDOLookup;
 import com.idega.user.data.*;
 import java.rmi.RemoteException;
 import java.util.*;
 import javax.ejb.*;
 import javax.transaction.*;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import se.idega.idegaweb.commune.school.business.SchoolCommuneBusiness;
+import se.idega.idegaweb.commune.school.data.*;
 import se.idega.util.PIDChecker;
 
 /**
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/03/27 11:20:54 $ by $Author: staffan $
+ * Last modified: $Date: 2003/03/28 11:10:05 $ by $Author: staffan $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
+ * @see com.idega.block.school.data.SchoolTime
  */
 public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
     implements NackaStudentTimeImportFileHandler {
@@ -49,13 +53,13 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
      * prior to invocation of this method.
      */
     public boolean handleRecords () throws RemoteException {
-        System.err.println ("¤¤¤ start handling records");
-        boolean result = false;
+        boolean readSuccess = true;
         failedRecords.clear ();
         final SessionContext sessionContext = getSessionContext();
         final UserTransaction transaction = sessionContext.getUserTransaction();
         try {
             transaction.begin();
+            // get all home and business objects needed in traversal below
             final CommuneUserBusiness communeUserBusiness
                     = (CommuneUserBusiness) getServiceInstance
                     (CommuneUserBusiness.class);
@@ -64,6 +68,11 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                     getServiceInstance (SchoolBusiness.class);
             final SchoolHome schoolHome = schoolBusiness.getSchoolHome ();
             final PIDChecker pidChecker = PIDChecker.getInstance ();
+            final SchoolTimeHome schoolTimeHome
+                    = (SchoolTimeHome) IDOLookup.getHome (SchoolTime.class);
+            final SchoolSeason schoolSeason = getPreviousSeason ();
+            final Date now = new Date ();
+            // traverse all records
             for (String record = (String) importFile.getNextRecord ();
                  record != null && record.trim ().length () > 0;
                  record = (String) importFile.getNextRecord ()) {
@@ -83,42 +92,63 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                         if (pidChecker.isValid (ssn)) {
                             user = communeUserBusiness .createSpecialCitizenByPersonalIDIfDoesNotExist(ssn, "", "", ssn);
                         }
-                        System.err.println (getClass ().getName () + ": created"
-                                            + " new special citizen with ssn "
-                                            + ssn);
+                        System.err.println
+                                ("NackaStudentTimeImportFileHandlerget: created"
+                                 + " new special citizen with ssn " + ssn);
                     }
 
                     // 2. find school
                     final String schoolName = (String) fields.get (SCHOOL_COL);
+                    School school = null;
                     try {
-                        final School school
-                                = schoolHome.findBySchoolName (schoolName);
-                        final int hours = getIntInBeginningOfString
-                                ((String) fields.get (HOURS_COL));
-                        // TODO: store in DB
+                        school = schoolHome.findBySchoolName (schoolName);
                     } catch (FinderException finderException) {
-                        System.err.println (getClass ().getName ()
-                                            + ": couldn't import record with"
-                                            + " unknown school '" + schoolName
-                                            + "' record=" + record);
-                        failedRecords.add (record + " : "
-                                           + finderException.getMessage ());
+                        System.err.println
+                                ("NackaStudentTimeImportFileHandlerget: School"
+                                 + " '" + schoolName + "' non existent in db");
+                    }
+
+                    // 3. get number of hours spent per week
+                    final int hours = getIntInBeginningOfString
+                            ((String) fields.get (HOURS_COL));
+
+                    // 4. store in db
+                    if (user != null) {
+                        final SchoolTime schoolTime = schoolTimeHome.create ();
+                        schoolTime.setUser (user);
+                        if (school != null) { schoolTime.setSchool (school); }
+                        schoolTime.setHours (hours);
+                        schoolTime.setSeason (schoolSeason);
+                        schoolTime.setRegistrationTime (now);
+                        schoolTime.store ();
                     }
                 }
             }
-            transaction.commit ();
-            result = true;
         } catch (final Exception e) {
             // something really unexpected occured - rollback everything
             e.printStackTrace ();
+            readSuccess = false;
+        } finally {
             try {
-                transaction.rollback ();
-            } catch (final SystemException systemException) {
-                systemException.printStackTrace();
+                if (readSuccess) {
+                    transaction.commit ();
+                } else {
+                    System.err.println (getClass ().getName ()
+                                        + " import failed:");
+                    for (Iterator i = failedRecords.iterator ();
+                         i.hasNext ();) {
+                        final String message = (String) i.next ();
+                        System.err.println ("> " + message);
+                    }
+                    transaction.rollback ();
+                }
+            } catch (Exception e) {
+                e.printStackTrace ();
+                readSuccess = false;
             }
         }
 
-        return result;
+        return readSuccess;
     }
     
     public List getFailedRecords () {
@@ -134,15 +164,20 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
         return Integer.parseInt (digits.toString ());
     }
 
-    /*
-	private SchoolSeason getPreviousSeason () {
-        final SchoolCommuneBusiness schoolCommuneBusiness = (SchoolCommuneBusiness) getServiceInstance (SchoolCommuneBusiness.class);
-        final int currentSeasonId = schoolCommuneBusiness.getCurrentSchoolSeasonID ();
-        final int previousSeasonId = schoolCommuneBusiness.getPreviousSchoolSeasonID (currentSeasonId);
-        final SchoolSeasonHome schoolSeasonHome = (SchoolSeasonHome) getIDOHome (SchoolSeason.class);
-        final SchoolSeason previousSeason = schoolSeasonHome.findByPrimaryKey (previousSeasonId);
+	private SchoolSeason getPreviousSeason () throws RemoteException,
+                                                     FinderException {
+        final SchoolCommuneBusiness schoolCommuneBusiness
+                = (SchoolCommuneBusiness) getServiceInstance
+                (SchoolCommuneBusiness.class);
+        final int currentSeasonId
+                = schoolCommuneBusiness.getCurrentSchoolSeasonID ();
+        final int previousSeasonId
+                = schoolCommuneBusiness.getPreviousSchoolSeasonID
+                (currentSeasonId);
+        final SchoolSeasonHome schoolSeasonHome
+                = (SchoolSeasonHome) getIDOHome (SchoolSeason.class);
+        final SchoolSeason previousSeason = schoolSeasonHome.findByPrimaryKey
+                (new Integer (previousSeasonId));
         return previousSeason;
 	}
-
-    */
 }
