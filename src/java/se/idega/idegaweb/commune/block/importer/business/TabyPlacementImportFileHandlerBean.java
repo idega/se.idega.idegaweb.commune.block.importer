@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.5 2004/01/12 09:11:05 laddi Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.6 2004/07/22 11:52:18 aron Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -28,6 +28,7 @@ import se.idega.idegaweb.commune.accounting.resource.business.ResourceBusiness;
 import se.idega.idegaweb.commune.accounting.resource.data.Resource;
 import se.idega.idegaweb.commune.accounting.resource.data.ResourceClassMember;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import se.idega.idegaweb.commune.school.business.SchoolChoiceBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
@@ -67,10 +68,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/12 09:11:05 $ by $Author: laddi $
+ * Last modified: $Date: 2004/07/22 11:52:18 $ by $Author: aron $
  *
  * @author Anders Lindman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -98,7 +99,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 
 	private Resource motherTongueResource = null;
 
-	private final static String REGISTER_DATE = "2003-07-01";
+	//private final static String REGISTER_DATE = "2003-07-01";
 		
 	private final int COLUMN_SCHOOL_NAME = 0;  
 	private final int COLUMN_SCHOOL_TYPE = 1;  
@@ -152,7 +153,9 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			languageHome = (ICLanguageHome) this.getIDOHome(ICLanguage.class);			
 
 			try {
-				season = schoolBiz.getCurrentSchoolSeason();    	
+				SchoolChoiceBusiness schoolChoiceBusiness = (SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class);
+				//season = schoolBiz.getCurrentSchoolSeason();
+				season = schoolChoiceBusiness.getCurrentSeason();
 			} catch(FinderException e) {
 				e.printStackTrace();
 				System.out.println("TabyPlacementHandler: School season is not defined");
@@ -594,7 +597,8 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 					log(row, "School Class member could not be created for personal id: " + personalId);	
 					return false;
 				}
-				IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
+				//IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
+				IWTimestamp registerDate = new IWTimestamp(season.getSchoolSeasonStart());
 				member.setRegisterDate(registerDate.getTimestamp());
 				member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
 				member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
@@ -626,7 +630,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			}
 			if (createMotherTongueResource) {
 				try {
-					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
+					resourceBiz.createResourcePlacement(resourceId, memberId,new IWTimestamp(season.getSchoolSeasonStart()).toString());
 				} catch (Exception e) {
 					log(row, "Could not create resource placement (" + motherTongue + ") for personal id: " + personalId);
 					return false;
