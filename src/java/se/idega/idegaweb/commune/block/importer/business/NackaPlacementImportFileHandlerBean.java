@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.24 2003/11/07 11:02:19 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.25 2003/11/12 15:15:18 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/07 11:02:19 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/12 15:15:18 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.24 $
+ * @version $Revision: 1.25 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -121,12 +121,12 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private final int COLUMN_SKILL_LEVEL = 13;  
 	private final int COLUMN_USE_SKILL_LEVEL = 14;  
 
-	private final int RESOURCE_ID_SKILL_LEVEL_0 = 123;
-	private final int RESOURCE_ID_SKILL_LEVEL_1 = 124;
-	private final int RESOURCE_ID_SKILL_LEVEL_2 = 125;
-	private final int RESOURCE_ID_SKILL_LEVEL_3 = 126;
-	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 121;
-	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 122;
+	private final int RESOURCE_ID_SKILL_LEVEL_0 = 32;
+	private final int RESOURCE_ID_SKILL_LEVEL_1 = 33;
+	private final int RESOURCE_ID_SKILL_LEVEL_2 = 41;
+	private final int RESOURCE_ID_SKILL_LEVEL_3 = 42;
+	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 30;
+	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 31;
 	
 	private Gender female;
 	private Gender male;
