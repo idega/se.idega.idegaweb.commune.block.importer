@@ -213,7 +213,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       }
 
       clock.stop();
-      System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
+      System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s. Not done yet starting with relation");
 
       // System.gc();
       //success commit changes
