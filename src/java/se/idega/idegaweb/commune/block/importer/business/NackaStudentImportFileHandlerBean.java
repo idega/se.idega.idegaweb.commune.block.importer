@@ -162,8 +162,6 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   	while (iter.hasNext()) {
 		System.out.println((String) iter.next());
 	}
-	
-  	System.out.println("Import failed for these records, please fix and import again:");
   }
 
   protected boolean storeUserInfo() throws RemoteException{
@@ -192,7 +190,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	try {
 		user = biz.getUserHome().findByPersonalID(PIN);
 		//debug
-		if( user == null ) System.out.println(" USER IS NULL WTF!??? shoild cast finderexception");
+		if( user == null ) System.out.println(" USER IS NULL!!??? should cast finderexception");
 		
 	}
 	catch (FinderException e) {
@@ -226,7 +224,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	SchoolClass sClass = null;
 	
 	try {	
-		sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
+		sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
 	}catch (FinderException e) {
 		//e.printStackTrace();
 		System.out.println("School class not found creating...");	
