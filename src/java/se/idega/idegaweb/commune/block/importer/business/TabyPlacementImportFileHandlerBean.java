@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.3 2004/01/08 16:39:39 anders Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.4 2004/01/09 12:49:57 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -67,10 +67,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/08 16:39:39 $ by $Author: anders $
+ * Last modified: $Date: 2004/01/09 12:49:57 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -415,8 +415,11 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		
 		if (isNewUser) {
 			try {
-				Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
-				Integer communeId = (Integer) homeCommune.getPrimaryKey();
+				Integer communeId = null;
+				if (!homeCommuneCode.equals("") && !homeCommuneCode.equals("0")) {
+					Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+					communeId = (Integer) homeCommune.getPrimaryKey();
+				}
 				biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
 			} catch (FinderException e) {
 				log(row, "Commune not found: " + homeCommuneCode);
