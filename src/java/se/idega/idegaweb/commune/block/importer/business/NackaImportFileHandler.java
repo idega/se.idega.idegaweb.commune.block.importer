@@ -1,4 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import com.idega.business.IBOLookup;
+import com.idega.data.*;
+import com.idega.user.data.User;
 import java.io.LineNumberReader;
 import com.idega.util.text.TextSoap;
 import java.util.*;
@@ -17,7 +20,9 @@ import java.io.*;
 
 public class NackaImportFileHandler implements ImportFileHandler{
 
-  private Map propertiesMap;
+  private Map userPropertiesMap;
+  private Map RelationialMap;
+
 
   private final String RELATIONAL_SECTION_STARTS = "02000";
   private final String RELATIONAL_SECTION_ENDS = "02999";
@@ -50,14 +55,16 @@ public class NackaImportFileHandler implements ImportFileHandler{
       while (iter.hasNext()) {
         count++;
         String item = (String) iter.next();
-        processRecord(item);
 
         //if( this.importAtATimeLimit >= count ){
+        processRecord(item);
         if( (count % 1000) == 0 ){
           System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
         }
         //}
       }
+
+
 
       records = null;
       clock.stop();
@@ -75,32 +82,42 @@ public class NackaImportFileHandler implements ImportFileHandler{
   }
 
   private boolean processRecord(String record){
-    propertiesMap = new HashMap();
+    userPropertiesMap = new HashMap();
 
     record = TextSoap.findAndCut(record,"#UP ");
 
     //Family relations
-    propertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListMapFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
+    userPropertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
     //Special case relations
-    propertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getArrayListMapFromStringFragment(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
+    userPropertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getArrayListWithMapsFromStringFragment(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
     //Citizen info
-    propertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getArrayListMapFromStringFragment(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
+    userPropertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
     //Historic info
-    propertiesMap.put(HISTORIC_SECTION_STARTS,getArrayListMapFromStringFragment(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
+    userPropertiesMap.put(HISTORIC_SECTION_STARTS,getArrayListWithMapsFromStringFragment(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
 
     //the rest e.g. User info and immigration stuff
-    propertiesMap.putAll(getPropertiesMapFromString(record," "));
+    userPropertiesMap.putAll(getPropertiesMapFromString(record," "));
+
+    storeUserInfo();
+
+    /*
+    Iterator iter = ((ArrayList)userPropertiesMap.get("02000")).iterator();
+    while (iter.hasNext()) {
+      Map item = (Map) iter.next();
+      System.out.println((String) item.get("02001"));
+    }*/
+
 
     /**@todo
      *  do database stuff for this user
      */
 
-    propertiesMap = null;
+    userPropertiesMap = null;
 
     return true;
   }
 
-  protected ArrayList getArrayListMapFromStringFragment(String record, String fragmentStart, String fragmentEnd){
+  protected ArrayList getArrayListWithMapsFromStringFragment(String record, String fragmentStart, String fragmentEnd){
     ArrayList list = null;
     String fragment = getAndCutFragmentFromRecord(record,fragmentStart,fragmentEnd);
     if( fragment != null ){
@@ -180,7 +197,10 @@ public class NackaImportFileHandler implements ImportFileHandler{
     return fragment;
   }
 
-  public void storeUserInfo(Map userMap){
+  protected void storeUserInfo(){
+
+    //UserBusiness biz = (UserBusiness) IBOLookup.getServiceInstance(IBOLookup.,UserBusiness.class);
+
     //user info
 
     //address
@@ -195,6 +215,10 @@ public class NackaImportFileHandler implements ImportFileHandler{
     //citizen info (commune stuff)
 
     //family and other releation stuff
+
+  }
+
+  protected void storeRelations(){
 
   }
 
