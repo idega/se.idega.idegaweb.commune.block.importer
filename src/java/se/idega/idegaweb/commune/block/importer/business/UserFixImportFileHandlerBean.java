@@ -111,8 +111,12 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 				
 				user.setPersonalID(PIN);
 				
-				user.setDateOfBirth(dateOfBirth.getDate());
-				
+				if(dateOfBirth!=null){
+					user.setDateOfBirth(dateOfBirth.getDate());
+				}
+				else {
+					user.setDateOfBirth(null);
+				}
 
 				/**
 				 * Save the user to the database
