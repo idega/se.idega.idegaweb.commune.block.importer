@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.23 2003/11/06 16:31:58 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.24 2003/11/07 11:02:19 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/06 16:31:58 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/07 11:02:19 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.23 $
+ * @version $Revision: 1.24 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -311,11 +311,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			System.out.println("\nThe following error(s) logged:\n");
 		}
 		Iterator rowIter = errorLog.keySet().iterator();
-		while(rowIter.hasNext()) {
+		while (rowIter.hasNext()) {
 			Integer row = (Integer) iter.next();
 			String message = (String) errorLog.get(row);
 			System.out.println("Row " + row + ": " + message);
 		}
+		
+		System.out.println();
 	}
 
 	/**
@@ -328,13 +330,22 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 //		String period = getUserProperty(this.COLUMN_PERIOD);  
 
 		String schoolTypeName = getUserProperty(this.COLUMN_SCHOOL_TYPE);
-		if (schoolTypeName == null ) return false;
+		if (schoolTypeName == null ) {
+			errorLog.put(row, "School type cannot be empty.");
+			return false;
+		}
 
 		String schoolName = getUserProperty(this.COLUMN_SCHOOL_NAME);
-		if (schoolName == null ) return false;
+		if (schoolName == null ) {
+			errorLog.put(row, "School name cannot be empty.");
+			return false;
+		}
 
 		String personalId = getUserProperty(this.COLUMN_PERSONAL_ID);
-		if (personalId == null) return false;
+		if (personalId == null) {
+			errorLog.put(row, "Personal ID cannot be empty.");
+			return false;
+		}
 
 		String studentName = getUserProperty(this.COLUMN_STUDENT_NAME);
 		studentName = studentName == null ? "" : studentName;
@@ -362,10 +373,16 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		homeCommuneName = homeCommuneName == null ? "" : homeCommuneName;
 		
 		String schoolYearName = getUserProperty(this.COLUMN_SCHOOL_YEAR);
-		if (schoolYearName == null) return false;
+		if (schoolYearName == null) {
+			errorLog.put(row, "School year cannot be empty.");
+			return false;
+		}
 		
 		String schoolClass = getUserProperty(this.COLUMN_SCHOOL_CLASS);
-		if (schoolClass == null) return false;
+		if (schoolClass == null) {
+			errorLog.put(row, "School class cannot be empty.");
+			return false;
+		}
 
 		String motherTongue = getUserProperty(this.COLUMN_MOTHER_TONGUE);
 		motherTongue = motherTongue == null ? "" : motherTongue;
@@ -570,9 +587,9 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 						SchoolType st = placement.getSchoolClass().getSchoolType();
 						if (st != null && st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
 							if (placement.getRemovedDate() == null) {
-								int oldSchoolId = placement.getSchoolClass().getSchoolId();
-								int newSchoolId = ((Integer) school.getPrimaryKey()).intValue();
-								if (oldSchoolId != newSchoolId) { 
+								int oldSchoolClassId = ((Integer) placement.getSchoolClass().getPrimaryKey()).intValue();
+								int newSchoolClassId = ((Integer) sClass.getPrimaryKey()).intValue();
+								if (oldSchoolClassId != newSchoolClassId) { 
 									IWTimestamp yesterday = new IWTimestamp();
 									yesterday.addDays(-1);
 									placement.setRemovedDate(yesterday.getTimestamp());
@@ -621,7 +638,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				motherTongueResource = motherTongue2Resource;
 			} else {
 				motherTongueResource = motherTongue1Resource;
-			}
+			}			
 			resourceId = ((Integer) motherTongueResource.getPrimaryKey()).intValue();
 			Collection rm = resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
 			Iterator rmIter = rm.iterator();
