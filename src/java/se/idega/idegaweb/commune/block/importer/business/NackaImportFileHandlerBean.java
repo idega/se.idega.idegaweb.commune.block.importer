@@ -1340,8 +1340,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					} else {
 						unhandledActions.put(actions[i][3], new Integer(1));
 					}
-					if (!fullImport()) {
-						return false;
+					if (!"99".equals(action)) {
+						if (!fullImport()) {
+							return false;
+						}
 					}
 				}
 			}
