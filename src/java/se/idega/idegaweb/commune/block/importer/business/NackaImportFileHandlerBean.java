@@ -1464,6 +1464,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		 */
 		//main address
 		//country id 187 name Sweden isoabr: SE
+		
+		if (user == null) {
+			return false;
+		}
 
 		String addressLine = getUserProperty(ImportFileFieldConstants.ADDRESS_COLUMN);
 		String coAddressLine = getUserProperty(ImportFileFieldConstants.CO_ADDRESS_COLUMN);
@@ -1898,8 +1902,4 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			throw new IBORuntimeException(e);
 		}
 	}
-
-///////////////////////////////////////////////////
-//            -----
-///////////////////////////////////////////////////
 }
