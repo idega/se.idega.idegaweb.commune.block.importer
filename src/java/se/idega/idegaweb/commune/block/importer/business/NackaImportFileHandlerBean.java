@@ -79,11 +79,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       home = biz.getUserHome();
       groupHome = biz.getGroupHome();
 
-
-      //if the transaction failes all the users and their relations are removed
-      transaction.begin();
-
-
+      /**@todo should be in a separate transaction?**/
+      //create the default group
       String groupId = (String) iwac.getApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME);
       if( groupId!=null ){
         nackaGroup = groupHome.findByPrimaryKey(new Integer(groupId));
@@ -91,12 +88,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       else{
         nackaGroup = groupHome.create();
         nackaGroup.setDescription("The Nacka Commune Root Group.");
-        nackaGroup.setName("Nacka Commune");
+        nackaGroup.setName("Nacka Commune Citizens");
         nackaGroup.store();
 
         iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
         iwac.getApplication().storeStatus();
       }
+      // end default group creation
+
+      //if the transaction failes all the users and their relations are removed
+      transaction.begin();
 
       Iterator iter = records.iterator();
       int count = 0;
