@@ -1180,18 +1180,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String concerns;
 		String prefix;
 		
-		if (user != null) {
+		if (user == null) {
 			if (refPIN != null) { // could be a pid change
-				Address address = comUserBiz.getUsersMainAddress(user);
-
 				Collection coll = new Vector();
 				coll.add(PIN + "\t(new PID)");
-				coll.add(user.getName());
-				if (address != null) {
-					coll.add(address.getStreetAddress());
-				} else {
-					coll.add("");
-				}
+				coll.add("");
+				coll.add("");
 				coll.add(refPIN + "\t(referenced PID)");
 				coll.add("Actions = "+actionType);
 				TFlist.add(coll);
@@ -1232,6 +1226,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					coll.add(refPIN + "\t(referenced PID)");
 					coll.add("Actions = "+actionType);
 					TFlist.add(coll);
+					
+					return true;
 				}
 			}
 
@@ -1465,10 +1461,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//main address
 		//country id 187 name Sweden isoabr: SE
 		
-		if (user == null) {
-			return false;
-		}
-
 		String addressLine = getUserProperty(ImportFileFieldConstants.ADDRESS_COLUMN);
 		String coAddressLine = getUserProperty(ImportFileFieldConstants.CO_ADDRESS_COLUMN);
 		String foreignAddressLine1 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_1_COLUMN);
