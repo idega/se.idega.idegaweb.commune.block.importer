@@ -1,8 +1,9 @@
 package se.idega.idegaweb.commune.block.importer.data;
 
 import java.io.*;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Iterator;
+import se.idega.idegaweb.commune.block.importer.business.*;
 import com.idega.util.text.TextSoap;
 
 /**
@@ -33,7 +34,10 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
         ArrayList list = new ArrayList();
 
         int cnt = 0;
+        int records = 0;
 
+        Timer clock = new Timer();
+        clock.start();
         while ( (line=br.readLine()) != null){
           if( buf == null ){
             buf = new StringBuffer();
@@ -42,6 +46,8 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
           buf.append(line);
 
           if( line.indexOf(DILIMITER)!= -1 ){
+            records++;
+            System.out.println("Record nr.: "+records);
            list.add(buf.toString());
            buf = null;
           }
@@ -49,8 +55,11 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
           cnt++;
         }
 
+        clock.stop();
+
+        System.out.println("Time for operation: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
         System.out.println("Number of Lines: "+cnt);
-        System.out.println("Number of records = "+list.size());
+        System.out.println("Number of records = "+records);
         processRecords(list);
 
         br.close();
