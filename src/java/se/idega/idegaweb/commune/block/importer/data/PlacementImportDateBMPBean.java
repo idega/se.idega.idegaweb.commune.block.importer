@@ -1,5 +1,5 @@
 /*
- * $Id: PlacementImportDateBMPBean.java,v 1.3 2004/04/15 11:47:11 anders Exp $
+ * $Id: PlacementImportDateBMPBean.java,v 1.4 2004/04/15 11:48:56 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -15,12 +15,12 @@ import com.idega.block.school.data.SchoolClassMember;
 import com.idega.data.GenericEntity;
 
 /**
- * Entity bean holding import date values flr student placements.
+ * Entity bean holding import date values for student placements.
  * <p>
- * Last modified: $Date: 2004/04/15 11:47:11 $ by $Author: anders $
+ * Last modified: $Date: 2004/04/15 11:48:56 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class PlacementImportDateBMPBean extends GenericEntity implements PlacementImportDate {
 
