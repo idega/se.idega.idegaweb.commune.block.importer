@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.17 2004/04/07 12:11:52 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.18 2004/04/14 11:34:38 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -70,10 +70,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/04/07 12:11:52 $ by $Author: anders $
+ * Last modified: $Date: 2004/04/14 11:34:38 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.17 $
+ * @version $Revision: 1.18 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -107,7 +107,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 
 	private Date today = null;
 
-	private final static Timestamp REGISTER_DATE = (new IWTimestamp("2003-07-01")).getTimestamp(); 
+//	private final static Timestamp REGISTER_DATE = (new IWTimestamp("2003-07-01")).getTimestamp(); 
 	
 	private final static String LOC_KEY_HIGH_SCHOOL = "sch_type.school_type_gymnasieskola";
 	private final static String LOC_KEY_SPECIAL_HIGH_SCHOOL = "sch_type.school_type_gymnasiesarskola";
@@ -552,7 +552,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		// school Class member
 		int schoolClassId = ((Integer) schoolClass.getPrimaryKey()).intValue();
 		SchoolClassMember member = null;
-		Timestamp registerDate = REGISTER_DATE;
+		Timestamp registerDate = firstDayInCurrentMonth;
 		
 		try {
 			Collection placements = schoolClassMemberHome.findByStudent(user);
