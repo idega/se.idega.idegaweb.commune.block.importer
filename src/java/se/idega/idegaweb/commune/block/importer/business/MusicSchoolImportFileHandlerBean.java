@@ -182,17 +182,17 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			}
 		}		
 		
-		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, firstInstrument, secondInstrument, thirdInstrument);
+//		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, instrument);
 
 		if(student != null) {
 			if(instrument1 != null && !instrument1.equals("")) {
-				processInstrument(instrument1, musicSchool, mainClass, student, firstInstrument, level1Nr, level1);
+				processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentSSN, studentTelNr);
 			}
 			if(instrument2 != null && !instrument2.equals("")) {
-				processInstrument(instrument2, musicSchool, mainClass, student, secondInstrument, level2Nr, level2);
+				processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentSSN, studentTelNr);
 			}
 			if(instrument3 != null && !instrument3.equals("")) {
-				processInstrument(instrument3, musicSchool, mainClass, student, thirdInstrument, level3Nr, level3);
+				processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentSSN, studentTelNr);
 			}
 		}
 		
@@ -210,7 +210,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @return student (SchoolClassMember) - null if failed to create student
 	 * @throws RemoteException
 	 */
-	private SchoolClassMember processStudent(String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath firstInstrument, SchoolStudyPath secondInstrument, SchoolStudyPath thirdInstrument) throws RemoteException {
+	private SchoolClassMember processStudent(String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath instrument) throws RemoteException {
 		SchoolClassMemberHome studentHome = schoolBiz.getSchoolClassMemberHome();
 		UserBusiness userBiz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
 		SchoolClassMember student = null;
@@ -243,27 +243,20 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				}
 				Integer musicSchoolID = new Integer(-1);
 				Integer seasonID = new Integer(-1);
-				String firstInstrumentID = null;
-				String secondInstrumentID = null;
-				String thirdInstrumentID = null;
+				Integer instrumentID = new Integer(-1);
+				
 				if(musicSchool != null) {
 					musicSchoolID = (Integer) musicSchool.getPrimaryKey();
 				}
 				if(schoolSeason != null) {
 					seasonID = (Integer) schoolSeason.getPrimaryKey();
 				}
-				if(firstInstrument != null) {
-					firstInstrumentID = (String) firstInstrument.getPrimaryKey();
+				if(instrument != null) {
+					instrumentID = (Integer) instrument.getPrimaryKey();
 				}
-				if(secondInstrument != null) {
-					secondInstrumentID = (String) secondInstrument.getPrimaryKey();
-				}
-				if(thirdInstrument != null) {
-					thirdInstrumentID = (String) thirdInstrument.getPrimaryKey();
-				}
-				String[] instrumentIDs = {firstInstrumentID, secondInstrumentID, thirdInstrumentID};
 				try {
-					student = studentHome.findByUserAndSchoolAndSeasonAndStudyPath(userID.intValue(),musicSchoolID.intValue(),seasonID.intValue(),instrumentIDs);
+					student = studentHome.findByUserAndSchoolAndSeasonAndStudyPath(userID.intValue(),musicSchoolID.intValue(),seasonID.intValue(),instrumentID.intValue());
+					
 				}catch(FinderException fEx) {
 					student = studentHome.create();
 					student.setClassMemberId(userID.intValue());
@@ -295,11 +288,12 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @param firstInstrument
 	 * @param instrumentHome
 	 */
-	private void processInstrument(String instrumentCode, School musicSchool, SchoolClass mainClass, SchoolClassMember student, SchoolStudyPath instrument, String levelNr, String levelString) throws RemoteException{
+	private void processInstrument(String instrumentCode, School musicSchool, SchoolClass mainClass, SchoolSeason schoolSeason, SchoolStudyPath instrument, String levelNr, String levelString, String studentSSN, String studentTelNr) throws RemoteException{
 		SchoolStudyPathHome instrumentHome = schoolBiz.getSchoolStudyPathHome();
 		SchoolYearHome levelHome = schoolBiz.getSchoolYearHome();
 		SchoolYear level = null;
 		SchoolYear levelStr = null;
+		SchoolClassMember student = null;
 		
 		try {
 			instrument = instrumentHome.findByCode(instrumentCode);
@@ -313,6 +307,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			}			
 		}
 		if(instrument != null) {
+			student = processStudent(studentSSN,studentTelNr,musicSchool,schoolSeason,mainClass,instrument);
 			try {
 				Collection i = musicSchool.findRelatedStudyPaths();
 				Iterator iIter = i.iterator();
