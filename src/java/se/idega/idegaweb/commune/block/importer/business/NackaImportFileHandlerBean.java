@@ -1638,7 +1638,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				if (commune != null) {
 					address.setCity(commune.getCommuneName());
 					address.setCommune(commune);
-				}
+				} 
 				
 				address.setStreetName(streetName);
 				address.setStreetNumber(streetNumber);
@@ -1653,7 +1653,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			catch (Exception e) {
 				e.printStackTrace();
 				return false;
-			}		}//foreign adress
+			}		
+		}//foreign adress
 		else if (foreignAddressLine1 != null) {
 			String foreignAddressLine2 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_2_COLUMN, "");
 			String foreignAddressLine3 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_3_COLUMN, "");
@@ -1687,6 +1688,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 				address.setStreetName(streetName);
 				address.setStreetNumber("");
+				address.setCommune(null);
 
 				address.store();
 
