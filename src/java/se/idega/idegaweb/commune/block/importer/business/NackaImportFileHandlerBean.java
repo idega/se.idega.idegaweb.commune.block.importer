@@ -193,8 +193,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 		try {
 			//Initialize the default/home commune
-			CommuneHome communeHome = (CommuneHome) getIDOHome(Commune.class);
-			homeCommune = communeHome.findDefaultCommune();
+			homeCommune = getCommuneHome().findDefaultCommune();
 			this.HOME_COMMUNE_CODE = homeCommune.getCommuneCode();
 
 			//initialize business beans and data homes
@@ -463,7 +462,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String communeCode = countyNumber+communeNumber;
 		Commune commune=null;
 		try {
-			commune = communeHome.findByCommuneCode(communeCode);
+			commune = getCommuneHome().findByCommuneCode(communeCode);
 		}
 		catch (FinderException e1) {
 			logWarning("Commune with code:"+communeCode+" not found in database");
@@ -1313,5 +1312,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	protected CommuneHome  getCommuneHome(){
+		if(communeHome==null){
+			try {
+				communeHome=(CommuneHome)getIDOHome(Commune.class);
+			}
+			catch (RemoteException e) {
+				log(e);
+			}
+		}
+		return communeHome;
 	}
 }
