@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.2 2003/10/17 15:27:10 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.3 2003/10/20 13:44:30 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -48,6 +48,9 @@ import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
 
+import se.idega.idegaweb.commune.accounting.resource.business.ResourceBusiness;
+import se.idega.idegaweb.commune.accounting.resource.data.Resource;
+
 /** 
  * Import logic for placing Nacka students.
  * <br>
@@ -59,21 +62,22 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/17 15:27:10 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/20 13:44:30 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
-	private CommuneUserBusiness biz;
-	private SchoolBusiness schoolBiz;
+	private CommuneUserBusiness biz = null;
+	private SchoolBusiness schoolBiz = null;
+	private ResourceBusiness resourceBiz = null;
   
-	private SchoolYearHome sYearHome;
-	private SchoolTypeHome sTypeHome;
-	private SchoolHome sHome;
-	private SchoolClassHome sClassHome;
-	private SchoolClassMemberHome sClassMemberHome;
+	private SchoolYearHome sYearHome = null;
+	private SchoolTypeHome sTypeHome = null;
+	private SchoolHome sHome = null;
+	private SchoolClassHome sClassHome = null;
+	private SchoolClassMemberHome sClassMemberHome = null;
 
 	private SchoolSeason season = null;
     
@@ -84,6 +88,16 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private Map failedSchools;
 	private ArrayList failedRecords = null;
 
+	private Resource skillLevel0Resource = null;
+	private Resource skillLevel1Resource = null;
+	private Resource skillLevel2Resource = null;
+	private Resource skillLevel3Resource = null;
+	
+	private Resource motherTongue1Resource = null;
+	private Resource motherTongue2Resource = null;
+
+	private final static String REGISTER_DATE = "2003-07-01";
+		
 //	private final int COLUMN_PERIOD = 0;  
 	private final int COLUMN_SCHOOL_TYPE = 1;  
 	private final int COLUMN_SCHOOL_NAME = 2;  
@@ -121,7 +135,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			//((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.Class)).getCurrentSeason();
     	} catch(FinderException e) {
 			e.printStackTrace();
-			System.err.println("NackaStudentHandler:School season is not defined");
+			System.out.println("NackaPlacementHandler: School season is not defined");
 			return false;
 		}
     
@@ -131,9 +145,9 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		try {
 			//initialize business beans and data homes
 			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			//home = biz.getUserHome();
-      
+			//home = biz.getUserHome();      
 			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			resourceBiz = (ResourceBusiness) this.getServiceInstance(ResourceBusiness.class);
 
 			sHome = schoolBiz.getSchoolHome();           
 			sYearHome = schoolBiz.getSchoolYearHome();
@@ -141,6 +155,38 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
 			sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
       
+      		// Get resources (change primary keys to the correct values)
+			skillLevel0Resource = resourceBiz.getResourceByPrimaryKey(new Integer(1));
+			if (skillLevel0Resource == null) {
+				System.out.println("Resource for language skill level 0 not found.");
+				return false;
+			}
+			skillLevel1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(2));
+			if (skillLevel1Resource == null) {
+				System.out.println("Resource for language skill level 1 not found.");
+				return false;
+			}
+			skillLevel2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(3));
+			if (skillLevel2Resource == null) {
+				System.out.println("Resource for language skill level 2 not found.");
+				return false;
+			}
+			skillLevel3Resource = resourceBiz.getResourceByPrimaryKey(new Integer(4));
+			if (skillLevel3Resource == null) {
+				System.out.println("Resource for language skill level 4 not found.");
+				return false;
+			}
+			motherTongue1Resource = resourceBiz.getResourceByPrimaryKey(new Integer(5));
+			if (motherTongue1Resource == null) {
+				System.out.println("Resource for mother tongue 1-5 not found.");
+				return false;
+			}
+			motherTongue2Resource = resourceBiz.getResourceByPrimaryKey(new Integer(6));
+			if (motherTongue2Resource == null) {
+				System.out.println("Resource for mother tongue 6-9 not found.");
+				return false;
+			}
+      		
 			//if the transaction failes all the users and their relations are removed
 			transaction.begin();
 
@@ -155,7 +201,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 					failedRecords.add(item);
 				} 
 
-				if ((count % 500) == 0 ) {
+				if ((count % 200) == 0 ) {
 					System.out.println("NackaStudentHandler processing RECORD [" + count + "] time: " + IWTimestamp.getTimestampRightNow().toString());
 				}
 				
@@ -187,7 +233,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	/*
 	 * Processes one record 
 	 */
-	private boolean processRecord(String record, int count) throws RemoteException{
+	private boolean processRecord(String record, int count) throws RemoteException {
 		if (count == 1) {
 			// Skip header
 			return true;
@@ -232,7 +278,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	/**
 	 * Stores one placement.
 	 */
-	protected boolean storeUserInfo() throws RemoteException{
+	protected boolean storeUserInfo() throws RemoteException {
 
 		User user = null;
 
@@ -361,6 +407,21 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				failedSchools.put(schoolName,schoolName);
 				return false;
 			}		
+
+			Iterator iter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
+			boolean hasSchoolType = false;
+			while (iter.hasNext()) {
+				SchoolType st = (SchoolType) iter.next();
+				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+					hasSchoolType = true;
+					break;
+				}
+			}
+			if (!hasSchoolType) {
+				String s = "School type '" + schoolTypeName + "' not found in school: " + schoolName;
+				System.out.println(s);
+				failedSchools.put(schoolName, s);
+			}
 			
 			if (schoolYear.equals("0")) {
 				schoolYear = "F";
@@ -369,12 +430,12 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				//school year	
 				year = sYearHome.findByYearName(schoolYear);
 			} catch (FinderException e) {
-				System.out.println("SchoolYear not found : " + schoolYear);
+				System.out.println("School year not found: " + schoolYear);
 				return false;
 			}
 
 			Map schoolYears = schoolBiz.getSchoolRelatedSchoolYears(school);
-			Iterator iter = schoolYears.values().iterator();
+			iter = schoolYears.values().iterator();
 			boolean schoolYearFound = false;
 			while (iter.hasNext()) {
 				SchoolYear sy = (SchoolYear) iter.next();
@@ -399,6 +460,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				System.out.println("School class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
 				
 				sClass = schoolBiz.storeSchoolClass(schoolClass, school, year, season);
+				sClass.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
 				sClass.store();
 				if (sClass == null) {
 					return false;
@@ -419,17 +481,69 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 							IWTimestamp yesterday = new IWTimestamp();
 							yesterday.addDays(-1);
 							placement.setRemovedDate(yesterday.getTimestamp());
+							placement.store();
 						}
 					}
 				}
 			} catch (FinderException f) {}
 			
-			//System.out.println("School Class member not found creating...");	
 			member = schoolBiz.storeSchoolClassMember(sClass, user);
-			member.store();
 			if (member == null) {
+				System.out.println("School class member could not be created for personal id: " + personalId);	
 				return false;
-			} 
+			}
+			IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
+			member.setRegisterDate(registerDate.getTimestamp());
+			member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
+			member.store();
+			
+			int memberId = ((Integer) member.getPrimaryKey()).intValue();
+			int resourceId = -1;
+			
+			if (useMotherTongue.equals("X")) {
+				Resource motherTongueResource = null;
+				if (schoolYear.charAt(0) >= '6') {
+					motherTongueResource = motherTongue2Resource;
+				} else {
+					motherTongueResource = motherTongue1Resource;
+				}
+				resourceId = ((Integer) motherTongueResource.getPrimaryKey()).intValue();
+				try {
+					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
+				} catch (Exception e) {
+					System.out.println("Could not create resource placement (" + motherTongue + ") for personal id: " + personalId);
+					return false;
+				}
+			}
+			
+			if (useSkillLevel.equals("X")) {
+				char level = skillLevel.charAt(0);
+				Resource skillLevelResource = null;
+				switch (level) {
+					case '0':
+						skillLevelResource = skillLevel0Resource;
+						break;			
+					case '1':
+						skillLevelResource = skillLevel1Resource;
+						break;			
+					case '2':
+						skillLevelResource = skillLevel2Resource;
+						break;			
+					case '3':
+						skillLevelResource = skillLevel3Resource;
+						break;
+					default:
+						System.out.println("Could not create resource placement (" + skillLevel + ") for personal id: " + personalId);
+						return false;
+				}
+				resourceId = ((Integer) skillLevelResource.getPrimaryKey()).intValue();
+				try {
+					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
+				} catch (Exception e) {
+					System.out.println("Could not create resource placement (skill level) for personal id: " + personalId);
+					return false;
+				}				
+			}
 			
 		} else {//remove secret market person from all schools this season
 			System.out.println("NackaStudentImportHandler Removing protected citizen from all classes (pin:" + user.getPersonalID() + ")");
