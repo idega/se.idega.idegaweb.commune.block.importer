@@ -45,6 +45,7 @@ import com.idega.data.IDORemoveRelationshipException;
 import com.idega.data.IDOUtil;
 import com.idega.idegaweb.IWApplicationContext;
 import com.idega.idegaweb.IWMainApplicationSettings;
+import com.idega.presentation.IWContext;
 import com.idega.user.business.GroupBusiness;
 import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Gender;
@@ -668,8 +669,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     	
 				//this will force a new record in the relation table
 				try{
+          // try to get the current user
+          User currentUser;
+          try {
+            currentUser = IWContext.getInstance().getCurrentUser();
+          }
+          catch (Exception ex)  {
+            currentUser = null;
+          }
 				
-					comUserBiz.getRootProtectedCitizenGroup().removeUser(user);
+					comUserBiz.getRootProtectedCitizenGroup().removeUser(user,currentUser);
 				}
 				catch(Exception e){}
     	}
@@ -682,8 +691,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     	
 				//this will force a new record in the relation table
 				try{
+          // try to get the current user
+          User currentUser;
+          try {
+            currentUser = IWContext.getInstance().getCurrentUser();
+          }
+          catch (Exception ex)  {
+            currentUser = null;
+          }
 						
-					comUserBiz.getRootSpecialCitizenGroup().removeUser(user);
+					comUserBiz.getRootSpecialCitizenGroup().removeUser(user, currentUser);
 				}
 				catch(Exception e){}
 			}
@@ -695,8 +712,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			if(fix){
 				//this will force a new record in the relation table
 				try{
+          // try to get the current user
+          User currentUser;
+          try {
+            currentUser = IWContext.getInstance().getCurrentUser();
+          }
+          catch (Exception ex)  {
+            currentUser = null;
+          }
 							
-					comUserBiz.getRootCitizenGroup().removeUser(user);
+					comUserBiz.getRootCitizenGroup().removeUser(user, currentUser);
 				}
 				catch(Exception e){}
 			}			
