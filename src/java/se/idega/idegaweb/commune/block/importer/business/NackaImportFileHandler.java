@@ -80,13 +80,13 @@ public class NackaImportFileHandler implements ImportFileHandler{
     record = TextSoap.findAndCut(record,"#UP ");
 
     //Family relations
-    propertiesMap.put(RELATIONAL_SECTION_STARTS,getAndCutFragmentFromRecord(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
+    propertiesMap.put(RELATIONAL_SECTION_STARTS,getArrayListMapFromStringFragment(record,RELATIONAL_SECTION_STARTS,RELATIONAL_SECTION_ENDS) );
     //Special case relations
-    propertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getAndCutFragmentFromRecord(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
+    propertiesMap.put(SPECIALCASE_RELATIONAL_SECTION_STARTS, getArrayListMapFromStringFragment(record,SPECIALCASE_RELATIONAL_SECTION_STARTS,SPECIALCASE_RELATIONAL_SECTION_ENDS) );
     //Citizen info
-    propertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getAndCutFragmentFromRecord(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
+    propertiesMap.put(CITIZEN_INFO_SECTION_STARTS,getArrayListMapFromStringFragment(record,CITIZEN_INFO_SECTION_STARTS,CITIZEN_INFO_SECTION_ENDS) );
     //Historic info
-    propertiesMap.put(HISTORIC_SECTION_STARTS,getAndCutFragmentFromRecord(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
+    propertiesMap.put(HISTORIC_SECTION_STARTS,getArrayListMapFromStringFragment(record,HISTORIC_SECTION_STARTS,HISTORIC_SECTION_ENDS) );
 
     //the rest e.g. User info and immigration stuff
     propertiesMap.putAll(getPropertiesMapFromString(record," "));
@@ -100,18 +100,47 @@ public class NackaImportFileHandler implements ImportFileHandler{
     return true;
   }
 
-  protected void getArrayListMapFromString(String propsString, String seperator){
+  protected ArrayList getArrayListMapFromStringFragment(String record, String fragmentStart, String fragmentEnd){
+    ArrayList list = null;
+    String fragment = getAndCutFragmentFromRecord(record,fragmentStart,fragmentEnd);
+    if( fragment != null ){
 
+      LineNumberReader reader = new LineNumberReader(new StringReader(fragment));
+      list = new ArrayList();
+      String line = null;
+      StringBuffer buf = null;
+
+      try{
+        while( (line = reader.readLine()) != null ){
+          if( buf == null ){ buf = new StringBuffer(); }
+          buf.append(line);
+          buf.append('\n');
+          if( line.indexOf(fragmentEnd)!= -1 ){
+            list.add( getPropertiesMapFromString(buf.toString()," ") );
+            buf = null;
+          }
+        }
+
+        reader.close();
+        reader = null;
+      }
+      catch (Exception ex) {
+        ex.printStackTrace();
+      }
+
+    }
+
+    return list;
   }
 
   protected Map getPropertiesMapFromString(String propsString, String seperator){
     HashMap map = new HashMap();
-    LineNumberReader reader = new LineNumberReader(new StringReader(propsString));
-
     String line = null;
-    int index = -1;
     String property = null;
     String value = null;
+    int index = -1;
+
+    LineNumberReader reader = new LineNumberReader(new StringReader(propsString));
 
     try{
 
