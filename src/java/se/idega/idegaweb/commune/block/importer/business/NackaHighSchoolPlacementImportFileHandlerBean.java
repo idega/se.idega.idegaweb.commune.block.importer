@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.7 2004/01/12 09:04:40 laddi Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.8 2004/01/14 12:06:48 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -62,10 +62,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/12 09:04:40 $ by $Author: laddi $
+ * Last modified: $Date: 2004/01/14 12:06:48 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -88,6 +88,9 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private ArrayList userValues;
 	private ArrayList failedRecords = null;
 	private Map errorLog  = null;
+	
+	private Timestamp firstDayInCurrentMonth = null;
+	private Timestamp lastDayInPreviousMonth = null;
 
 	private final static Timestamp REGISTER_DATE = (new IWTimestamp("2003-07-01")).getTimestamp(); 
 	
@@ -124,6 +127,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	public boolean handleRecords(){
 		failedRecords = new ArrayList();
 		errorLog = new TreeMap();
+		
+		IWTimestamp t = IWTimestamp.RightNow();
+		t.setAsDate();
+		t.setDay(1);
+		firstDayInCurrentMonth = t.getTimestamp();
+		t.addDays(-1);
+		lastDayInPreviousMonth = t.getTimestamp();
 		
 		transaction = this.getSessionContext().getUserTransaction();
         
@@ -476,6 +486,8 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		// school Class member
 		int schoolClassId = ((Integer) schoolClass.getPrimaryKey()).intValue();
 		SchoolClassMember member = null;
+		Timestamp registerDate = REGISTER_DATE;
+		
 		try {
 			Collection placements = schoolClassMemberHome.findByStudent(user);
 			if (placements != null) {
@@ -493,13 +505,14 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 							stKey.equals(LOC_KEY_SPECIAL_HIGH_SCHOOL)) {
 						if (placement.getRemovedDate() == null) {
 							int scId = placement.getSchoolClassId();
-							if (scId == schoolClassId) {
+							int studyPathId = placement.getStudyPathId();
+							int newStudyPathId = ((Integer) studyPath.getPrimaryKey()).intValue(); 
+							if ((scId == schoolClassId) && (studyPathId == newStudyPathId)) {
 								member = placement;
 							} else {
-								IWTimestamp yesterday = new IWTimestamp();
-								yesterday.addDays(-1);
-								placement.setRemovedDate(yesterday.getTimestamp());
+								placement.setRemovedDate(lastDayInPreviousMonth);
 								placement.store();
+								registerDate = firstDayInCurrentMonth;
 							}
 							placement.store();
 						}
@@ -514,14 +527,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				errorLog.put(new Integer(row), "School Class member could not be created for personal id: " + personalId);	
 				return false;
 			}
+			member.setRegisterDate(registerDate);
+			member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
+			member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
+			member.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
+			member.setStudyPathId(((Integer) studyPath.getPrimaryKey()).intValue());
+			member.store();
 		}
-		
-		member.setRegisterDate(REGISTER_DATE);
-		member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
-		member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
-		member.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
-		member.setStudyPathId(((Integer) studyPath.getPrimaryKey()).intValue());
-		member.store();
 
 		return true;
 	}
