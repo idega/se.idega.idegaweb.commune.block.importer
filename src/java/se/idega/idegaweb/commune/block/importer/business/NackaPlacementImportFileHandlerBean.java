@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.31 2003/11/24 12:55:21 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.32 2003/11/25 11:17:23 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -12,11 +12,12 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.TreeMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.ejb.FinderException;
 import javax.ejb.RemoveException;
@@ -66,10 +67,10 @@ import com.idega.util.Timer;
  * Note that the "8" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/24 12:55:21 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/25 11:17:23 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.31 $
+ * @version $Revision: 1.32 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -90,7 +91,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private ImportFile file = null;
 	private UserTransaction transaction = null;
   
-	private ArrayList userValues = null;
+	private List userValues = null;
 	private Map failedSchools = null;
 	private Map errorLog = null;
 	private ArrayList failedRecords = null;
@@ -127,6 +128,14 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 	private final int RESOURCE_ID_SKILL_LEVEL_3 = 82;
 	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 30;
 	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 31;
+
+//	private final int RESOURCE_ID_SKILL_LEVEL_0 = 121;
+//	private final int RESOURCE_ID_SKILL_LEVEL_1 = 122;
+//	private final int RESOURCE_ID_SKILL_LEVEL_2 = 123;
+//	private final int RESOURCE_ID_SKILL_LEVEL_3 = 124;
+//	private final int RESOURCE_ID_NATIVE_LANGUAGE_1 = 121;
+//	private final int RESOURCE_ID_NATIVE_LANGUAGE_2 = 122;
+
 	
 	private Gender female;
 	private Gender male;
@@ -219,7 +228,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
+			while (!(item = (String) file.getNextRecord()).equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
@@ -270,11 +279,19 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			// Skip header
 			return true;
 		}
-		userValues = file.getValuesFromRecordString(record);
+//		userValues = file.getValuesFromRecordString2(record);
+		userValues = getValuesFromRecordString2(record);
 		boolean success = storeUserInfo(count);
 		userValues = null;
 				
 		return success;
+	}
+	
+	// Hack to fix multi-tab (three tabs in a row) bug
+	private List getValuesFromRecordString2(String record) {
+		String[] s = record.split("\t");
+		List l = Arrays.asList(s);
+		return l;
 	}
   
 	/**
