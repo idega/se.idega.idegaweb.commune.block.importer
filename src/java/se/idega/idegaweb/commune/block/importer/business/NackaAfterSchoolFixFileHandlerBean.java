@@ -1,5 +1,5 @@
 /*
- * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.3 2003/12/16 09:58:49 anders Exp $
+ * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.4 2003/12/16 10:31:41 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -53,17 +53,17 @@ import com.idega.util.Timer;
  * Import logic for placing Nacka children in after school centers.
  * <br>
  * To add this to the "Import handler" dropdown for the import function, execute the following SQL:<br>
- * insert into im_handler values (10, 'Nacka after school placement importer', 
- * 'se.idega.idegaweb.commune.block.importer.business.NackaAfterSchoolPlacementImportFileHandlerBean',
- * 'Imports after-school placements for children in Nacka.')
+ * insert into im_handler values (14, 'Nacka after school placement fix, 
+ * 'se.idega.idegaweb.commune.block.importer.business.NackaAfterSchoolFixFileHandlerBean',
+ * 'Fix for imports of after-school placements for children in Nacka.')
  * <br>
- * Note that the "10" value in the SQL might have to be adjusted in the sql, 
+ * Note that the "14" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/12/16 09:58:49 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/16 10:31:41 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implements NackaAfterSchoolFixFileHandler, ImportFileHandler {
 
