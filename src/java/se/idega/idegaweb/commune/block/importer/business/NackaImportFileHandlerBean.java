@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +25,8 @@ import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import sun.tools.tree.ThisExpression;
 
 import com.idega.block.importer.data.ImportFile;
+import com.idega.block.process.business.CaseBusiness;
+import com.idega.block.process.data.Case;
 import com.idega.business.IBOLookup;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.business.AddressBusiness;
@@ -33,6 +36,7 @@ import com.idega.core.data.AddressType;
 import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
 import com.idega.core.data.PostalCode;
+import com.idega.data.IDORemoveRelationshipException;
 import com.idega.data.IDOUtil;
 import com.idega.idegaweb.IWApplicationContext;
 import com.idega.idegaweb.IWMainApplicationSettings;
@@ -88,6 +92,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private AddressBusiness addressBiz;
   private MemberFamilyLogic relationBiz;
   private CommuneUserBusiness comUserBiz;
+  private CaseBusiness caseBiz;
   private GroupHome groupHome;
   private Group nackaGroup;
   private Group nackaSpecialGroup;
@@ -98,7 +103,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private boolean importUsers = true;
   private boolean importAddresses = true;
   private boolean importRelations = true;
-  private boolean moveNonCitizensToTestGroup = true;
+  private boolean fix = true;
   
 	private static final String TEST_GROUP_ID_PARAMETER_NAME = "citizen_test_group_id";
   
@@ -158,6 +163,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
       home = comUserBiz.getUserHome();
       addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
+			caseBiz = (CaseBusiness) this.getServiceInstance(CaseBusiness.class);
      
 			nackaGroup = comUserBiz.getRootCitizenGroup();
 			nackaSpecialGroup = comUserBiz.getRootSpecialCitizenGroup();
@@ -195,6 +201,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       //store family relations
       if( importRelations){
         storeRelations();
+      }
+      if(fix){
+				moveNonCitizensToTestGroup();
       }
 
       return true;
@@ -443,8 +452,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
         address.setCountry(sweden);
         address.setPostalCode(code);
-        address.setProvince("Nacka");//set as 01 ?
-        address.setCity("Stockholm");//set as 81?
+        //address.setProvince("Nacka" );//set as 01 ?
+        //address.setCity("Stockholm" );//set as 81?
+				address.setProvince(county );//set as 01 ?
+				address.setCity(commune );//set as 81?
+        
+        
         address.setStreetName(streetName);
         address.setStreetNumber(streetNumber);
 
@@ -494,8 +507,38 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     
     
     //get rid of test data
-		if( moveNonCitizensToTestGroup ){
+		if( fix ){
 			citizenIds.add(user.getPrimaryKey());
+			try {
+				user.removeAllEmails();
+				user.removeAllPhones();
+				
+				/*
+				 this needs to be implemented generally.
+				 getall the case codes (types)
+				 get the handler for each
+				 call getAllcasesforuser(code) or getAllcasesforuser
+				 remove the cases
+				 
+				Collection cases = caseBiz.getAllCasesForUser(user);
+				
+				if( cases!=null && !cases.isEmpty()){
+					Iterator iter = cases.iterator();
+					
+					while (iter.hasNext()) {
+						Case myCase = (Case) iter.next();
+						myCase.remove();
+					}
+					
+				}
+				*/
+				
+				
+			}
+			catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			
 		}
     
 
