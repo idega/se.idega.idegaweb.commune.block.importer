@@ -143,7 +143,6 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		School musicSchool = null;
 		SchoolClass mainClass = null;
 		SchoolSeason schoolSeason = null;
-		SchoolClassMember student = null;
 		SchoolStudyPath firstInstrument = null;
 		SchoolStudyPath secondInstrument = null;
 		SchoolStudyPath thirdInstrument = null;
@@ -184,16 +183,14 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		
 //		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, instrument);
 
-		if(student != null) {
-			if(instrument1 != null && !instrument1.equals("")) {
-				processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentSSN, studentTelNr);
-			}
-			if(instrument2 != null && !instrument2.equals("")) {
-				processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentSSN, studentTelNr);
-			}
-			if(instrument3 != null && !instrument3.equals("")) {
-				processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentSSN, studentTelNr);
-			}
+		if(instrument1 != null && !instrument1.equals("")) {
+			processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentSSN, studentTelNr);
+		}
+		if(instrument2 != null && !instrument2.equals("")) {
+			processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentSSN, studentTelNr);
+		}
+		if(instrument3 != null && !instrument3.equals("")) {
+			processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentSSN, studentTelNr);
 		}
 		
 		return true;
