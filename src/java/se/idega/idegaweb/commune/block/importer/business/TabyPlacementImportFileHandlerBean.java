@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.8 2004/08/06 10:14:02 aron Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.9 2004/10/07 15:25:35 thomas Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -25,9 +25,9 @@ import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import se.idega.idegaweb.commune.accounting.resource.business.ResourceBusiness;
-import se.idega.idegaweb.commune.accounting.resource.data.Resource;
-import se.idega.idegaweb.commune.accounting.resource.data.ResourceClassMember;
+import se.idega.idegaweb.commune.accounting.extra.business.ResourceBusiness;
+import se.idega.idegaweb.commune.accounting.extra.data.Resource;
+import se.idega.idegaweb.commune.accounting.extra.data.ResourceClassMember;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import se.idega.idegaweb.commune.school.business.SchoolChoiceBusiness;
 
@@ -69,10 +69,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/08/06 10:14:02 $ by $Author: aron $
+ * Last modified: $Date: 2004/10/07 15:25:35 $ by $Author: thomas $
  *
  * @author Anders Lindman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
