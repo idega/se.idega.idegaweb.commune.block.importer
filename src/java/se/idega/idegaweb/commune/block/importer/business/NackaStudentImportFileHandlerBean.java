@@ -186,35 +186,47 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
 	//database stuff
 	School school;
-	SchoolYear year;
+	SchoolYear year; 
 	
 	// user
 	try {
 		user = biz.getUserHome().findByPersonalID(PIN);
+		//debug
+		if( user == null ) System.out.println(" USER IS NULL WTF!??? shoild cast finderexception");
+		
+	}
+	catch (FinderException e) {
+		System.out.println("User not found for PIN : "+PIN);
+		return false;
+	}	
 	
+	try{
 		//school
 		//this can only work if there is only one school with this name. add more parameters for other areas
 		school = (School) sHome.findAllBySchoolName(schoolName).iterator().next();
 		if( school == null ) return false;
-		
+	}
+	catch (Exception e) {
+		System.out.println("School not found for PIN : "+PIN);
+		return false;
+	}		
+	
+	try{
 		//school year	
-		if( schoolYear == null ) return false;
-		else if( schoolYear.equals("0") ) schoolYear = "F";
-		
+		if( schoolYear.equals("0") ) schoolYear = "F";
 		year = sYearHome.findByYearName(schoolYear);
 	}
 	catch (FinderException e) {
-		System.out.println("User not found/School not found/SchoolYear not found for PIN : "+PIN);
+		System.out.println("SchoolYear not found for PIN : "+PIN);
 		return false;
 	}	
 		
+	
 	//school class		
 	SchoolClass sClass = null;
 	
-	try {
-		
+	try {	
 		sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
-		
 	}catch (FinderException e) {
 		//e.printStackTrace();
 		System.out.println("School class not found creating...");	
