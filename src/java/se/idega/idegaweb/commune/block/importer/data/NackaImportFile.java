@@ -15,6 +15,8 @@ import com.idega.util.text.TextSoap;
  */
 
 public class NackaImportFile extends GenericImportFile implements ImportFile{
+  private int importAtATimeLimit = 5;
+  private final String DILIMITER = "#POST_SLUT";
 
   public NackaImportFile(File file) {
     super(file);
@@ -26,32 +28,36 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
     try{
         FileReader fr = new FileReader(getFile());
         BufferedReader br = new BufferedReader(fr);
-        int cnt = 0;
         String line;
         StringBuffer buf = new StringBuffer();
+        ArrayList list = new ArrayList();
+
+        int cnt = 0;
+
         while ( (line=br.readLine()) != null){
+          if( buf == null ){
+            buf = new StringBuffer();
+          }
+
           buf.append(line);
+
+          if( line.indexOf(DILIMITER)!= -1 ){
+           list.add(buf.toString());
+           buf = null;
+          }
+
           cnt++;
         }
+
+        processRecords(list);
+
         br.close();
         fr = null;
         br = null;
 
-        Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
-        buf = null;
-
+        //Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
         System.gc();
 
-        int size = users.size();
-        for (int i = 0; i < 4; i++) {
-          System.out.println( (String) users.elementAt(i));
-          users.removeElementAt(i);
-          //users.trimToSize();
-
-        }
-
-        users = null;
-        System.gc();
         System.out.println("Number of Lines: "+cnt);
     }
     catch( FileNotFoundException ex ){
@@ -65,4 +71,23 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
 
     return true;
   }
+
+
+  private void processRecords(ArrayList list){
+    Iterator iter = list.iterator();
+    int count = 0;
+    while (iter.hasNext()) {
+      count++;
+      String item = (String) iter.next();
+      if( this.importAtATimeLimit >= count ){
+        System.out.println("RECORD ["+count+"] \n"+item);
+      }
+    }
+
+    list = null;
+    System.gc();
+  }
+
+
+
 }
