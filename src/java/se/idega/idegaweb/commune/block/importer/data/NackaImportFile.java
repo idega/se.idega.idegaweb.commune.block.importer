@@ -22,6 +22,7 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
   public NackaImportFile(File file) {
     super(file);
     setRecordDilimiter("#POST_SLUT");
+    setAddNewLineAfterRecord(true);
   }
 
 }
