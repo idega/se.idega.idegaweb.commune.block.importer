@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.4 2004/01/09 12:49:57 anders Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.5 2004/01/12 09:11:05 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -67,10 +67,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/09 12:49:57 $ by $Author: anders $
+ * Last modified: $Date: 2004/01/12 09:11:05 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -127,7 +127,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	/**
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords() 
 	 */
-	public boolean handleRecords() throws RemoteException{
+	public boolean handleRecords(){
 		failedRecords = new ArrayList();
 		failedSchools = new TreeMap();
 		errorLog = new TreeMap();

@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/11/24 07:45:07 $ by $Author: staffan $
+ * Last modified: $Date: 2004/01/12 09:10:37 $ by $Author: laddi $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -52,7 +52,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
      * Relies on the fact that {@link #setImportFile} has been invoked correctly
      * prior to invocation of this method.
      */
-    public boolean handleRecords () throws RemoteException {
+    public boolean handleRecords () {
         log ("Importing records: " + getClass ().getName ());
         boolean readSuccess = true;
         failedRecords.clear ();

@@ -1,5 +1,4 @@
 package se.idega.idegaweb.commune.block.importer.business;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
   
   public UserFixImportFileHandlerBean(){}
 
-  public boolean handleRecords() throws RemoteException{
+  public boolean handleRecords(){
   
     Timer clock = new Timer();
     clock.start();
@@ -77,7 +76,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 
   }
 
-  private boolean processRecord(String record) throws RemoteException{
+  private boolean processRecord(String record){
   	ArrayList list = file.getValuesFromRecordString(record);
     return storeUserInfo(list);
   }
@@ -85,7 +84,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
  
  
 
-  protected boolean storeUserInfo(ArrayList list) throws RemoteException{
+  protected boolean storeUserInfo(ArrayList list){
 
     try {
 			User user = null;
