@@ -2,11 +2,15 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
+import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -17,12 +21,15 @@ import com.idega.block.school.business.*;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDOAddRelationshipException;
 import com.idega.user.business.UserBusiness;
+import com.idega.user.data.Gender;
+import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
 
+import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import se.idega.idegaweb.commune.school.business.*;
 
 
@@ -40,7 +47,7 @@ import se.idega.idegaweb.commune.school.business.*;
 public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements NackaStudentImportFileHandler{
 
 
-  private UserBusiness biz;
+  private CommuneUserBusiness biz;
   private UserHome home;
   private SchoolBusiness schoolBiz;
   
@@ -55,26 +62,32 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   private UserTransaction transaction;
   
   private ArrayList userValues;
+  private Map failedSchools;
   private ArrayList failedRecords = new ArrayList();
 
   private final int COLUMN_SCHOOL_NAME = 0;  
   private final int COLUMN_PERSONAL_ID = 1;
   private final int COLUMN_SCHOOL_YEAR = 2; 
   private final int COLUMN_CLASS = 3; 
+	private Gender female;
+	private Gender male;
   
 
   	
   public NackaStudentImportFileHandlerBean(){}
   
   public boolean handleRecords() throws RemoteException{
+		failedSchools = new HashMap();
     transaction =  this.getSessionContext().getUserTransaction();
     
     try{
-    	season = ((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class)).getCurrentSeason();
+    	season = ((SchoolSeasonHome)this.getIDOHome(SchoolSeason.class)).findByPrimaryKey(new Integer(2));
+    	
+    	//((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class)).getCurrentSeason();
     }
     catch(FinderException ex){
     	ex.printStackTrace();
-    	System.err.println("NackaStudentHandler:Current School season is not defined");
+    	System.err.println("NackaStudentHandler:School season is not defined");
     	return false;
     }
     
@@ -83,7 +96,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
     try {
       //initialize business beans and data homes
-      biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
+      biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
       home = biz.getUserHome();
       
       
@@ -94,7 +107,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
       
       sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
  	  
- 	  sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
+ 	  	sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
       
   
       //if the transaction failes all the users and their relations are removed
@@ -161,8 +174,20 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   	Iterator iter = failedRecords.iterator();
   	while (iter.hasNext()) {
 		System.out.println((String) iter.next());
-	}
+		}
+		
+		System.out.println("Schools missing from database or have different names:");
+		Collection cols = failedSchools.values();
+		Iterator schools = cols.iterator();
+		
+		while (schools.hasNext()) {
+			String name = (String) schools.next();
+			System.out.println(name);
+		}
+		
   }
+
+
 
   protected boolean storeUserInfo() throws RemoteException{
 
@@ -194,8 +219,21 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		
 	}
 	catch (FinderException e) {
-		System.out.println("User not found for PIN : "+PIN);
-		return false;
+		System.out.println("User not found for PIN : "+PIN+" CREATING");
+		//create special citizen user by pin
+		//find annan kommune1 258
+		// get gender
+		// get dat of birfth
+		
+		try {
+			user = biz.createSpecialCitizenByPersonalIDIfDoesNotExist(PIN,"","",PIN,getGenderFromPin(PIN),getBirthDateFromPin(PIN));
+			schoolName = "I annan kommun 1";
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+		
 	}	
 	
 	try{
@@ -204,8 +242,15 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		school = sHome.findBySchoolName(schoolName);
 	}
 	catch (FinderException e) {
-		System.out.println("School not found : "+schoolName);
-		return false;
+		//System.out.println("School not found : "+schoolName);
+		schoolName = "I annan kommun 1";
+		try {
+			school = sHome.findBySchoolName(schoolName);
+		}
+		catch (FinderException ex) {
+			failedSchools.put(schoolName,schoolName);
+			return false;
+		}
 	}		
 	
 	try{
@@ -249,19 +294,31 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	//school class member
 	SchoolClassMember member = null;
 	try {
-		
+		SchoolClassMember temp = sClassMemberHome.findByUserAndSeason(user,season);
 		member = sClassMemberHome.findByUserAndSchoolClass(user,sClass);
+		
+		if( !temp.getPrimaryKey().equals(member.getPrimaryKey()) ){
+		
+			try {
+				temp.remove();
+			}
+			catch (RemoveException e) {
+				e.printStackTrace();
+				return false;
+				
+			}	
+		
+		}
 		
 	}catch (FinderException e) {
 		//e.printStackTrace();
 		//System.out.println("School class member not found creating...");	
-		
 
 		member = schoolBiz.storeSchoolClassMember(sClass, user);
 		member.store();
 		if (member == null)
 			return false;
-
+			
 	
 	}
 	
@@ -293,7 +350,42 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   		else return null;
   }
 
-
+	private IWTimestamp getBirthDateFromPin(String pin){
+		//pin format = 190010221208 yyyymmddxxxx
+		int dd = Integer.parseInt(pin.substring(6,8));
+		int mm = Integer.parseInt(pin.substring(4,6));
+		int yyyy = Integer.parseInt(pin.substring(0,4));
+		IWTimestamp dob = new IWTimestamp(dd,mm,yyyy);
+		return dob;
+	}
+	
+	
+	private Gender getGenderFromPin(String pin){
+			//pin format = 190010221208 second last number is the gender
+			//even number = female
+			//odd number = male
+			try {
+				GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
+				if( Integer.parseInt(pin.substring(10,11)) % 2 == 0 ){
+					if( female == null ){
+						female = home.getFemaleGender();
+					}
+					return female;
+				}
+				else{
+					if( male == null ){
+						male = home.getMaleGender();
+					}
+					return male;
+				}
+			}
+			catch (Exception ex) {
+				ex.printStackTrace();
+				return null;//if something happened
+			}
+		}
+		
+		
 /**
  * Not used
  * @param rootGroup The rootGroup to set
