@@ -367,7 +367,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 						level.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
 						level.setSchoolYearName(levelNr);
 						level.setLocalizedKey("sch_year." + levelNr);
-						level.setIsSelectable(true);
+						level.setIsSelectable(false);
 						level.store();
 					}
 					//SchoolClass (many-to-many) SchoolYear
