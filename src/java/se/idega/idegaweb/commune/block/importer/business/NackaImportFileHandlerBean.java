@@ -92,7 +92,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         nackaGroup.store();
 
         iwac.setApplicationAttribute(NACKA_ROOT_GROUP_ID_PARAMETER_NAME,(Integer)nackaGroup.getPrimaryKey());
-        iwac.getApplication().storeStatus();
       }
       // end default group creation
 
