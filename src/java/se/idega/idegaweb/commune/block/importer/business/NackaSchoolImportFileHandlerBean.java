@@ -4,6 +4,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collection;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
@@ -16,6 +17,7 @@ import com.idega.block.school.data.*;
 import com.idega.block.school.business.*;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDOAddRelationshipException;
+import com.idega.data.IDORelationshipException;
 import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
@@ -37,7 +39,7 @@ import se.idega.idegaweb.commune.school.business.*;
 
 
 
-public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implements NackaSchoolImportFileHandler{
+public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements NackaSchoolImportFileHandler,ImportFileHandler{
 
 
 
@@ -84,6 +86,13 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
   private final int COLUMN_CARETAKER_PIN = 9; 
   private final int COLUMN_CARETAKER_POSTAL_CODE = 10;  
   private final int COLUMN_CARETAKER_PHONE = 11;
+  
+  SchoolType preSchoolOnly;
+	SchoolType caretakerPreSchool;
+	SchoolType regularSchool;
+	SchoolType schoolWithPreSchoolClass;
+			
+
   	
   public NackaSchoolImportFileHandlerBean(){}
   
@@ -97,6 +106,13 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
       //initialize business beans and data homes           
       schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
       sHome = schoolBiz.getSchoolHome();
+			
+			preSchoolOnly = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(1));
+			caretakerPreSchool = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(2));
+			regularSchool = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(4));
+			schoolWithPreSchoolClass = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(5));
+			
+
       
       //if the transaction failes all the users and their relations are removed
       transaction.begin();
@@ -169,35 +185,148 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean {//implemen
     School school = null;
 
 //variables
+  
+  	String schoolArea = getProperty(COLUMN_SCHOOL_AREA);  
     String schoolName = getProperty(this.COLUMN_SCHOOL_NAME);
-    String caretakerName = getProperty(COLUMN_CARETAKER_NAME);
+	  String schoolAddress = getProperty(COLUMN_SCHOOL_ADDRESS);
+	  String schoolPostalName = getProperty(COLUMN_SCHOOL_POSTAL_NAME);
+	  String schoolPostalCode= getProperty(COLUMN_SCHOOL_POSTAL_CODE);
+	  String schoolPhoneNumber = getProperty(COLUMN_SCHOOL_PHONE_NUMBER);
+	  
+	  String caretakerName = getProperty(COLUMN_CARETAKER_NAME);
+	  String caretakerAddress = getProperty(COLUMN_CARETAKER_ADDRESS);
+	  String caretakerPostalName = getProperty(COLUMN_CARETAKER_POSTAL_NAME);
+	  String caretakerPIN = getProperty(COLUMN_CARETAKER_PIN);
+	  String caretakerPostalCode = getProperty(COLUMN_CARETAKER_POSTAL_CODE);
+	  String caretakerPhoneNumber = getProperty(COLUMN_CARETAKER_PHONE);
+        
+   
+		if( checkIfPreSchool ){//only done once, the first row cannot contain anything other than the column names
+			if(caretakerName!=null) isPreSchoolFile = true;
+			checkIfPreSchool = false;
+			return true;
+		}
+	
+    boolean found = false;
+    boolean caretaker = (isPreSchoolFile && caretakerName!=null);
     
-    
-    
-    
-    if(schoolName == null ) return false;
-
-
-	if( checkIfPreSchool ){
-		if(caretakerName!=null) isPreSchoolFile = true;
+    if( caretaker ){	
+    		schoolName = caretakerName;
+    		schoolAddress = caretakerAddress;
+    		schoolPostalName = caretakerPostalName;
+    		schoolPostalCode = caretakerPostalCode;
+    		schoolPhoneNumber = caretakerPhoneNumber;
+    }
+	
+		try{
+			//create or find the school and update min data
+			//this can only work if there is only one school with this name. add more parameters for other areas
+			school = (School) (sHome.findAllBySchoolName(schoolName).iterator().next());//halló steikt!!! -eiki til sjálfs míns						
+			school.setSchoolAddress(schoolAddress);
+			school.setSchoolZipCode(schoolPostalCode);
+			school.setSchoolZipArea(schoolPostalName);
+			school.setSchoolPhone(schoolPhoneNumber);
+			found = true;
+		}
+		catch (FinderException e) {
+			int[] nullType = null;
+			System.out.println("School not found creating : "+schoolName);	
+			school = schoolBiz.createSchool(schoolName,schoolAddress,schoolPostalCode,schoolPostalName,schoolPhoneNumber,-1,nullType); 
+		}
 		
-		checkIfPreSchool = false;	
-	}
-    
-	//database stuff
-	try{
-		//school
-		//this can only work if there is only one school with this name. add more parameters for other areas
-		school = (School) (sHome.findAllBySchoolName(schoolName).iterator().next());
-		if( school == null ) return false;
-	}
-	catch (FinderException e) {
-		System.out.println("School not found creating : "+schoolName);	
-		school = schoolBiz.createSchool(schoolName,"","","","",-1);
-		return true;
-	}		
+		
+			
+		Collection schoolTypes = null;
+		SchoolArea area = null;
+				
+		
+		try {
+			schoolTypes = school.getSchoolTypes();
+		} catch (IDORelationshipException e) {
+		}
+						
+		//add types and areas
+		if( isPreSchoolFile && !caretaker){
+			//add type
+			if(found){
 
-    //finished with this user
+				if( schoolTypes==null || isPreSchoolOnly(schoolTypes)  ){//check if it has any other types or none
+					try{
+						school.addSchoolType(preSchoolOnly);
+					}
+					catch(Exception e){}
+				}
+				else{
+					try{
+						school.addSchoolType(schoolWithPreSchoolClass);
+					}
+					catch(Exception e){}
+					
+				}	
+							
+				
+			}
+			else{
+				//add only preschool type 1
+				try{
+					school.addSchoolType(preSchoolOnly);
+				}
+				catch(Exception e){}
+					
+				}	
+		}
+		else if (caretaker){//familie...
+			//add type 2
+			try{
+				school.addSchoolType(caretakerPreSchool);
+			}
+			catch(Exception e){}
+			
+			//todo! register principal
+			//caretakerPIN
+			
+			// user = comUserBiz.createCitizenByPersonalIDIfDoesNotExist(firstName,middleName,lastName,PIN, gender, dateOfBirth);
+    
+		
+			
+		}
+		else{//regular school
+			//add type 4
+			//what if the school changes from a preschoolonly to a mixed school?
+			if( !isPreSchoolOnly(schoolTypes) ){
+				try{
+						school.addSchoolType(regularSchool);
+				}
+				catch(Exception e){}
+			}		
+		}
+
+		
+		if( schoolArea!=null ){
+			 try{
+			 	area = schoolBiz.getSchoolAreaHome().findSchoolAreaByAreaName(schoolArea);
+			 }
+			 catch (FinderException e) {
+			 	
+			 	try {
+					System.out.println("SchoolArea not found creating : "+schoolArea);	
+					area = schoolBiz.getSchoolAreaHome().create();
+					area.setSchoolAreaName(schoolArea);
+					area.store();
+				}catch (CreateException ex) {
+					ex.printStackTrace();
+			 	}
+			}
+			
+		}
+		//set area
+		if( area!=null ){
+			school.setSchoolAreaId(((Integer)area.getPrimaryKey()).intValue());
+		}
+		
+		school.store();			
+		
+    //finished with this school
     school = null;
     
     return true;
@@ -238,5 +367,23 @@ public void setRootGroup(Group rootGroup) {
 public List getFailedRecords(){
 	return failedRecords;	
 }
+
+	private boolean isPreSchoolOnly(Collection schoolTypes){
+		
+		if( schoolTypes!=null && !schoolTypes.isEmpty()){
+			Iterator iter = schoolTypes.iterator();
+				while (iter.hasNext()) {
+					SchoolType element = (SchoolType) iter.next();
+					if( element.equals(preSchoolOnly) ){
+						return true;	
+					}
+					else return false;
+					
+				}
+		}
+			
+		return false;
+		
+	}
 
   }
