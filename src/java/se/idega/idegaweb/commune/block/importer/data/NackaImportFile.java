@@ -1,7 +1,9 @@
 package se.idega.idegaweb.commune.block.importer.data;
 
 import java.io.*;
-import java.util.Collection;
+import java.util.*;
+
+import com.idega.util.text.TextSoap;
 
 /**
  * <p>Title: IdegaWeb classes</p>
@@ -25,11 +27,32 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
         FileReader fr = new FileReader(getFile());
         BufferedReader br = new BufferedReader(fr);
         int cnt = 0;
-        while ( br.readLine() != null){
+        String line;
+        StringBuffer buf = new StringBuffer();
+        while ( (line=br.readLine()) != null){
+          buf.append(line);
           cnt++;
         }
-
         br.close();
+        fr = null;
+        br = null;
+
+        Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
+        buf = null;
+
+        System.gc();
+
+        int size = users.size();
+        for (int i = 0; i < 4; i++) {
+          System.out.println( (String) users.elementAt(i));
+          users.removeElementAt(i);
+          //users.trimToSize();
+
+        }
+
+        users = null;
+        System.gc();
+        System.out.println("Number of Lines: "+cnt);
     }
     catch( FileNotFoundException ex ){
       ex.printStackTrace(System.err);
