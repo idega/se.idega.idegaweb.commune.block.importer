@@ -1,8 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
 
 import java.util.StringTokenizer;
-
-import com.idega.business.IBOServiceBean;
+import com.idega.block.importer.business.ImportBusinessBean;
 import com.idega.data.IDOStoreException;
 import com.idega.user.data.User;
 import com.idega.util.text.TextSoap;
@@ -11,7 +10,7 @@ import com.idega.util.text.TextSoap;
 /**
  * @author gimmi
  */
-public class NackaImportBusinessBean extends IBOServiceBean implements NackaImportBusiness {
+public class NackaImportBusinessBean extends ImportBusinessBean implements NackaImportBusiness {
 	/**
 	 * @param updateName
 	 * @param user
