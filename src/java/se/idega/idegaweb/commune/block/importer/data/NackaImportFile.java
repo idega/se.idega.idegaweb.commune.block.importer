@@ -1,10 +1,10 @@
 package se.idega.idegaweb.commune.block.importer.data;
 
-import java.util.Collection;
+import java.io.File;
 import java.util.ArrayList;
-import java.io.*;
-import se.idega.idegaweb.commune.block.importer.business.*;
-import com.idega.util.text.TextSoap;
+
+import com.idega.block.importer.data.GenericImportFile;
+import com.idega.block.importer.data.ImportFile;
 
 /**
  * <p>Title: IdegaWeb classes</p>

@@ -1,26 +1,41 @@
 package se.idega.idegaweb.commune.block.importer.business;
-import com.idega.core.business.AddressBusiness;
-import com.idega.core.data.*;
-import com.idega.util.IWTimestamp;
-import se.idega.idegaweb.commune.business.CommuneUserBusiness;
-import javax.transaction.*;
-import se.idega.idegaweb.commune.block.importer.data.ImportFile;
-import com.idega.user.data.*;
-import com.idega.idegaweb.IWApplicationContext;
-import javax.ejb.CreateException;
-import java.rmi.RemoteException;
-import com.idega.business.IBOServiceBean;
-import javax.ejb.FinderException;
 import is.idega.idegaweb.member.business.MemberFamilyLogic;
-import com.idega.user.business.UserBusiness;
-import com.idega.presentation.IWContext;
-import com.idega.business.IBOLookup;
-import com.idega.data.*;
 import java.io.LineNumberReader;
+import java.io.StringReader;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+
+import javax.ejb.CreateException;
+import javax.ejb.FinderException;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
+
+import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+
+import com.idega.block.importer.data.ImportFile;
+import com.idega.business.IBOLookup;
+import com.idega.business.IBOServiceBean;
+import com.idega.core.business.AddressBusiness;
+import com.idega.core.data.Address;
+import com.idega.core.data.AddressHome;
+import com.idega.core.data.AddressType;
+import com.idega.core.data.Country;
+import com.idega.core.data.CountryHome;
+import com.idega.core.data.PostalCode;
+import com.idega.user.business.UserBusiness;
+import com.idega.user.data.Gender;
+import com.idega.user.data.GenderHome;
+import com.idega.user.data.Group;
+import com.idega.user.data.GroupHome;
+import com.idega.user.data.User;
+import com.idega.user.data.UserHome;
+import com.idega.util.IWTimestamp;
 import com.idega.util.text.TextSoap;
-import java.util.*;
-import java.io.*;
-import javax.transaction.HeuristicMixedException;
+import com.idega.util.Timer;
 
 /**
  * <p>Title: NackaImportFileHandlerBean</p>

@@ -1,6 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
 
-import javax.ejb.*;
+import com.idega.block.importer.business.ImportFileHandler;
+import com.idega.block.importer.data.ImportFile;
 
 public interface NackaImportFileHandler extends com.idega.business.IBOService,ImportFileHandler
 {
@@ -10,5 +11,5 @@ public interface NackaImportFileHandler extends com.idega.business.IBOService,Im
  public boolean handleRecords()throws java.rmi.RemoteException, java.rmi.RemoteException;
  public void setImportRelations(boolean p0) throws java.rmi.RemoteException;
  public void setStartRecord(int p0) throws java.rmi.RemoteException;
- public void setImportFile(se.idega.idegaweb.commune.block.importer.data.ImportFile p0) throws java.rmi.RemoteException;
+ public void setImportFile(ImportFile p0) throws java.rmi.RemoteException;
 }
