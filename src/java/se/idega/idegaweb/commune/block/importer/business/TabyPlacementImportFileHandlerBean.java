@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.10 2004/10/14 14:54:15 thomas Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.11 2004/10/19 10:33:42 thomas Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -19,18 +19,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import javax.ejb.FinderException;
 import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
-
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+import se.idega.idegaweb.commune.care.business.CareBusiness;
 import se.idega.idegaweb.commune.care.resource.business.ResourceBusiness;
 import se.idega.idegaweb.commune.care.resource.data.Resource;
 import se.idega.idegaweb.commune.care.resource.data.ResourceClassMember;
 import se.idega.idegaweb.commune.school.business.SchoolChoiceBusiness;
-
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.business.SchoolBusiness;
@@ -69,10 +67,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/10/14 14:54:15 $ by $Author: thomas $
+ * Last modified: $Date: 2004/10/19 10:33:42 $ by $Author: thomas $
  *
  * @author Anders Lindman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -169,11 +167,11 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
 			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
 			languageHome = (ICLanguageHome) this.getIDOHome(ICLanguage.class);			
+			CareBusiness careBusiness = (CareBusiness)this.getServiceInstance(SchoolChoiceBusiness.class);
 
 			try {
-				SchoolChoiceBusiness schoolChoiceBusiness = (SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class);
 				//season = schoolBiz.getCurrentSchoolSeason();
-				season = schoolChoiceBusiness.getCurrentSeason();
+				season = careBusiness.getCurrentSeason();
 			} catch(FinderException e) {
 				e.printStackTrace();
 				System.out.println("TabyPlacementHandler: School season is not defined");
