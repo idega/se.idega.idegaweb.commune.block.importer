@@ -1,7 +1,7 @@
 package se.idega.idegaweb.commune.block.importer.business;
 import com.idega.core.business.AddressBusiness;
 import com.idega.core.data.*;
-import com.idega.util.IWTimeStamp;
+import com.idega.util.IWTimestamp;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import javax.transaction.*;
 import se.idega.idegaweb.commune.block.importer.data.ImportFile;
@@ -115,7 +115,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         }
 
         if( (count % 500) == 0 ){
-          System.out.println("NackaImportFileHandler processing RECORD ["+count+"] time: "+IWTimeStamp.getTimestampRightNow().toString());
+          System.out.println("NackaImportFileHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
         }
         item = null;
       }
@@ -281,7 +281,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     String PIN = getUserProperty("01001");
 
     Gender gender = getGenderFromPin(PIN);
-    IWTimeStamp dateOfBirth = getBirthDateFromPin(PIN);
+    IWTimestamp dateOfBirth = getBirthDateFromPin(PIN);
 
     /**
     * basic user info
@@ -411,7 +411,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         while (iter.hasNext()) {
           ++count;
           if( (count % 500) == 0 ){
-            System.out.println("NackaImportFileHandler storing relations ["+count+"] time: "+IWTimeStamp.getTimestampRightNow().toString());
+            System.out.println("NackaImportFileHandler storing relations ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
           }
 
           PIN = (String) iter.next();
@@ -586,12 +586,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     }
   }
 
-  private IWTimeStamp getBirthDateFromPin(String pin){
+  private IWTimestamp getBirthDateFromPin(String pin){
     //pin format = 190010221208 yyyymmddxxxx
     int dd = Integer.parseInt(pin.substring(6,8));
     int mm = Integer.parseInt(pin.substring(4,6));
     int yyyy = Integer.parseInt(pin.substring(0,4));
-    IWTimeStamp dob = new IWTimeStamp(dd,mm,yyyy);
+    IWTimestamp dob = new IWTimestamp(dd,mm,yyyy);
     return dob;
   }
 
