@@ -1180,7 +1180,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String concerns;
 		String prefix;
 		
-		if (user == null) {
+		if (user != null) {
 			if (refPIN != null) { // could be a pid change
 				Address address = comUserBiz.getUsersMainAddress(user);
 
@@ -1217,20 +1217,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				//System.out.println(" ... SUCCESS !!!!");
 			}
 		} else {
-			if (refPIN != null) {
-				Address address = comUserBiz.getUsersMainAddress(user);
-
-				Collection coll = new Vector();
-				coll.add(PIN + "\t(new PID)");
-				coll.add(user.getName());
-				if (address != null) {
-					coll.add(address.getStreetAddress());
-				} else {
-					coll.add("");
+			if (user != null) {
+				if (refPIN != null) {
+					Address address = comUserBiz.getUsersMainAddress(user);
+	
+					Collection coll = new Vector();
+					coll.add(PIN + "\t(new PID)");
+					coll.add(user.getName());
+					if (address != null) {
+						coll.add(address.getStreetAddress());
+					} else {
+						coll.add("");
+					}
+					coll.add(refPIN + "\t(referenced PID)");
+					coll.add("Actions = "+actionType);
+					TFlist.add(coll);
 				}
-				coll.add(refPIN + "\t(referenced PID)");
-				coll.add("Actions = "+actionType);
-				TFlist.add(coll);
 			}
 
 			for (int i = 0; i < actions.length; i++) {
