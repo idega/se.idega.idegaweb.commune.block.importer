@@ -20,7 +20,11 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 		boolean updateName = false;
 		
 		if (firstName == null) {
-			firstName = "";
+			if (user.getFirstName() != null) {
+				firstName = user.getFirstName();
+			} else {
+				firstName = "";
+			}
 		}
 		// Setting middleName as "", required for the rest of the code
 		if (middleName != null && !middleName.equals("")) {
@@ -31,7 +35,11 @@ public class NackaImportBusinessBean extends IBOServiceBean implements NackaImpo
 		}
 		
 		if (lastName == null) {
-			lastName = "";
+			if (user.getLastName() != null) {
+				lastName = user.getLastName();
+			} else {
+				lastName = "";
+			}
 		}
 		
 		if (preferredNameIndex == null) {
