@@ -1917,6 +1917,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private User handleNames(User user, String firstName, String middleName, String lastName, boolean store) {
 		boolean updateName = false;
 		
+		if (firstName == null) {
+			firstName = "";
+		}
 		// Setting middleName as "", required for the rest of the code
 		if (middleName != null && !middleName.equals("")) {
 			firstName = firstName + " " + middleName;
