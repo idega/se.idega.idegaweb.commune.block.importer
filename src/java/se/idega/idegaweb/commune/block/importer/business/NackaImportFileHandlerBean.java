@@ -684,6 +684,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			relationsMap = new HashMap();
 			deceasedMap = new HashMap();
 			unhandledActions = new HashMap();
+			coordinateMap = new HashMap();
 			TFlist = new Vector();
 			
 			Collection row1 = new Vector();
@@ -1586,24 +1587,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		return true;
 	}
 
-	private AddressCoordinate getAddressCoordinate(String addressKeyCode) throws IDOLookupException, CreateException {
+	private AddressCoordinate getAddressCoordinate(String addressKeyCode) throws IDOLookupException {
 		if (addressKeyCode != null) {
-			if (coordinateMap == null) {
-				coordinateMap = new HashMap();
-			}
-			AddressCoordinate ac = (AddressCoordinate) coordinateMap.get(addressKeyCode);
-			if (ac == null) {
+			if (coordinateMap.containsKey(addressKeyCode)) {
+				// Can return null
+				return (AddressCoordinate) coordinateMap.get(addressKeyCode);
+			} else {
 				AddressCoordinateHome ach = (AddressCoordinateHome) IDOLookup.getHome(AddressCoordinate.class);
+				AddressCoordinate ac = null; 
 				try {
 					ac = ach.findByCoordinate(addressKeyCode);
 				} catch (FinderException f) {
-					ac = ach.create();
-					ac.setCoordinate(addressKeyCode);
-					ac.store();
+					System.out.println("[NackaImportFileHandlreBean] Address Coordinate not found (possibly not imported yet : "+addressKeyCode+")");
 				}
 				coordinateMap.put(addressKeyCode, ac);
+				return ac;
 			}
-			return ac;
 		}
 		return null;
 	}
