@@ -1234,7 +1234,7 @@ private String getValueAtIndexFromNameString(int index , String name){
 			
 			while(keys.hasNext()) {
 				Integer parentId = (Integer) keys.next();
-				Collection coll = (Collection) ( table.getCollection(parentId)) ;
+				Collection coll = table.getCollection(parentId);
 				Iterator colIt = coll.iterator();
 				while(colIt.hasNext()){
 					Integer childId = (Integer)colIt.next();

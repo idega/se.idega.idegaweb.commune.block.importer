@@ -3,8 +3,6 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.transaction.UserTransaction;
-
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
@@ -30,7 +28,6 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 
   
 	private ImportFile file;
-	private UserTransaction transaction2;
 	private ArrayList failedRecords;
 	private CommuneUserBusiness comUserBiz;
 
