@@ -13,7 +13,7 @@ import com.idega.business.IBOServiceBean;
  * @version 1.0
  */
 
-public class ImportBusinessBean extends IBOServiceBean {
+public class ImportBusinessBean extends IBOServiceBean implements ImportBusiness{
 
   public ImportBusinessBean() {
   }
