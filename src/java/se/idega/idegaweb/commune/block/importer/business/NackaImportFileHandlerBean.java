@@ -137,6 +137,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	//private boolean importAddresses = false;//temp
 	//private boolean importRelations = false;//temp
 	private boolean fix = false;
+	private boolean secretPerson = false;
   
   private ArrayList failedRecords = new ArrayList();
   private ArrayList citizenIds = new ArrayList();
@@ -267,7 +268,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     /**
     * family and other releation stuff
     */
-    if( importRelations ) addRelations();
+    if( importRelations && !secretPerson ) addRelations();
 
 
     userPropertiesMap = null;
@@ -383,14 +384,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     boolean updateName = false;
     
     
-		StringBuffer fullname = new StringBuffer();
-		fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-
-		System.out.println("Name : "+fullname.toString());
-    
+		
     
     //preferred name handling.
-    if(!"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
+    if( preferredNameIndex!=null ){
+
+			StringBuffer fullname = new StringBuffer();
+			fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+			//System.out.println("Name : "+fullname.toString());
+    	
+    if( !"10".equals(preferredNameIndex) && !"12".equals(preferredNameIndex) && !"13".equals(preferredNameIndex) ){
     	String preferredName = getPreferredName(preferredNameIndex,firstName,middleName,lastName);
     	if(middleName.equals("")){
     		middleName = firstName;
@@ -456,11 +459,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     
     }
     
-		fullname = new StringBuffer();
-		fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
-
-		System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
-    
+			//fullname = new StringBuffer();
+			//fullname.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
+	
+			//System.out.println("Index : "+preferredNameIndex+" Modified name : "+fullname.toString());
+     
+  	}
 
     /**
     * basic user info
