@@ -744,7 +744,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   protected void storeRelations() throws RemoteException{
     ArrayList errors = new ArrayList();
 		HashtableMultivalued parentRelations = new HashtableMultivalued();
-
+		System.out.println("NackaImportFileHandler [STARTING - RELATIONS] time: "+IWTimestamp.getTimestampRightNow().toString());
+          
    //get keys <- pins
   //get user bean
   //get relative bean
