@@ -66,74 +66,8 @@ import com.idega.util.text.TextSoap;
 
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler {
 
-	private static final String ACTION_CONCERNS_CURRENT_PERSON =				"H";
-	private static final String ACTION_CONCERNS_RELATIVE = 							"R";
-	private static final String ACTION_PREFIX_CANCEL = 									"3";
-	private static final String ACTION_TYPE_BIRTH =											"6";
-	private static final String ACTION_TYPE_CHANGE_ADDRESS =						"75";
-	private static final String ACTION_TYPE_CITIZENSHIP =								"36";
-	private static final String ACTION_TYPE_COLUMN = 										"01004";
-	private static final String ACTION_TYPE_CUSTODY_RELATIONS =					"12";
-	private static final String ACTION_TYPE_DEATH =											"66";
-	private static final String ACTION_TYPE_DIVORCE =										"59";
-	private static final String ACTION_TYPE_LAST_NAME =									"21";
-	private static final String ACTION_TYPE_MARRIAGE =									"56";
-	private static final String ACTION_TYPE_MIDDLE_NAME=								"25";
-	private static final String ACTION_TYPE_MOVED =											"41";
-	private static final String ACTION_TYPE_MOVED_TO_ANOTHER_COUNTRY =	"43";
-	private static final String ACTION_TYPE_NEW_PERSONAL_ID =						"1";
-	private static final String ACTION_TYPE_SECRET = 										"3";
-	private static final String ACTION_TYPE_SPECIAL_CO_ADDRESS = 				"45";
-	private static final String ACTION_TYPE_SPECIAL_FIRST_NAME =				"29";
-	//private static final String LONG_LAT_COLUMN = "01025";
-	private static final String ADDRESS_COLUMN = 												"01033";
-	private static final String CITIZEN_INFO_SECTION_ENDS = 						"03999";
-	private static final String CITIZEN_INFO_SECTION_STARTS = 					"03000";
-	//private static final String CO_ADDRESS_NAME_COLUMN = 								"01051";
-	private static final String CO_ADDRESS_COLUMN = 										"01052";
-	private static final String CO_POSTAL_CODE_COLUMN = 								"01053";
-	private static final String CO_POSTAL_NAME_COLUMN = 								"01054";
-	private static final String COMMUNE_CODE_COLUMN = 									"01023";
-	private static final String COUNTY_CODE_COLUMN = 										"01022";
-	//private static final String DEACTIVATE_REASON_COLUMN = "01006";
-	private static final String DEACTIVATION_DATE_COLUMN = 							"01007";
-	private static final String EMPTY_FIELD_CHARACTER ="$";
-	private static final String FIRST_NAME_COLUMN = 										"01012";
-	private static final String FIRST_PART_OF_LAST_NAME_COLUMN = 				"01013";
-	//private static final String TEST_GROUP_ID_PARAMETER_NAME =
-	// "citizen_test_group_id";
-	private static final String FIX_PARAMETER_NAME = "run_fix";
-	private static final String FOREIGN_ADDRESS_1_COLUMN = 							"01071";
-	private static final String FOREIGN_ADDRESS_2_COLUMN = 							"01072";
-	private static final String FOREIGN_ADDRESS_3_COLUMN = 							"01073";
-	private static final String FOREIGN_ADDRESS_COUNTRY_COLUMN = 				"01077";
-	private static final String HISTORIC_SECTION_ENDS = 								"04999";
-	private static final String HISTORIC_SECTION_STARTS = 							"04000";
-	private static final String LAST_NAME_COLUMN = 											"01014";
-	private static final String PIN_COLUMN =														"01001";
-	private static final String POSTAL_CODE_COLUMN = 										"01034";
-	private static final String POSTAL_NAME_COLUMN = 										"01035";
-	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = 		"01011";
-	private static final String REFERENCE_PIN_COLUMN = 									"01005";
-	private static final String REGISTRATION_DATE_COLUMN = 							"01021";
-	//private static final String RELATION_STATUS_NEW = "NY";
-	private static final String RELATION_STATUS_CANCELLED = "AS";
-	//private static final String ACTION_PREFIX_BIRTH_CANCEL = "5";
-
-	private static final String RELATION_TYPE_CHILD = "B";
-	private static final String RELATION_TYPE_CUSTODY = "VF"; //custody
-	private static final String RELATION_TYPE_CUSTODY2 = "V"; //custody
-	private static final String RELATION_TYPE_FATHER = "FA";
-	private static final String RELATION_TYPE_MOTHER = "MO";
-	private static final String RELATION_TYPE_SPOUSE = "M";
-	private static final String RELATIONAL_SECTION_ENDS = 							"02999";
-	private static final String RELATIONAL_SECTION_STARTS = 						"02000";
-	private static final String RELATIVE_PIN_COLUMN = 									"02001";
-	private static final String RELATIVE_STATUS_COLUMN = 								"02008";
-	private static final String RELATIVE_TYPE_COLUMN = 									"02003";
-	private static final String SECRECY_MARKING_COLUMN = 								"01003";
-	private static final String SPECIALCASE_RELATIONAL_SECTION_ENDS = 	"06999";
-	private static final String SPECIALCASE_RELATIONAL_SECTION_STARTS =	"06000";
+	protected static final String FIX_PARAMETER_NAME = "run_fix";
+	
 	private AddressBusiness addressBiz;
 	CommuneHome communeHome;
 	private CommuneUserBusiness comUserBiz;
@@ -223,8 +157,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}*/
 
 	protected void addRelations() {
-		ArrayList relatives = (ArrayList) userPropertiesMap.get(RELATIONAL_SECTION_STARTS);
-		relationsMap.put(getUserProperty(PIN_COLUMN), relatives);
+		ArrayList relatives = (ArrayList) userPropertiesMap.get(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS);
+		relationsMap.put(getUserProperty(ImportFileFieldConstants.PIN_COLUMN), relatives);
 	}
 
 	protected Group convertUserToGroup(User user) {
@@ -242,16 +176,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//boolean updateName = false;
 		User user = null;
 
-		String actionType = getUserProperty(ACTION_TYPE_COLUMN);
+		String actionType = getUserProperty(ImportFileFieldConstants.ACTION_TYPE_COLUMN);
 
 		//variables
-		String firstName = getUserProperty(FIRST_NAME_COLUMN, "");
+		String firstName = getUserProperty(ImportFileFieldConstants.FIRST_NAME_COLUMN, "");
 		//String middleName = getUserProperty(MIDDLE_NAME_COLUMN, "");
 		String middleName = "";
-		String lastNameFirstPart = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null); 
-		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
-		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
-		String PIN = getUserProperty(PIN_COLUMN);
+		String lastNameFirstPart = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null); 
+		String lastName = getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN, "");
+		String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
+		String PIN = getUserProperty(ImportFileFieldConstants.PIN_COLUMN);
 		
 		if (lastNameFirstPart != null ) {
 			if (preferredNameIndex == null) {
@@ -260,8 +194,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			lastName = lastNameFirstPart + " " + lastName;
 		}
 		
-		String countyNumber = getUserProperty(COUNTY_CODE_COLUMN);
-		String communeNumber = getUserProperty(COMMUNE_CODE_COLUMN);
+		String countyNumber = getUserProperty(ImportFileFieldConstants.COUNTY_CODE_COLUMN);
+		String communeNumber = getUserProperty(ImportFileFieldConstants.COMMUNE_CODE_COLUMN);
 		String communeCode = countyNumber+communeNumber;
 		//System.out.println(firstName+" "+middleName+" "+lastName);
 		//System.out.print(" ...CommuneCode = "+communeCode);
@@ -273,7 +207,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			//logWarning("Commune with code:"+communeCode+" (countyNumber+communeNumber) not found in database");
 		}
 		
-		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
+		String dateOfRegistrationString = getUserProperty(ImportFileFieldConstants.REGISTRATION_DATE_COLUMN);
 		IWTimestamp dateOfRegistration = null;
 		if (dateOfRegistrationString != null) {
 			dateOfRegistration = getDateFromString(dateOfRegistrationString);
@@ -283,19 +217,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//boolean personHasDied = false;
 		boolean isMovingFromHomeCommune = false;
 		if (actionType != null) {
-			String dateOfActionString = getUserProperty(DEACTIVATION_DATE_COLUMN);
+			String dateOfActionString = getUserProperty(ImportFileFieldConstants.DEACTIVATION_DATE_COLUMN);
 			if (dateOfActionString != null) {
 				dateOfDeactivation = getDateFromString(dateOfActionString);
 			}
 
 			// check if the deactivation concerns the current person
-			if (actionType.endsWith(ACTION_CONCERNS_CURRENT_PERSON)) {
+			if (actionType.endsWith(ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON)) {
 				//why is this person deactivated
-				if (actionType.startsWith(ACTION_TYPE_DEATH)) {
+				if (actionType.startsWith(ImportFileFieldConstants.ACTION_TYPE_DEATH)) {
 					//personHasDied = true;
 					deceasedMap.put(PIN, dateOfDeactivation);
 				}
-				else if (actionType.startsWith(ACTION_TYPE_MOVED)) {
+				else if (actionType.startsWith(ImportFileFieldConstants.ACTION_TYPE_MOVED)) {
 					if(commune != null && homeCommune != null) {
 						if (!commune.equals(homeCommune)) {
 							isMovingFromHomeCommune= true;
@@ -304,14 +238,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						isMovingFromHomeCommune = false;
 					}
 				}
-				else if (actionType.startsWith(ACTION_TYPE_MOVED_TO_ANOTHER_COUNTRY)) {
+				else if (actionType.startsWith(ImportFileFieldConstants.ACTION_TYPE_MOVED_TO_ANOTHER_COUNTRY)) {
 					isMovingFromHomeCommune = true;
 				}
 			}
 
 		}
 
-		String secrecy = getUserProperty(SECRECY_MARKING_COLUMN);
+		String secrecy = getUserProperty(ImportFileFieldConstants.SECRECY_MARKING_COLUMN);
 		boolean secretPerson = "J".equals(secrecy);
 
 		//TODO should not be necessary because of deactivation check
@@ -998,8 +932,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 
 	private boolean isSecretPerson() {
-		String secrecy = getUserProperty(SECRECY_MARKING_COLUMN);
-		String PIN = getUserProperty(PIN_COLUMN);
+		String secrecy = getUserProperty(ImportFileFieldConstants.SECRECY_MARKING_COLUMN);
+		String PIN = getUserProperty(ImportFileFieldConstants.PIN_COLUMN);
 		if (secrecy != null && !secrecy.equals(""))
 			log("SECRET PERSON = " + PIN + " Code :" + secrecy + ".");
 		return "J".equals(secrecy);
@@ -1030,9 +964,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			while (iter.hasNext()) {
 				try {
 					action = (String) iter.next();
-					index = action.indexOf(ACTION_CONCERNS_CURRENT_PERSON);
+					index = action.indexOf(ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON);
 					if (index == -1) {
-						index = action.indexOf(ACTION_CONCERNS_RELATIVE);
+						index = action.indexOf(ImportFileFieldConstants.ACTION_CONCERNS_RELATIVE);
 					}
 					
 					if (index != -1) {
@@ -1069,20 +1003,20 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		if (importUsers || importAddresses) {
 			//Family relations
 			userPropertiesMap.put(
-				RELATIONAL_SECTION_STARTS,
-				getArrayListWithMapsFromStringFragment(record, RELATIONAL_SECTION_STARTS, RELATIONAL_SECTION_ENDS));
+					ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
+				getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.RELATIONAL_SECTION_STARTS, ImportFileFieldConstants.RELATIONAL_SECTION_ENDS));
 			//Special case relations
 			userPropertiesMap.put(
-				SPECIALCASE_RELATIONAL_SECTION_STARTS,
-				getArrayListWithMapsFromStringFragment(record, SPECIALCASE_RELATIONAL_SECTION_STARTS, SPECIALCASE_RELATIONAL_SECTION_ENDS));
+					ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_STARTS,
+				getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_STARTS, ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_ENDS));
 			//Citizen info
 			userPropertiesMap.put(
-				CITIZEN_INFO_SECTION_STARTS,
-				getArrayListWithMapsFromStringFragment(record, CITIZEN_INFO_SECTION_STARTS, CITIZEN_INFO_SECTION_ENDS));
+					ImportFileFieldConstants.CITIZEN_INFO_SECTION_STARTS,
+				getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.CITIZEN_INFO_SECTION_STARTS, ImportFileFieldConstants.CITIZEN_INFO_SECTION_ENDS));
 			//Historic info
 			userPropertiesMap.put(
-				HISTORIC_SECTION_STARTS,
-				getArrayListWithMapsFromStringFragment(record, HISTORIC_SECTION_STARTS, HISTORIC_SECTION_ENDS));
+					ImportFileFieldConstants.HISTORIC_SECTION_STARTS,
+				getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.HISTORIC_SECTION_STARTS,ImportFileFieldConstants.HISTORIC_SECTION_ENDS));
 
 			//the rest e.g. User info and immigration stuff
 			Map tmp = getPropertiesMapFromString(record, " ");
@@ -1104,8 +1038,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			// etc.
 			//Family relations
 			userPropertiesMap.put(
-				RELATIONAL_SECTION_STARTS,
-				getArrayListWithMapsFromStringFragment(record, RELATIONAL_SECTION_STARTS, RELATIONAL_SECTION_ENDS));
+					ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
+				getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.RELATIONAL_SECTION_STARTS, ImportFileFieldConstants.RELATIONAL_SECTION_ENDS));
 		}
 
 		/**
@@ -1175,9 +1109,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 							Iterator iter2 = relatives.iterator();
 							while (iter2.hasNext()) {
 								Map relativeMap = (Map) iter2.next();
-								relativePIN = (String) relativeMap.get(RELATIVE_PIN_COLUMN);
-								relationType = (String) relativeMap.get(RELATIVE_TYPE_COLUMN);
-								relationStatus = (String) relativeMap.get(RELATIVE_STATUS_COLUMN);
+								relativePIN = (String) relativeMap.get(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
+								relationType = (String) relativeMap.get(ImportFileFieldConstants.RELATIVE_TYPE_COLUMN);
+								relationStatus = (String) relativeMap.get(ImportFileFieldConstants.RELATIVE_STATUS_COLUMN);
 								/**
 								 * @todo use this second parameter if first is
 								 * missing??? ask kjell
@@ -1194,35 +1128,35 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 											secretPerson = "secret".equals(relative.getDescription());
 
 											if (!secretPerson) {
-												if (relationType.equals(RELATION_TYPE_CHILD)) {
+												if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_CHILD)) {
 													//relationBiz.setAsChildFor(relative,user);
 													//for custodian check
 													parentRelations.put(user.getPrimaryKey(), relative.getPrimaryKey());
 
 												}
-												else if (relationType.equals(RELATION_TYPE_SPOUSE)) {
+												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_SPOUSE)) {
 													relationBiz.setAsSpouseFor(relative, user);
 												}
-												else if (relationType.equals(RELATION_TYPE_FATHER)) {
+												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_FATHER)) {
 													//relationBiz.setAsChildFor(user,relative);
 													parentRelations.put(relative.getPrimaryKey(), user.getPrimaryKey());
 												}
-												else if (relationType.equals(RELATION_TYPE_MOTHER)) {
+												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_MOTHER)) {
 													//relationBiz.setAsChildFor(user,relative);
 													parentRelations.put(relative.getPrimaryKey(), user.getPrimaryKey());
 												}
-												else if (relationType.equals(RELATION_TYPE_CUSTODY)) { //custody
+												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_CUSTODY)) { //custody
 													
 													
-													if (RELATION_STATUS_CANCELLED.equals(relationStatus)) {
+													if (ImportFileFieldConstants.RELATION_STATUS_CANCELLED.equals(relationStatus)) {
 														System.out.println("removing custody relation ("+user.getPersonalID()+", "+relative.getPersonalID()+")");
 														relationBiz.removeAsCustodianFor(user, relative);
 													} else {
 														relationBiz.setAsCustodianFor(user, relative);
 													}
 												}
-												else if (relationType.equals(RELATION_TYPE_CUSTODY2)) { //custody
-													if (RELATION_STATUS_CANCELLED.equals(relationStatus)) {
+												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_CUSTODY2)) { //custody
+													if (ImportFileFieldConstants.RELATION_STATUS_CANCELLED.equals(relationStatus)) {
 														System.out.println("removing (reverse) custody relation ("+user.getPersonalID()+", "+relative.getPersonalID()+")");
 														relationBiz.removeAsCustodianFor(relative, user); //backwards
 													} else {
@@ -1365,7 +1299,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	protected boolean storeUserInfo() throws RemoteException {
 
-		String actionType = getUserProperty(ACTION_TYPE_COLUMN);
+		String actionType = getUserProperty(ImportFileFieldConstants.ACTION_TYPE_COLUMN);
 		String[][] actions = new String[0][0];
 		if (actionType != null) {
 			actions = parseAction(actionType);
@@ -1376,7 +1310,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//Iterator actions = actionTypes.iterator();
 		
 		User user = null;
-		String PIN = getUserProperty(PIN_COLUMN);
+		String PIN = getUserProperty(ImportFileFieldConstants.PIN_COLUMN);
 		if (PIN ==null) {
 			return false;
 		}
@@ -1422,63 +1356,63 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 				
 				//System.out.println("Action = "+action+" ("+concerns+")");
-				if (action.equals(ACTION_TYPE_BIRTH)) {
+				if (action.equals(ImportFileFieldConstants.ACTION_TYPE_BIRTH)) {
 					/** BIRTH */
-					if (ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
+					if (ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
 						if (!fullImport()) {
 							return false;
 						}
 					}
-				} else if (action.equals(ACTION_TYPE_MOVED_TO_ANOTHER_COUNTRY)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_MOVED_TO_ANOTHER_COUNTRY)) {
 					/** MOVING TO ANOTHER COUNTRY*/
 					// Lelegt hondlun her, vantar td. aÝ fletta i gegnum types og skoda betur
-					if (ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
+					if (ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
 						if (!handleMoving(user)) {
 							return false;
 						}
 					}
-				} else if(action.equals(ACTION_TYPE_MOVED)) {
+				} else if(action.equals(ImportFileFieldConstants.ACTION_TYPE_MOVED)) {
 					/** MOVING */
 					// Lelegt hondlun her, vantar td. aÝ fletta i gegnum types og skoda betur
-					if (ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
+					if (ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
 						if (!handleMoving(user)) {
 							return false;
 						}
 					}
-				} else if (action.equals(ACTION_TYPE_DEATH)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_DEATH)) {
 					/** DEATH */
-					if (ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
-						String dateOfDeactivationString = getUserProperty(DEACTIVATION_DATE_COLUMN);
+					if (ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
+						String dateOfDeactivationString = getUserProperty(ImportFileFieldConstants.DEACTIVATION_DATE_COLUMN);
 						IWTimestamp dateOfDeactivation = null;
 						if (dateOfDeactivationString != null) {
 							dateOfDeactivation = getDateFromString(dateOfDeactivationString);
 						}
 						deceasedMap.put(PIN, dateOfDeactivation);
 					}
-				} else if (action.equals(ACTION_TYPE_MIDDLE_NAME)) { 
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_MIDDLE_NAME)) { 
 					/** CHANGING THE FIRST PART OF THE LAST NAME */
 					String firstName = user.getFirstName();
 					String middleName = user.getMiddleName();
-					String lastName = (getUserProperty(LAST_NAME_COLUMN) != null) ? getUserProperty(LAST_NAME_COLUMN) : user.getLastName();
+					String lastName = (getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) != null) ? getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) : user.getLastName();
 					
-					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null);
+					String firstPartOfLast = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
 					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
 					handleNames(user, firstName, middleName, lastName, true);
-				} else if (action.equals(ACTION_TYPE_LAST_NAME)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_LAST_NAME)) {
 					/** CHANGING THE LAST NAME */
 					String firstName = user.getFirstName();
 					String middleName = user.getMiddleName();
-					String lastName = (getUserProperty(LAST_NAME_COLUMN) != null) ? getUserProperty(LAST_NAME_COLUMN, "") : user.getLastName();
+					String lastName = (getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN) != null) ? getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN, "") : user.getLastName();
 					
-					String firstPartOfLast = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null);
+					String firstPartOfLast = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null);
 					
 					lastName = handleDoubleLastName(lastName, firstPartOfLast);
 					
 					handleNames(user, firstName, middleName, lastName, true);
-				} else if (action.equals(ACTION_TYPE_MARRIAGE)) {
-					String relPIN = getUserProperty(RELATIVE_PIN_COLUMN);
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_MARRIAGE)) {
+					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
 					try {
 						spouse = comUserBiz.getUser(relPIN);
@@ -1486,7 +1420,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						logError("NackaImportFileHandler : cant find spouse");
 					}
 					if (spouse != null) {
-						if (ACTION_PREFIX_CANCEL.equals(prefix)) {
+						if (ImportFileFieldConstants.ACTION_PREFIX_CANCEL.equals(prefix)) {
 							try {
 								relationBiz.removeAsSpouseFor(spouse, user);
 							} catch (RemoveException e1) {
@@ -1500,15 +1434,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 							}
 						}
 					}
-				} else if (action.equals(ACTION_TYPE_CHANGE_ADDRESS)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_CHANGE_ADDRESS)) {
 					if (!handleMoving(user)) {
 						return false;
 					}
 					
-				} else if(action.equals(ACTION_TYPE_SPECIAL_FIRST_NAME)) {
+				} else if(action.equals(ImportFileFieldConstants.ACTION_TYPE_SPECIAL_FIRST_NAME)) {
 					handleNames(user, true);
-				} else if (action.equals(ACTION_TYPE_NEW_PERSONAL_ID)) {
-					String newPIN = getUserProperty(REFERENCE_PIN_COLUMN);
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_NEW_PERSONAL_ID)) {
+					String newPIN = getUserProperty(ImportFileFieldConstants.REFERENCE_PIN_COLUMN);
 					if(newPIN != null) {
 						if (PIDChecker.getInstance().isValid(newPIN, true)) {
 							try {
@@ -1522,8 +1456,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						
 					}
 				
-				} else if (action.equals(ACTION_TYPE_DIVORCE)) {
-					String relPIN = getUserProperty(RELATIVE_PIN_COLUMN);
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_DIVORCE)) {
+					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
 					try {
 						spouse = comUserBiz.getUser(relPIN);
@@ -1539,16 +1473,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						}
 					}
 					
-				} else if (action.equals(ACTION_TYPE_CITIZENSHIP)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_CITIZENSHIP)) {
 					if (!fullImport()) {
 						return false;
 					}
-				} else if (action.equals(ACTION_TYPE_SECRET)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_SECRET)) {
 					handleSecretPerson(user);
-				} else if (action.equals(ACTION_TYPE_CUSTODY_RELATIONS)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_CUSTODY_RELATIONS)) {
 					/** RELATIONS ONLY */
-				} else if (action.equals(ACTION_TYPE_SPECIAL_CO_ADDRESS)) { 
-					if (ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
+				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_SPECIAL_CO_ADDRESS)) { 
+					if (ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON.equals(concerns)) {
 						if (!handleMoving(user)) {
 							return false;
 						}
@@ -1593,7 +1527,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		if (lastName == null) {
 			lastName = "";
 		}
-		if (firstPartOfLast == null || "".equals(firstPartOfLast) || EMPTY_FIELD_CHARACTER.equals(firstPartOfLast)) {
+		if (firstPartOfLast == null || "".equals(firstPartOfLast) || ImportFileFieldConstants.EMPTY_FIELD_CHARACTER.equals(firstPartOfLast)) {
 			int index = lastName.indexOf(" ");
 			if (index != -1 && lastName.length() > 0) {
 				lastName = lastName.substring(index +1);
@@ -1627,17 +1561,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		//main address
 		//country id 187 name Sweden isoabr: SE
 
-		String addressLine = getUserProperty(ADDRESS_COLUMN);
-		String coAddressLine = getUserProperty(CO_ADDRESS_COLUMN);
-		String foreignAddressLine1 = getUserProperty(FOREIGN_ADDRESS_1_COLUMN);
+		String addressLine = getUserProperty(ImportFileFieldConstants.ADDRESS_COLUMN);
+		String coAddressLine = getUserProperty(ImportFileFieldConstants.CO_ADDRESS_COLUMN);
+		String foreignAddressLine1 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_1_COLUMN);
 
 		if ((addressLine != null) && importAddresses) {
 			try {
 
 				String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
 				String streetNumber = addressBiz.getStreetNumberFromAddressString(addressLine);
-				String postalCode = getUserProperty(POSTAL_CODE_COLUMN);
-				String postalName = getUserProperty(POSTAL_NAME_COLUMN);
+				String postalCode = getUserProperty(ImportFileFieldConstants.POSTAL_CODE_COLUMN);
+				String postalName = getUserProperty(ImportFileFieldConstants.POSTAL_NAME_COLUMN);
 
 				Address address = comUserBiz.getUsersMainAddress(user);
 				Country sweden = ((CountryHome) getIDOHome(Country.class)).findByIsoAbbreviation("SE");
@@ -1688,8 +1622,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				//String addressName = getUserProperty(CO_ADDRESS_NAME_COLUMN); // Not used
 				String streetName = addressBiz.getStreetNameFromAddressString(coAddressLine);
 				String streetNumber = addressBiz.getStreetNumberFromAddressString(coAddressLine);
-				String postalCode = getUserProperty(CO_POSTAL_CODE_COLUMN);
-				String postalName = getUserProperty(CO_POSTAL_NAME_COLUMN);
+				String postalCode = getUserProperty(ImportFileFieldConstants.CO_POSTAL_CODE_COLUMN);
+				String postalName = getUserProperty(ImportFileFieldConstants.CO_POSTAL_NAME_COLUMN);
 
 				Address address = comUserBiz.getUsersCoAddress(user);
 				Country sweden = ((CountryHome) getIDOHome(Country.class)).findByIsoAbbreviation("SE");
@@ -1729,9 +1663,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				return false;
 			}		}//foreign adress
 		else if (foreignAddressLine1 != null) {
-			String foreignAddressLine2 = getUserProperty(FOREIGN_ADDRESS_2_COLUMN, "");
-			String foreignAddressLine3 = getUserProperty(FOREIGN_ADDRESS_3_COLUMN, "");
-			String foreignAddressCountry = getUserProperty(FOREIGN_ADDRESS_COUNTRY_COLUMN, "");
+			String foreignAddressLine2 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_2_COLUMN, "");
+			String foreignAddressLine3 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_3_COLUMN, "");
+			String foreignAddressCountry = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_COUNTRY_COLUMN, "");
 			final String space = " ";
 			StringBuffer addressBuf = new StringBuffer();
 			addressBuf
@@ -1828,8 +1762,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 * @return
 	 */
 	private boolean handleMoving(User user) throws RemoteException {
-		String countyNumber = getUserProperty(COUNTY_CODE_COLUMN);
-		String communeNumber = getUserProperty(COMMUNE_CODE_COLUMN);
+		String countyNumber = getUserProperty(ImportFileFieldConstants.COUNTY_CODE_COLUMN);
+		String communeNumber = getUserProperty(ImportFileFieldConstants.COMMUNE_CODE_COLUMN);
 		String communeCode = countyNumber+communeNumber;
 		//System.out.println(firstName+" "+middleName+" "+lastName);
 		//System.out.print(" ...CommuneCode = "+communeCode);
@@ -1875,7 +1809,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 			
 			IWTimestamp dateOfDeactivation = null;
-			String dateOfActionString = getUserProperty(DEACTIVATION_DATE_COLUMN);
+			String dateOfActionString = getUserProperty(ImportFileFieldConstants.DEACTIVATION_DATE_COLUMN);
 			if (dateOfActionString != null) {
 				dateOfDeactivation = getDateFromString(dateOfActionString);
 			}
@@ -1908,7 +1842,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 			}
 
-			String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
+			String dateOfRegistrationString = getUserProperty(ImportFileFieldConstants.REGISTRATION_DATE_COLUMN);
 			IWTimestamp dateOfRegistration = null;
 			if (dateOfRegistrationString != null) {
 				dateOfRegistration = getDateFromString(dateOfRegistrationString);
@@ -1932,10 +1866,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private User handleNames(User user, boolean store) {
 		//variables
 		
-		String firstName = getUserProperty(FIRST_NAME_COLUMN, "");
+		String firstName = getUserProperty(ImportFileFieldConstants.FIRST_NAME_COLUMN, "");
 		String middleName = "";
-		String lastNameFirstPart = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null); 
-		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		String lastNameFirstPart = getUserProperty(ImportFileFieldConstants.FIRST_PART_OF_LAST_NAME_COLUMN, null); 
+		String lastName = getUserProperty(ImportFileFieldConstants.LAST_NAME_COLUMN, "");
 		
 		if (lastNameFirstPart != null ) {
 			lastName = lastNameFirstPart + " " + lastName;
@@ -1966,7 +1900,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			lastName = "";
 		}
 		
-		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+		String preferredNameIndex = getUserProperty(ImportFileFieldConstants.PREFERRED_FIRST_NAME_INDEX_COLUMN);
 		if (preferredNameIndex == null) {
 			preferredNameIndex = "10";
 		}
