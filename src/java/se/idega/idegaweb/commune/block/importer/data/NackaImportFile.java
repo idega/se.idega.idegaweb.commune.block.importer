@@ -49,6 +49,8 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
           cnt++;
         }
 
+        System.out.println("Number of Lines: "+cnt);
+        System.out.println("Number of records = "+list.size());
         processRecords(list);
 
         br.close();
@@ -58,7 +60,7 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
         //Vector users = TextSoap.FindAllBetween(buf.toString(),"#POST_START","#POST_SLUT");
         System.gc();
 
-        System.out.println("Number of Lines: "+cnt);
+
     }
     catch( FileNotFoundException ex ){
       ex.printStackTrace(System.err);
@@ -74,6 +76,7 @@ public class NackaImportFile extends GenericImportFile implements ImportFile{
 
 
   private void processRecords(ArrayList list){
+
     Iterator iter = list.iterator();
     int count = 0;
     while (iter.hasNext()) {
