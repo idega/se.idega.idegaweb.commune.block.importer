@@ -44,18 +44,6 @@
     </developer>
   </developers>
   <dependencies>
-  <!--
-   <dependency>
-      <groupId>nexus-pki</groupId>
-      <artifactId>nbs-server</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-      <url>http://www.nexus-secured.com/</url>
-      <properties>
-        <idegaweb.bundle.include>true</idegaweb.bundle.include>
-      </properties>
-    </dependency>
-    -->
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.core</artifactId>
@@ -114,6 +102,17 @@
    <dependency>
       <groupId>bundles</groupId>
       <artifactId>se.idega.idegaweb.commune</artifactId>
+      <!--<version>1.0</version>-->
+      <version>SNAPSHOT</version>
+      <type>jar</type>
+      <url>http://www.idega.com/</url>
+      <properties>
+        <eclipse.dependency>true</eclipse.dependency>
+      </properties>
+    </dependency>
+   <dependency>
+      <groupId>bundles</groupId>
+      <artifactId>se.idega.idegaweb.commune.care</artifactId>
       <!--<version>1.0</version>-->
       <version>SNAPSHOT</version>
       <type>jar</type>
