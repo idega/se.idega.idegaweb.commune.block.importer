@@ -2,7 +2,7 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import javax.ejb.*;
 
-public interface NackaImportFileHandler extends com.idega.business.IBOService
+public interface NackaImportFileHandler extends com.idega.business.IBOService,ImportFileHandler
 {
  public void setImportAddresses(boolean p0) throws java.rmi.RemoteException;
  public void setOnlyImportRelations(boolean p0) throws java.rmi.RemoteException;
