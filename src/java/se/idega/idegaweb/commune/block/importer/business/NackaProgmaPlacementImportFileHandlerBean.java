@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.11 2004/02/02 13:21:04 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.12 2004/02/02 13:58:25 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -65,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/02/02 13:21:04 $ by $Author: anders $
+ * Last modified: $Date: 2004/02/02 13:58:25 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -551,8 +551,11 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 						if (placement.getRemovedDate() == null) {
 							int scId = placement.getSchoolClassId();
 							int studyPathId = placement.getStudyPathId();
-							int newStudyPathId = ((Integer) studyPath.getPrimaryKey()).intValue(); 
-							if ((scId == schoolClassId) && (studyPathId == newStudyPathId)) {
+							int newStudyPathId = ((Integer) studyPath.getPrimaryKey()).intValue();
+							int schoolYearId = placement.getSchoolYearId();
+							int newSchoolYearId = ((Integer) schoolYear.getPrimaryKey()).intValue();
+							if ((scId == schoolClassId) && (studyPathId == newStudyPathId) &&
+									(schoolYearId == newSchoolYearId)) {
 								member = placement;
 							} else {
 								IWTimestamp t1 = new IWTimestamp(placement.getRegisterDate());
