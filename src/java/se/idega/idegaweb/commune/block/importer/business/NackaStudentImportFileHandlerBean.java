@@ -14,6 +14,7 @@ import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.data.*;
 import com.idega.block.school.business.*;
 import com.idega.business.IBOServiceBean;
+import com.idega.data.IDOAddRelationshipException;
 import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
@@ -219,6 +220,14 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		return false;
 	}	
 		
+	//add year to school
+	try{
+		school.addSchoolYear(year);
+	}
+	catch(IDOAddRelationshipException aEx){
+		aEx.printStackTrace();
+			
+	}
 	
 	//school class		
 	SchoolClass sClass = null;
