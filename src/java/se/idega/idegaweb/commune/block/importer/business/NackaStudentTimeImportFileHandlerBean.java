@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/03/28 11:10:05 $ by $Author: staffan $
+ * Last modified: $Date: 2003/04/01 13:25:56 $ by $Author: staffan $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -84,12 +84,13 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                     // this is an acceptable record
 
                     // 1. find or create user
-                    final String ssn = (String) fields.get (SSN_COL);
+                    final String ssn
+                            = getDigitString ((String) fields.get (SSN_COL));
                     User user = null;
                     try {
                         user = userHome.findByPersonalID (ssn);
                     } catch (FinderException finderException) {
-                        if (pidChecker.isValid (ssn)) {
+                        if (ssn.length () == 12 && pidChecker.isValid (ssn)) {
                             user = communeUserBusiness .createSpecialCitizenByPersonalIDIfDoesNotExist(ssn, "", "", ssn);
                         }
                         System.err.println
@@ -103,9 +104,9 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                     try {
                         school = schoolHome.findBySchoolName (schoolName);
                     } catch (FinderException finderException) {
-                        System.err.println
-                                ("NackaStudentTimeImportFileHandlerget: School"
-                                 + " '" + schoolName + "' non existent in db");
+                        System.err.println (record + " - Unknown school");
+                        // failedRecords.add (record + " - Unknown school");
+                        // readSuccess = false;
                     }
 
                     // 3. get number of hours spent per week
@@ -162,6 +163,16 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
             digits.append (rawString.charAt (i));
         }
         return Integer.parseInt (digits.toString ());
+    }
+
+    private static String getDigitString (final String rawString) {
+        final StringBuffer digits = new StringBuffer ();
+        for (int i = 0; i < rawString.length (); i++) {
+            if (Character.isDigit (rawString.charAt (i))) {
+                digits.append (rawString.charAt (i));
+            }
+        }
+        return digits.toString ();
     }
 
 	private SchoolSeason getPreviousSeason () throws RemoteException,
