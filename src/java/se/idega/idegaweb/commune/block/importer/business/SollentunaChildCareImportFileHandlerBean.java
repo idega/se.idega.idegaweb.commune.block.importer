@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-import javax.ejb.CreateException;
+//import javax.ejb.CreateException;
 import javax.ejb.FinderException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
@@ -25,8 +25,8 @@ import com.idega.block.school.data.SchoolClass;
 import com.idega.block.school.data.SchoolClassHome;
 import com.idega.block.school.data.SchoolClassMember;
 import com.idega.block.school.data.SchoolClassMemberHome;
-import com.idega.block.school.data.SchoolClassMemberLog;
-import com.idega.block.school.data.SchoolClassMemberLogHome;
+//import com.idega.block.school.data.SchoolClassMemberLog;
+//import com.idega.block.school.data.SchoolClassMemberLogHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.block.school.data.SchoolType;
 import com.idega.business.IBOServiceBean;
@@ -62,7 +62,7 @@ implements ImportFileHandler
 	private SchoolHome sHome;
 	private SchoolClassHome sClassHome;
 	private SchoolClassMemberHome sClassMemberHome;
-	private SchoolClassMemberLogHome sClassMemberLogHome;
+//	private SchoolClassMemberLogHome sClassMemberLogHome;
 	private ImportFile file;
 	private UserTransaction transaction;
 	private ArrayList userValues;
@@ -131,7 +131,7 @@ implements ImportFileHandler
 			sHome = schoolBiz.getSchoolHome();
 			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
 			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
-			sClassMemberLogHome = (SchoolClassMemberLogHome) this.getIDOHome(SchoolClassMemberLog.class);
+//			sClassMemberLogHome = (SchoolClassMemberLogHome) this.getIDOHome(SchoolClassMemberLog.class);
 			//if the transaction failes all the users and their relations are removed
 			transaction.begin();
 			//iterate through the records and process them
@@ -497,23 +497,23 @@ implements ImportFileHandler
 					}
 					member.store();
 					
-					SchoolClassMemberLog log = sClassMemberLogHome.create();
-					log.setSchoolClassMember(member);
-					log.setSchoolClass(new Integer(member.getSchoolClassId()));
-					log.setStartDate(placementFrom.getDate());
-					if (placementTo != null) {
-						log.setEndDate(placementTo.getDate());
-						log.setUserTerminating(performer);
-					}
-					log.setUserPlacing(performer);
-					log.store();
+//					SchoolClassMemberLog log = sClassMemberLogHome.create();
+//					log.setSchoolClassMember(member);
+//					log.setSchoolClass(new Integer(member.getSchoolClassId()));
+//					log.setStartDate(placementFrom.getDate());
+//					if (placementTo != null) {
+//						log.setEndDate(placementTo.getDate());
+//						log.setUserTerminating(performer);
+//					}
+//					log.setUserPlacing(performer);
+//					log.store();
 				}
 				catch (FinderException fe) {
 					report.append("Placement not found for child " + child.getName());
 				}
-				catch (CreateException e) {
-					report.append("Could not create placement log for child " + child.getName());					
-				}
+//				catch (CreateException e) {
+//					report.append("Could not create placement log for child " + child.getName());					
+//				}
 				report.append("Contract created for child "+child.getName());
 			}
 			else
