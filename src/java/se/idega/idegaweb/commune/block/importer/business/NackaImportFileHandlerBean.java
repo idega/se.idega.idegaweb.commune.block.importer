@@ -1033,27 +1033,27 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 											secretPerson = "secret".equals(relative.getDescription());
 
 											if (!secretPerson) {
-												if (relationType.equals(this.RELATION_TYPE_CHILD)) {
+												if (relationType.equals(RELATION_TYPE_CHILD)) {
 													//relationBiz.setAsChildFor(relative,user);
 													//for custodian check
 													parentRelations.put(user.getPrimaryKey(), relative.getPrimaryKey());
 
 												}
-												else if (relationType.equals(this.RELATION_TYPE_SPOUSE)) {
+												else if (relationType.equals(RELATION_TYPE_SPOUSE)) {
 													relationBiz.setAsSpouseFor(relative, user);
 												}
-												else if (relationType.equals(this.RELATION_TYPE_FATHER)) {
+												else if (relationType.equals(RELATION_TYPE_FATHER)) {
 													//relationBiz.setAsChildFor(user,relative);
 													parentRelations.put(relative.getPrimaryKey(), user.getPrimaryKey());
 												}
-												else if (relationType.equals(this.RELATION_TYPE_MOTHER)) {
+												else if (relationType.equals(RELATION_TYPE_MOTHER)) {
 													//relationBiz.setAsChildFor(user,relative);
 													parentRelations.put(relative.getPrimaryKey(), user.getPrimaryKey());
 												}
-												else if (relationType.equals(this.RELATION_TYPE_CUSTODY)) { //custody
+												else if (relationType.equals(RELATION_TYPE_CUSTODY)) { //custody
 													relationBiz.setAsCustodianFor(user, relative);
 												}
-												else if (relationType.equals(this.RELATION_TYPE_CUSTODY2)) { //custody
+												else if (relationType.equals(RELATION_TYPE_CUSTODY2)) { //custody
 													relationBiz.setAsCustodianFor(relative, user); //backwards
 												}
 											}
