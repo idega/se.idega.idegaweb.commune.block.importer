@@ -1164,6 +1164,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		
 		User user = null;
 		String PIN = getUserProperty(ImportFileFieldConstants.PIN_COLUMN);
+		String refPIN = getUserProperty(ImportFileFieldConstants.REFERENCE_PIN_COLUMN);
 		if (PIN ==null) {
 			return false;
 		}
@@ -1180,9 +1181,26 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String prefix;
 		
 		if (user == null) {
-			/** FULL IMPORT */
-			System.out.println("FullImport, user = "+user);
-			return fullImport();
+			if (refPIN != null) { // could be a pid change
+				Address address = comUserBiz.getUsersMainAddress(user);
+
+				Collection coll = new Vector();
+				coll.add(PIN + "\t(new PID)");
+				coll.add(user.getName());
+				if (address != null) {
+					coll.add(address.getStreetAddress());
+				} else {
+					coll.add("");
+				}
+				coll.add(refPIN + "\t(referenced PID)");
+				coll.add("Actions = "+actionType);
+				TFlist.add(coll);
+				return true;
+			} else { 
+				/** FULL IMPORT */
+				System.out.println("FullImport, user = "+user);
+				return fullImport();
+			}
 		} else if (secretPerson) {
 			/** SECRET */
 			//System.out.println("Secret person, actionType = "+actionType);
@@ -1199,6 +1217,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				//System.out.println(" ... SUCCESS !!!!");
 			}
 		} else {
+			if (refPIN != null) {
+				Address address = comUserBiz.getUsersMainAddress(user);
+
+				Collection coll = new Vector();
+				coll.add(PIN + "\t(new PID)");
+				coll.add(user.getName());
+				if (address != null) {
+					coll.add(address.getStreetAddress());
+				} else {
+					coll.add("");
+				}
+				coll.add(refPIN + "\t(referenced PID)");
+				coll.add("Actions = "+actionType);
+				TFlist.add(coll);
+			}
+
 			for (int i = 0; i < actions.length; i++) {
 				action = actions[i][0];
 				concerns = actions[i][1];
@@ -1297,7 +1331,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				} else if(action.equals(ImportFileFieldConstants.ACTION_TYPE_SPECIAL_FIRST_NAME)) {
 					handleNames(user, true);
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_NEW_PERSONAL_ID)) {
-					String newPIN = getUserProperty(ImportFileFieldConstants.REFERENCE_PIN_COLUMN);
 //					if(newPIN != null) {
 //						if (PIDChecker.getInstance().isValid(newPIN, true)) {
 //							try {
@@ -1309,18 +1342,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 //							}
 //						}
 //					}
-					Address address = comUserBiz.getUsersMainAddress(user);
-
-					Collection coll = new Vector();
-					coll.add(newPIN + "\t(new PID)");
-					coll.add(user.getName());
-					if (address != null) {
-						coll.add(address.getStreetAddress());
-					} else {
-						coll.add("");
-					}
-					coll.add(user.getPersonalID() + "\t(old PID)");
-					TFlist.add(coll);
+//					String newPIN = getUserProperty(ImportFileFieldConstants.REFERENCE_PIN_COLUMN);
+//					Address address = comUserBiz.getUsersMainAddress(user);
+//
+//					Collection coll = new Vector();
+//					coll.add(newPIN + "\t(new PID)");
+//					coll.add(user.getName());
+//					if (address != null) {
+//						coll.add(address.getStreetAddress());
+//					} else {
+//						coll.add("");
+//					}
+//					coll.add(user.getPersonalID() + "\t(old PID)");
+//					TFlist.add(coll);
 				// TODO repps
 				} else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_DIVORCE)) {
 					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
