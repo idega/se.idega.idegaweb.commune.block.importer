@@ -1,4 +1,6 @@
 package se.idega.idegaweb.commune.block.importer.business;
+import com.idega.core.business.AddressBusiness;
+import com.idega.core.data.*;
 import com.idega.util.idegaTimestamp;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 import javax.transaction.*;
@@ -37,6 +39,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private Map relationsMap;
   private UserBusiness biz;
   private UserHome home;
+  private AddressBusiness addressBiz;
   private MemberFamilyLogic relationBiz;
   private CommuneUserBusiness comUserBiz;
   private GroupHome groupHome;
@@ -83,6 +86,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       biz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
       relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
       home = biz.getUserHome();
+      addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
       comUserBiz = (CommuneUserBusiness)IBOLookup.getServiceInstance(this.getIWApplicationContext(),CommuneUserBusiness.class);
 
       //comUserBiz.getRootCitizenGroup();
@@ -284,6 +288,46 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
      * addresses
      */
     //main address
+    //country id 187 name Sweden isoabr: SE
+
+      String addressLine = getUserProperty("01033");
+      if( addressLine!=null ){
+        try{
+
+        String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
+        String streetNumber = addressBiz.getStreetNumberFromAddressString(addressLine);
+        String postalCode = getUserProperty("01034");
+        String postalName = getUserProperty("01035");
+
+        Address address = biz.getUsersMainAddress(user);
+        Country sweden = ((CountryHome)getIDOHome(Country.class)).findByIsoAbbreviation("SE");
+        PostalCode code = addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode,postalName,sweden);
+
+        if( address == null ){
+          AddressHome addressHome = addressBiz.getAddressHome();
+          address = addressHome.create();
+          AddressType mainAddressType = addressHome.getAddressType1();
+          address.setAddressType(mainAddressType);
+        }
+
+        address.setCountry(sweden);
+        address.setPostalCode(code);
+        address.setProvince("Nacka");
+        address.setCity("Stockholm");
+        address.setStreetName(streetName);
+        address.setStreetNumber(streetNumber);
+
+        address.store();
+    }
+     catch(Exception e){
+      e.printStackTrace();
+      return false;
+    }
+
+    }
+
+
+
     //extra address
     //special address
     //special extra address
