@@ -424,14 +424,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String firstName = getUserProperty(FIRST_NAME_COLUMN, "");
 		//String middleName = getUserProperty(MIDDLE_NAME_COLUMN, "");
 		String middleName = "";
-		String lastName = "";
-		if (getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null) != null) {
-			lastName = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, "") + " " + getUserProperty(LAST_NAME_COLUMN, "");
-		} else {
-			lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		String lastNameFirstPart = getUserProperty(FIRST_PART_OF_LAST_NAME_COLUMN, null); 
+		String lastName = getUserProperty(LAST_NAME_COLUMN, "");
+		if (lastNameFirstPart != null ) {
+			lastName = lastNameFirstPart + " " + lastName;
 		}
-		//String lastName = getUserProperty(LAST_NAME_COLUMN, "");
+
 		String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+
 		String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
 		IWTimestamp dateOfRegistration = null;
 		if (dateOfRegistrationString != null) {
@@ -481,7 +481,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		isMovingFromHomeCommune = isMovingFromHomeCommune || !HOME_COMMUNE_CODE.equals(communeCode);
 
 		String PIN = getUserProperty(PIN_COLUMN);
-
+		
 		if (secrecy != null && !secrecy.equals(""))
 			log("SECRET PERSON = " + PIN + " Code :" + secrecy + ".");
 
@@ -542,7 +542,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				full.append(firstName).append(" ").append(middleName).append(" ").append(lastName);
 				String fullName = full.toString();
 				fullName = TextSoap.findAndReplace(fullName, "  ", " ");
-
+				
 				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
 				String preferredName2 = getValueAtIndexFromNameString(2, fullName);
 
@@ -564,11 +564,17 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 				String preferredName1 = getValueAtIndexFromNameString(1, fullName);
 				String preferredName2 = getValueAtIndexFromNameString(3, fullName);
-
+				
 				firstName = preferredName1 + " " + preferredName2;
 				firstName = TextSoap.findAndReplace(firstName, "  ", " ");
+
+				// Remember MIDDLE NAME is always "" in the beginnig ...
+				// Removing lastName since last name should only be changed when moving name to firstName
+				middleName = TextSoap.findAndCut(fullName, lastName);
+				middleName = TextSoap.findAndCut(middleName, preferredName1);
 				middleName = TextSoap.findAndCut(middleName, preferredName2);
 				middleName = TextSoap.findAndReplace(middleName, "  ", " ");
+
 				lastName = TextSoap.findAndCut(lastName, preferredName2);
 				lastName = TextSoap.findAndReplace(lastName, "  ", " ");
 
