@@ -146,7 +146,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
   private boolean processRecord(String record) throws RemoteException{
     userValues = file.getValuesFromRecordString(record);
-    
+    System.out.println("THE RECORD = "+record);
 
 	boolean success = storeUserInfo();
   
@@ -262,9 +262,11 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   }
 
 	private String getUserProperty(int columnIndex){
+		String value = null;
+		
 		if( userValues!=null ){
-			String value = (String)userValues.get(columnIndex);
-	 	
+			value = (String)userValues.get(columnIndex);
+	 		System.out.println("Index: "+columnIndex+" Value: "+value);
 	 		if( value.equals( file.getEmptyValueString() ) ) return null;
 		 	else return value;
   		}
