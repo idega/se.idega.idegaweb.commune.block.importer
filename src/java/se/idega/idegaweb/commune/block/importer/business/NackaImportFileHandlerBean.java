@@ -1,5 +1,9 @@
 package se.idega.idegaweb.commune.block.importer.business;
 import is.idega.idegaweb.member.business.MemberFamilyLogic;
+import is.idega.idegaweb.member.business.NoChildrenFound;
+import is.idega.idegaweb.member.business.NoCustodianFound;
+import is.idega.idegaweb.member.business.NoSpouseFound;
+
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.rmi.RemoteException;
@@ -18,6 +22,7 @@ import java.util.StringTokenizer;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
+import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -35,6 +40,7 @@ import com.idega.core.data.AddressType;
 import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
 import com.idega.core.data.PostalCode;
+import com.idega.data.IDORemoveException;
 import com.idega.data.IDORemoveRelationshipException;
 import com.idega.data.IDOUtil;
 import com.idega.idegaweb.IWApplicationContext;
@@ -419,8 +425,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
 			String preferredName2 = getValueAtIndexFromNameString(2,fullName);
 			
-			//firstName = 
-   
+			firstName = preferredName1+" "+preferredName2;
+			firstName  = TextSoap.findAndReplace(firstName,"  "," ");
+			middleName = TextSoap.findAndCut(middleName,preferredName2);
+			middleName = TextSoap.findAndReplace(middleName,"  "," ");
+			lastName = TextSoap.findAndCut(lastName,preferredName2);
+			lastName = TextSoap.findAndReplace(lastName,"  "," ");
   
     	
     	updateName = true;
@@ -434,6 +444,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     	
 			String preferredName1 = getValueAtIndexFromNameString(1,fullName);
 			String preferredName2 = getValueAtIndexFromNameString(3,fullName);
+			
+			firstName = preferredName1+" "+preferredName2;
+			firstName  = TextSoap.findAndReplace(firstName,"  "," ");
+			middleName = TextSoap.findAndCut(middleName,preferredName2);
+			middleName = TextSoap.findAndReplace(middleName,"  "," ");
+			lastName = TextSoap.findAndCut(lastName,preferredName2);
+			lastName = TextSoap.findAndReplace(lastName,"  "," ");
     	
     	updateName= true;
     
@@ -593,7 +610,63 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     * or move from it
     */
     if( secretPerson ){
-    	comUserBiz.moveCitizenToProtectedCitizenGroup(user);
+    	//remove family ties!
+			try {
+				Collection children = relationBiz.getChildrenFor(user);
+				if( children != null ){
+					Iterator kids = children.iterator();
+					while (kids.hasNext()) {
+						User child = (User) kids.next();
+						relationBiz.removeAsChildFor(child,user);
+					}
+				}
+				
+			}
+			catch (RemoveException ex) {
+				ex.printStackTrace();
+			}
+			catch (NoChildrenFound x){}
+			
+			try {
+				User spouse = relationBiz.getSpouseFor(user);
+				if( spouse != null ){
+					relationBiz.removeAsSpouseFor(spouse,user);
+				}
+				
+			}
+			catch (RemoveException ex) {
+				ex.printStackTrace();
+			}
+			catch(NoSpouseFound x){}
+			
+			try {
+				Collection parents = relationBiz.getCustodiansFor(user);
+				if( parents != null ){
+					Iterator ents = parents.iterator();
+					while (ents.hasNext()) {
+						User ent = (User) ents.next();
+						relationBiz.removeAsParentFor(ent,user);
+					}
+				}
+				
+			}
+			catch (RemoveException ex) {
+				ex.printStackTrace();
+			}		
+			catch (NoCustodianFound x){}
+			
+			
+			
+    	//remove address
+    	try {
+				user.removeAllAddresses();
+			}
+			catch (IDORemoveRelationshipException e) {
+				//e.printStackTrace();
+			}
+    	
+    	
+    	//comUserBiz.moveCitizenToProtectedCitizenGroup(user);
     }
     else if( isMovingFromNacka ){
 			comUserBiz.moveCitizenFromCommune(user);
