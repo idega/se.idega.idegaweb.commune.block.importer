@@ -30,7 +30,6 @@ import com.idega.block.school.data.SchoolClassMemberLogHome;
 import com.idega.block.school.data.SchoolHome;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDORelationshipException;
-import com.idega.idegaweb.IWBundle;
 import com.idega.idegaweb.UnavailableIWContext;
 import com.idega.presentation.IWContext;
 import com.idega.user.data.Gender;
@@ -113,8 +112,8 @@ implements ImportFileHandler
 		notFoundParent = new ArrayList();
 		transaction = this.getSessionContext().getUserTransaction();
 		report = new Report(file.getFile().getName());	//Create a report file. I will be located in the Report dir
-		//Cero all counters used just for reporting purposes
-		IWBundle bundle = getIWMainApplication().getBundle("se.idega.idegaweb.commune");
+		//Zero all counters used just for reporting purposes
+		//IWBundle bundle = getIWMainApplication().getBundle("se.idega.idegaweb.commune");
 		//schoolTypeID =  Integer.parseInt(bundle.getProperty("child_care_school_type", "2"));
 		count = 0;
 		failCount = 0;
