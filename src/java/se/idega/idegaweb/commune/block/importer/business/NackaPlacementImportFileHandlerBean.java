@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.13 2003/10/23 14:48:24 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.14 2003/10/24 11:11:38 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -47,6 +47,7 @@ import com.idega.core.localisation.data.ICLanguage;
 import com.idega.core.localisation.data.ICLanguageHome;
 import com.idega.core.location.data.Commune;
 import com.idega.core.location.data.CommuneHome;
+import com.idega.data.IDOAddRelationshipException;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
@@ -65,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/23 14:48:24 $ by $Author: anders $
+ * Last modified: $Date: 2003/10/24 11:11:38 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.13 $
+ * @version $Revision: 1.14 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -347,8 +348,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		String homeCommuneName = getUserProperty(this.COLUMN_HOME_COMMUNE);
 		homeCommuneName = homeCommuneName == null ? "" : homeCommuneName;
 		
-		String schoolYear = getUserProperty(this.COLUMN_SCHOOL_YEAR);
-		if (schoolYear == null) return false;
+		String schoolYearName = getUserProperty(this.COLUMN_SCHOOL_YEAR);
+		if (schoolYearName == null) return false;
 		
 		String schoolClass = getUserProperty(this.COLUMN_SCHOOL_CLASS);
 		if (schoolClass == null) return false;
@@ -366,7 +367,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		useSkillLevel = useSkillLevel == null ? "" : useSkillLevel;
 
 		School school = null;
-		SchoolYear year = null;
+		SchoolYear schoolYear = null;
 		SchoolType schoolType = null; 
 
 		// school type
@@ -470,25 +471,26 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				failedSchools.put(schoolName, s);
 			}
 			
-			if (schoolYear.equals("0")) {
-				schoolYear = "F";
+			if (schoolYearName.equals("0")) {
+				schoolYearName = "F";
 			} else {
-				schoolYear = schoolYearPrefix + schoolYear; 
+				schoolYearName = schoolYearPrefix + schoolYearName; 
 			}
 			try {
 				//school year	
-				year = sYearHome.findByYearName(schoolYear);
+				schoolYear = sYearHome.findByYearName(schoolYearName);
 			} catch (FinderException e) {
-				System.out.println("School year not found: " + schoolYear);
+				System.out.println("School year not found: " + schoolYearName);
 				return false;
 			}
 
 			Map schoolYears = schoolBiz.getSchoolRelatedSchoolYears(school);
 			Iterator schoolYearIter = schoolYears.values().iterator();
 			boolean schoolYearFound = false;
+//			SchoolYear schoolYear = 
 			while (schoolYearIter.hasNext()) {
 				SchoolYear sy = (SchoolYear) schoolYearIter.next();
-				if (sy.getSchoolYearName().equals(schoolYear)) {
+				if (sy.getSchoolYearName().equals(schoolYearName)) {
 					schoolYearFound = true;
 					break;
 				}
@@ -497,23 +499,54 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				String s = "School year '" + schoolYear + "' not found in school: " + schoolName;
 				System.out.println(s);
 				failedSchools.put(schoolName, s);
+				return false;
 			}
 										
 			//school Class		
 			SchoolClass sClass = null;
 			
 			try {	
-				sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass, school, year, season);
-			} catch (FinderException e) {
+//				sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass, school, schoolYear, season);
+				int schoolId = ((Integer) school.getPrimaryKey()).intValue();
+				int seasonId = ((Integer) season.getPrimaryKey()).intValue();
+				Collection c = sClassHome.findBySchoolAndSeason(schoolId, seasonId);
+				Iterator iter = c.iterator();
+				while (iter.hasNext()) {
+					SchoolClass sc = (SchoolClass) iter.next();
+					if (sc.getName().equals(schoolClass)) {
+						try {
+							sc.addSchoolYear(schoolYear);
+						} catch (IDOAddRelationshipException e) { /* year already exists */ }
+						sClass = sc;
+						break;
+					}
+				}
+				if (sClass == null) {
+					throw new FinderException();
+				}				
+			} catch (Exception e) {
 				//e.printStackTrace();
 				System.out.println("School class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
-				
-				sClass = schoolBiz.storeSchoolClass(schoolClass, school, year, season);
-				sClass.setSchoolTypeId(((Integer) schoolType.getPrimaryKey()).intValue());
+				int schoolId = ((Integer) school.getPrimaryKey()).intValue();
+				int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
+				int seasonId = ((Integer) season.getPrimaryKey()).intValue();
+//				String[] schoolYearIds = {schoolYear.getPrimaryKey().toString()};
+//				int schoolClassId = -1;
+				try {
+					sClass = sClassHome.create();
+					sClass.setSchoolClassName(schoolClass);
+					sClass.setSchoolId(schoolId);
+					sClass.setSchoolTypeId(schoolTypeId);
+					sClass.setSchoolSeasonId(seasonId);
+					sClass.setValid(true);
+					sClass.store();
+					sClass.addSchoolYear(schoolYear);
+				} catch (Exception e2) {}
+//				sClass = schoolBiz.storeSchoolClass(schoolClassId, schoolClass, schoolId, schoolTypeId, seasonId, schoolYearIds, null);				
 				if (sClass == null) {
+					System.out.println("Could not create school class: " + schoolClass);
 					return false;
 				}				
-				sClass.store();
 			}
 			
 			//school Class member
@@ -572,7 +605,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			
 			boolean createMotherTongueResource = useMotherTongue.equals("X");
 			Resource motherTongueResource = null;
-			if (schoolYear.charAt(0) >= '6') {
+			if (schoolYearName.charAt(0) >= '6') {
 				motherTongueResource = motherTongue2Resource;
 			} else {
 				motherTongueResource = motherTongue1Resource;
