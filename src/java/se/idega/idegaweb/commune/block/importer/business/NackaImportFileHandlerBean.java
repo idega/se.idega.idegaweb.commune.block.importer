@@ -1,5 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
-import is.idega.idegaweb.member.business.MemberFamilyLogic;
+import is.idega.block.family.business.FamilyLogic;
 
 import java.io.LineNumberReader;
 import java.io.StringReader;
@@ -102,7 +102,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	//private ArrayList citizenIds;
 
 	private Gender male;
-	private MemberFamilyLogic relationBiz;
+	private FamilyLogic relationBiz;
 	private Map relationsMap;
 	private boolean secretPerson = false;
 	private int startRecord = 0;
@@ -821,7 +821,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 			//initialize business beans and data homes
 			comUserBiz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			relationBiz = (MemberFamilyLogic) this.getServiceInstance(MemberFamilyLogic.class);
+			relationBiz = (FamilyLogic) this.getServiceInstance(FamilyLogic.class);
 			home = comUserBiz.getUserHome();
 			addressBiz = (AddressBusiness) this.getServiceInstance(AddressBusiness.class);
 			//caseBiz = (CaseBusiness)
