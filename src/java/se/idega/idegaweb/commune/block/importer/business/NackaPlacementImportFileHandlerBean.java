@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.28 2003/11/13 16:35:18 anders Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.29 2003/11/13 16:41:52 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/13 16:35:18 $ by $Author: anders $
+ * Last modified: $Date: 2003/11/13 16:41:52 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.28 $
+ * @version $Revision: 1.29 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -337,13 +337,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 
 		String schoolName = getUserProperty(this.COLUMN_SCHOOL_NAME);
 		if (schoolName == null ) {
-			errorLog.put(row, "School name cannot be empty.");
+			log(row, "School name cannot be empty.");
 			return false;
 		}
 
 		String personalId = getUserProperty(this.COLUMN_PERSONAL_ID);
 		if (personalId == null) {
-			errorLog.put(row, "Personal ID cannot be empty.");
+			log(row, "Personal ID cannot be empty.");
 			return false;
 		}
 
@@ -374,13 +374,13 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		
 		String schoolYearName = getUserProperty(this.COLUMN_SCHOOL_YEAR);
 		if (schoolYearName == null) {
-			errorLog.put(row, "School year cannot be empty.");
+			log(row, "School year cannot be empty.");
 			return false;
 		}
 		
 		String schoolClass = getUserProperty(this.COLUMN_SCHOOL_CLASS);
 		if (schoolClass == null) {
-			errorLog.put(row, "School class cannot be empty.");
+			log(row, "School class cannot be empty.");
 			return false;
 		}
 
@@ -412,14 +412,14 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			schoolYearPrefix = "S";
 		}
 		if (typeKey == null) {
-			errorLog.put(row, "School type: " + schoolTypeName + " not supported.");
+			log(row, "School type: " + schoolTypeName + " not supported.");
 			return false;
 		}
 		
 		try {
 			schoolType = sTypeHome.findByTypeKey(typeKey);
 		} catch (FinderException e) {
-			errorLog.put(row, "School type: " + schoolTypeName + " not found in database (key = " + typeKey + ").");
+			log(row, "School type: " + schoolTypeName + " not found in database (key = " + typeKey + ").");
 			return false;
 		}
 			
@@ -452,7 +452,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				Integer communeId = (Integer) homeCommune.getPrimaryKey();
 				biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
 			} catch (FinderException e) {
-				errorLog.put(row, "Commune not found: " + homeCommuneName);
+				log(row, "Commune not found: " + homeCommuneName);
 				return false;
 			}
 			updateUser = true;
@@ -464,7 +464,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				user.setNativeLanguage(nativeLanguage);
 				updateUser = true;		
 			} catch (FinderException e) {
-				errorLog.put(row, "Language with code: " + motherTongue + " not found.");
+				log(row, "Language with code: " + motherTongue + " not found.");
 				return false;
 			}
 		}
@@ -500,7 +500,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			} catch (Exception e) {}
 			
 			if (!hasSchoolType) {
-				errorLog.put(row, "School type '" + schoolTypeName + "' not found in school: " + schoolName);
+				log(row, "School type '" + schoolTypeName + "' not found in school: " + schoolName);
 				return false;
 			}
 			
@@ -513,7 +513,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				//school year	
 				schoolYear = sYearHome.findByYearName(schoolYearName);
 			} catch (FinderException e) {
-				errorLog.put(row, "School year not found: " + schoolYearName);
+				log(row, "School year not found: " + schoolYearName);
 				return false;
 			}
 
@@ -528,7 +528,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				}
 			}
 			if (!schoolYearFound) {
-				errorLog.put(row, "School year '" + schoolYear + "' not found in school: " + schoolName);
+				log(row, "School year '" + schoolYear + "' not found in school: " + schoolName);
 				return false;
 			}
 										
@@ -572,7 +572,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				} catch (Exception e2) {}
 //				sClass = schoolBiz.storeSchoolClass(schoolClassId, schoolClass, schoolId, schoolTypeId, seasonId, schoolYearIds, null);				
 				if (sClass == null) {
-					errorLog.put(row, "Could not create school class: " + schoolClass);
+					log(row, "Could not create school class: " + schoolClass);
 					return false;
 				}				
 			}
@@ -621,7 +621,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			if (createNewPlacement) {			
 				member = schoolBiz.storeSchoolClassMember(sClass, user);
 				if (member == null) {
-					errorLog.put(row, "School Class member could not be created for personal id: " + personalId);	
+					log(row, "School Class member could not be created for personal id: " + personalId);	
 					return false;
 				}
 				IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
@@ -664,7 +664,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				try {
 					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
 				} catch (Exception e) {
-					errorLog.put(row, "Could not create resource placement (" + motherTongue + ") for personal id: " + personalId);
+					log(row, "Could not create resource placement (" + motherTongue + ") for personal id: " + personalId);
 					return false;
 				}
 			}
@@ -717,7 +717,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 				try {
 					resourceBiz.createResourcePlacement(resourceId, memberId, REGISTER_DATE);
 				} catch (Exception e) {
-					errorLog.put(row, "Could not create resource placement (skill level) for personal id: " + personalId);
+					log(row, "Could not create resource placement (skill level) for personal id: " + personalId);
 					return false;
 				}				
 			}
@@ -735,7 +735,7 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 					}
 					catch (RemoveException e) {
 						e.printStackTrace();
-						errorLog.put(row, "NackaStudentImportHandler failed removing protected citizen from all Classes (pin:"+user.getPersonalID()+")");
+						log(row, "NackaStudentImportHandler failed removing protected citizen from all Classes (pin:"+user.getPersonalID()+")");
 						return false;
 					}		
 				}
@@ -823,4 +823,8 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 		return failedRecords;	
 	}
 
+	private void log(Integer row, String message) {
+		errorLog.put(row, message);
+		System.out.println("Line " + row + ": " + message);
+	}
 }
