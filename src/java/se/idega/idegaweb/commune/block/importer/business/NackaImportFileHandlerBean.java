@@ -66,6 +66,24 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private static final String FIRST_NAME_COLUMN = "01012";
 	private static final String PREFERRED_FIRST_NAME_INDEX_COLUMN = "01011";
 	private static final String SECRECY_MARKING_COLUMN = "01003";
+		
+	private static final String REGISTRATION_DATE_COLUMN = "01021";
+	
+	private static final String DEACTIVATE_TYPE_COLUMN = "01004";
+//	private static final String DEACTIVATE_REASON_COLUMN = "01006";
+	private static final String DEACTIVATE_DATE_COLUMN = "01007";
+//	#UP<WS>01004<WS>66H<LF>
+//	#UP<WS>01006<WS>AV<LF>
+//	#UP<WS>01007<WS>20350601<LF>
+	private static final String DEACTIVATION_CONCERNS_CURRENT_PERSON = "H";
+//	private static final String DEACTIVATION_CONCERNS_RELATIVE = "R";
+	private static final String DEACTIVATION_TYPE_DEATH = "66";
+	private static final String DEACTIVATION_TYPE_MOVED_TO_ANOTHER_COMMUNE = "41";
+	private static final String DEACTIVATION_TYPE_MOVED_TO_ANOTHER_COUNTRY = "43";
+	
+	
+//	When 01004 is 66 means deceased
+
 	
 	private static final String FOREIGN_ADDRESS_1_COLUMN = "01071";
 	private static final String FOREIGN_ADDRESS_2_COLUMN = "01072";
@@ -362,6 +380,38 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     String middleName = getUserProperty(MIDDLE_NAME_COLUMN,"");
     String lastName = getUserProperty(LAST_NAME_COLUMN,"");
     String preferredNameIndex = getUserProperty(PREFERRED_FIRST_NAME_INDEX_COLUMN);
+    String dateOfRegistrationString = getUserProperty(REGISTRATION_DATE_COLUMN);
+	IWTimestamp dateOfRegistration = null;
+	if(dateOfRegistrationString != null){
+		dateOfRegistration = getDateFromString(dateOfRegistrationString);
+	}
+	
+	String deactivationType = getUserProperty(DEACTIVATE_TYPE_COLUMN);
+	IWTimestamp dateOfDeactivation = null;
+	boolean personHasDied = false;
+	boolean isMovingFromNacka = false;
+	if(deactivationType != null){
+		String dateOfDeactiovationString = getUserProperty(DEACTIVATE_DATE_COLUMN);		
+		if(dateOfDeactiovationString != null){
+			dateOfDeactivation = getDateFromString(dateOfDeactiovationString);
+		}
+		
+		// check if the deactivation concerns the current person
+		if(deactivationType.endsWith(DEACTIVATION_CONCERNS_CURRENT_PERSON)){
+			//why is this person deactivated
+			if(deactivationType.startsWith(DEACTIVATION_TYPE_DEATH)){
+				personHasDied = true;
+			} else if(deactivationType.startsWith(DEACTIVATION_TYPE_MOVED_TO_ANOTHER_COMMUNE)){
+				isMovingFromNacka = true;
+			} else if(deactivationType.startsWith(DEACTIVATION_TYPE_MOVED_TO_ANOTHER_COUNTRY)){
+				isMovingFromNacka = true;
+			}
+		}
+		
+		
+		
+		
+	}
 		
 		String county = getUserProperty(COUNTY_CODE_COLUMN);
 		String commune = getUserProperty(COMMUNE_CODE_COLUMN);
@@ -369,7 +419,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String secrecy = getUserProperty(SECRECY_MARKING_COLUMN);
 		boolean secretPerson = "J".equals(secrecy);
 		
-		boolean isMovingFromNacka = !NACKA_CODE.equals(county+commune);
+		//TODO should not be necessary because of deactivation check
+		isMovingFromNacka = isMovingFromNacka || !NACKA_CODE.equals(county+commune);
 		
     String PIN = getUserProperty(PIN_COLUMN);
     
@@ -692,8 +743,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 				catch(Exception e){}
 			}
-					
-			comUserBiz.moveCitizenFromCommune(user);
+			
+			if(dateOfDeactivation != null){
+				comUserBiz.moveCitizenFromCommune(user,dateOfDeactivation.getTimestamp());		
+			} else {
+				comUserBiz.moveCitizenFromCommune(user);
+			}
+			
     }
     else{
     	
@@ -713,8 +769,13 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 				catch(Exception e){}
 			}			
-		
-			comUserBiz.moveCitizenToCommune(user);  
+			
+			if(dateOfRegistration!=null){
+				comUserBiz.moveCitizenToCommune(user,dateOfRegistration.getTimestamp());  
+			} else {
+				comUserBiz.moveCitizenToCommune(user);  
+			}
+			
 			  	
     }
     
@@ -732,6 +793,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			}
 	*/		
 		}
+		
+		if(personHasDied){
+			if(dateOfDeactivation != null){
+				comUserBiz.setUserAsDeceased(((Integer)user.getPrimaryKey()),dateOfDeactivation.getDate());
+			} else {
+				comUserBiz.setUserAsDeceased(((Integer)user.getPrimaryKey()),IWTimestamp.RightNow().getDate());
+			}	
+		}
+		
     
 		/**
 		 * Save the user to the database
@@ -742,6 +812,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     user = null;
     return true;
   }
+	/**
+	 * @param dateOfRegistrationString
+	 */
+	private IWTimestamp getDateFromString(String dateOfRegistrationString) {
+		int year = Integer.parseInt(dateOfRegistrationString.substring(0,4));
+		int month = Integer.parseInt(dateOfRegistrationString.substring(4,6));
+		int day = Integer.parseInt(dateOfRegistrationString.substring(6,8));
+		
+		IWTimestamp date = new IWTimestamp(day,month,year);
+		
+		return date;
+	}
+
 	/**
 	 * Method removePreferredNameFromStringsAndReturnIt searches for the preffered
 	 * name by the supplied index and removes it from the names and then returns
@@ -1005,6 +1088,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     IWTimestamp dob = new IWTimestamp(dd,mm,yyyy);
     return dob;
   }
+  
+  
   
 /**
  * @see com.idega.block.importer.business.ImportFileHandler#setRootGroup(Group)
