@@ -8,19 +8,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.CreateException;
 import javax.ejb.FinderException;
 import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import com.idega.block.importer.business.ImportFileHandler;
+import se.idega.idegaweb.commune.business.CommuneUserBusiness;
+
 import com.idega.block.importer.data.ImportFile;
-import com.idega.block.school.data.*;
-import com.idega.block.school.business.*;
+import com.idega.block.school.business.SchoolBusiness;
+import com.idega.block.school.data.School;
+import com.idega.block.school.data.SchoolClass;
+import com.idega.block.school.data.SchoolClassHome;
+import com.idega.block.school.data.SchoolClassMember;
+import com.idega.block.school.data.SchoolClassMemberHome;
+import com.idega.block.school.data.SchoolHome;
+import com.idega.block.school.data.SchoolSeason;
+import com.idega.block.school.data.SchoolSeasonHome;
+import com.idega.block.school.data.SchoolYear;
+import com.idega.block.school.data.SchoolYearHome;
 import com.idega.business.IBOServiceBean;
 import com.idega.data.IDOAddRelationshipException;
-import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
@@ -28,9 +36,6 @@ import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
-
-import se.idega.idegaweb.commune.business.CommuneUserBusiness;
-import se.idega.idegaweb.commune.school.business.*;
 
 
 /**
@@ -262,7 +267,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		}
 		catch (FinderException e) {
 			System.out.println("SchoolYear not found : "+schoolYear);
-			//TODO CREATE THE YEAR
+			//TODO Create the SchoolYear
 			
 			
 			return false;

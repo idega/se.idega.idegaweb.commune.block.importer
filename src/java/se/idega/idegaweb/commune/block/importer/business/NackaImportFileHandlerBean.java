@@ -1,8 +1,5 @@
 package se.idega.idegaweb.commune.block.importer.business;
 import is.idega.idegaweb.member.business.MemberFamilyLogic;
-import is.idega.idegaweb.member.business.NoChildrenFound;
-import is.idega.idegaweb.member.business.NoCustodianFound;
-import is.idega.idegaweb.member.business.NoSpouseFound;
 
 import java.io.LineNumberReader;
 import java.io.StringReader;
@@ -19,10 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
-import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -30,24 +25,20 @@ import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.process.business.CaseBusiness;
-import com.idega.block.process.data.Case;
-import com.idega.business.IBOLookup;
 import com.idega.business.IBOServiceBean;
 import com.idega.core.business.AddressBusiness;
 import com.idega.core.data.Address;
-import com.idega.core.data.AddressHome; 
+import com.idega.core.data.AddressHome;
 import com.idega.core.data.AddressType;
 import com.idega.core.data.Country;
 import com.idega.core.data.CountryHome;
 import com.idega.core.data.PostalCode;
-import com.idega.data.IDORemoveException;
 import com.idega.data.IDORemoveRelationshipException;
 import com.idega.data.IDOUtil;
 import com.idega.idegaweb.IWApplicationContext;
 import com.idega.idegaweb.IWMainApplicationSettings;
 import com.idega.presentation.IWContext;
 import com.idega.user.business.GroupBusiness;
-import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Gender;
 import com.idega.user.data.GenderHome;
 import com.idega.user.data.Group;
@@ -57,10 +48,10 @@ import com.idega.user.data.GroupTypeHome;
 import com.idega.user.data.User;
 import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
+import com.idega.util.Timer;
 import com.idega.util.database.ConnectionBroker;
 import com.idega.util.datastructures.HashtableMultivalued;
 import com.idega.util.text.TextSoap;
-import com.idega.util.Timer;
 
 /**
  * <p>Title: NackaImportFileHandlerBean</p>
@@ -1167,7 +1158,7 @@ private String getValueAtIndexFromNameString(int index , String name){
 					User parent = comUserBiz.getUser(parentId);
 					User child = comUserBiz.getUser(childId);
 					
-					Collection custodians = parent.getRelatedBy(relationBiz.getCustodianRelationType() );
+					//Collection custodians = parent.getRelatedBy(relationBiz.getCustodianRelationType() );
 				
 					 if(coll==null || coll.isEmpty()){				
 							//and as custodian
@@ -1183,9 +1174,9 @@ private String getValueAtIndexFromNameString(int index , String name){
 		catch (RemoteException e) {
 			e.printStackTrace();
 		}
-		catch (FinderException e) {
+		/*catch (FinderException e) {
 			e.printStackTrace();
-		}
+		}*/
 		catch (CreateException e) {
 			e.printStackTrace();
 			System.err.println("NackaImportHandler Failed to create parent relation");

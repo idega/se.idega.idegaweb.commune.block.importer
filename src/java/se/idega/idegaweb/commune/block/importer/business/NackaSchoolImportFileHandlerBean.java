@@ -2,9 +2,9 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collection;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
@@ -13,20 +13,18 @@ import javax.transaction.UserTransaction;
 
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
-import com.idega.block.school.data.*;
-import com.idega.block.school.business.*;
+import com.idega.block.school.business.SchoolBusiness;
+import com.idega.block.school.data.School;
+import com.idega.block.school.data.SchoolArea;
+import com.idega.block.school.data.SchoolHome;
+import com.idega.block.school.data.SchoolType;
+import com.idega.block.school.data.SchoolTypeHome;
 import com.idega.business.IBORuntimeException;
 import com.idega.business.IBOServiceBean;
-import com.idega.data.IDOAddRelationshipException;
 import com.idega.data.IDORelationshipException;
-import com.idega.user.business.UserBusiness;
 import com.idega.user.data.Group;
-import com.idega.user.data.User;
-import com.idega.user.data.UserHome;
 import com.idega.util.IWTimestamp;
 import com.idega.util.Timer;
-
-import se.idega.idegaweb.commune.school.business.*;
 
 
 /**
@@ -235,7 +233,6 @@ private SchoolType getSchoolType(
 	} catch (RemoteException re) {
 		re.printStackTrace();
 	}
-	// TODO Auto-generated method stub
 	return type;
 }
 
@@ -275,7 +272,7 @@ private boolean processRecord(String record) throws RemoteException{
 	  String caretakerName = getProperty(COLUMN_CARETAKER_NAME);
 	  String caretakerAddress = getProperty(COLUMN_CARETAKER_ADDRESS);
 	  String caretakerPostalName = getProperty(COLUMN_CARETAKER_POSTAL_NAME);
-	  String caretakerPIN = getProperty(COLUMN_CARETAKER_PIN);
+	  //String caretakerPIN = getProperty(COLUMN_CARETAKER_PIN);
 	  String caretakerPostalCode = getProperty(COLUMN_CARETAKER_POSTAL_CODE);
 	  String caretakerPhoneNumber = getProperty(COLUMN_CARETAKER_PHONE);
         
