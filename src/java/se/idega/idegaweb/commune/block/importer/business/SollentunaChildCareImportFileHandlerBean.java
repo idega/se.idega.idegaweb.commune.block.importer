@@ -293,7 +293,7 @@ implements ImportFileHandler
 		}
 		String placementEndDate = getUserProperty(COLUMN_PLACEMENT_TO);
 		IWTimestamp placementTo = null;
-		if (placementTo == null) {
+		if (placementEndDate == null) {
 			placementTo = null;
 		}
 		else {
