@@ -146,7 +146,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
   private boolean processRecord(String record) throws RemoteException{
     userValues = file.getValuesFromRecordString(record);
-    System.out.println("THE RECORD = "+record);
+    //System.out.println("THE RECORD = "+record);
 
 	boolean success = storeUserInfo();
   
@@ -247,7 +247,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		
 	}catch (FinderException e) {
 		//e.printStackTrace();
-		System.out.println("School class member not found creating...");	
+		//System.out.println("School class member not found creating...");	
 		
 		try {
 			member = schoolBiz.createSchoolClassMember(sClass, user);
