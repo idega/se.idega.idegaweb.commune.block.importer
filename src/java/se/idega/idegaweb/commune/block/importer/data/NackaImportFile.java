@@ -18,11 +18,17 @@ import com.idega.block.importer.data.ImportFile;
 public class NackaImportFile extends GenericImportFile implements ImportFile{
   private int importAtATimeLimit = 5;
   private ArrayList records;
-
-  public NackaImportFile(File file) {
-    super(file);
+  
+  
+  public NackaImportFile() {
+  	super();
     setRecordDilimiter("#POST_SLUT");
     setAddNewLineAfterRecord(true);
+  }
+
+  public NackaImportFile(File file) {
+    this();
+    setFile(file);
   }
 
 }
