@@ -1,5 +1,5 @@
 /*
- * $Id: NackaPlacementImportFileHandlerBean.java,v 1.18 2003/10/27 20:23:14 laddi Exp $
+ * $Id: NackaPlacementImportFileHandlerBean.java,v 1.19 2003/10/28 15:05:38 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -66,10 +66,10 @@ import com.idega.util.Timer;
  * Note that the "5" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/10/27 20:23:14 $ by $Author: laddi $
+ * Last modified: $Date: 2003/10/28 15:05:38 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.18 $
+ * @version $Revision: 1.19 $
  */
 public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaPlacementImportFileHandler, ImportFileHandler {
 
@@ -469,7 +469,6 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			if (!hasSchoolType) {
 				String s = "School type '" + schoolTypeName + "' not found in school: " + schoolName;
 				System.out.println(s);
-				failedSchools.put(schoolName, schoolName);
 				return false;
 			}
 			
@@ -489,7 +488,6 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			Map schoolYears = schoolBiz.getSchoolRelatedSchoolYears(school);
 			Iterator schoolYearIter = schoolYears.values().iterator();
 			boolean schoolYearFound = false;
-//			SchoolYear schoolYear = 
 			while (schoolYearIter.hasNext()) {
 				SchoolYear sy = (SchoolYear) schoolYearIter.next();
 				if (sy.getSchoolYearName().equals(schoolYearName)) {
@@ -500,7 +498,6 @@ public class NackaPlacementImportFileHandlerBean extends IBOServiceBean implemen
 			if (!schoolYearFound) {
 				String s = "School year '" + schoolYear + "' not found in school: " + schoolName;
 				System.out.println(s);
-				failedSchools.put(schoolName, s);
 				return false;
 			}
 										
