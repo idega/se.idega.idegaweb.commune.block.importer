@@ -227,7 +227,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		
 		try {
 			user = biz.createSpecialCitizenByPersonalIDIfDoesNotExist(PIN,"","",PIN,getGenderFromPin(PIN),getBirthDateFromPin(PIN));
-			schoolName = "I annan kommun 1";
+			//schoolName = "I annan kommun 1";
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
