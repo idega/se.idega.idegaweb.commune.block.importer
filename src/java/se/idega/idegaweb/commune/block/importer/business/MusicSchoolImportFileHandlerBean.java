@@ -250,8 +250,10 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				PhoneHome phHome = userBiz.getPhoneHome();
 				try {
 					studentPhone = phHome.findUsersHomePhone(studentUser);
-					studentPhone.setNumber(studentTelNr);
-					studentPhone.store();
+					if(!studentPhone.getNumber().equals(studentTelNr)) {
+						studentPhone.setNumber(studentTelNr);
+						studentPhone.store();
+					}					
 				}
 				catch(FinderException fEx) {
 					try {
