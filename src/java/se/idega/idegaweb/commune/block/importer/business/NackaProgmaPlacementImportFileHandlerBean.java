@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.10 2004/01/14 17:22:24 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.11 2004/02/02 13:21:04 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -22,6 +22,7 @@ import java.util.logging.Level;
 
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
+import javax.ejb.RemoveException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -64,10 +65,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/14 17:22:24 $ by $Author: anders $
+ * Last modified: $Date: 2004/02/02 13:21:04 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -554,11 +555,22 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 							if ((scId == schoolClassId) && (studyPathId == newStudyPathId)) {
 								member = placement;
 							} else {
-								placement.setRemovedDate(lastDayInPreviousMonth);
-								placement.store();
+								IWTimestamp t1 = new IWTimestamp(placement.getRegisterDate());
+								t1.setAsDate();
+								IWTimestamp t2 = new IWTimestamp(firstDayInCurrentMonth);
+								t2.setAsDate();
+								if (t1.equals(t2)) {
+									try {
+										placement.remove();
+									} catch (RemoveException e) {
+										log(e);
+									}
+								} else {								
+									placement.setRemovedDate(lastDayInPreviousMonth);
+									placement.store();
+								}
 								registerDate = firstDayInCurrentMonth;
 							}
-							placement.store();
 						}
 					}
 				}
