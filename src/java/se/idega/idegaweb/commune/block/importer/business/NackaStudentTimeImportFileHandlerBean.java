@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2003/04/01 13:25:56 $ by $Author: staffan $
+ * Last modified: $Date: 2003/04/14 06:27:45 $ by $Author: staffan $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -53,10 +53,12 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
      * prior to invocation of this method.
      */
     public boolean handleRecords () throws RemoteException {
+        System.err.println ("Importing records: " + getClass ().getName ());
         boolean readSuccess = true;
         failedRecords.clear ();
         final SessionContext sessionContext = getSessionContext();
         final UserTransaction transaction = sessionContext.getUserTransaction();
+        final Set unknownSchools = new HashSet ();
         try {
             transaction.begin();
             // get all home and business objects needed in traversal below
@@ -100,13 +102,21 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
 
                     // 2. find school
                     final String schoolName = (String) fields.get (SCHOOL_COL);
-                    School school = null;
-                    try {
-                        school = schoolHome.findBySchoolName (schoolName);
-                    } catch (FinderException finderException) {
+                    School school = findBySchool (schoolName, schoolHome);
+                    if (school == null) {
+                        final String aliasedName
+                                = getIWApplicationContext().getApplication()
+                                .getBundle("se.idega.idegaweb.commune")
+                                .getProperty (schoolName + "_alias");
+                        if (aliasedName != null) {
+                            school = findBySchool (aliasedName, schoolHome);
+                        }
+                    }
+                    if (school == null) {
                         System.err.println (record + " - Unknown school");
-                        // failedRecords.add (record + " - Unknown school");
-                        // readSuccess = false;
+                        failedRecords.add (record + " - Unknown school");
+                        unknownSchools.add (schoolName);
+                        readSuccess = false;
                     }
 
                     // 3. get number of hours spent per week
@@ -141,6 +151,14 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                         final String message = (String) i.next ();
                         System.err.println ("> " + message);
                     }
+
+                    System.err.println ("Unknown Schools:");
+                    for (Iterator i = unknownSchools.iterator ();
+                         i.hasNext ();) {
+                        final String message = (String) i.next ();
+                        System.err.println ("> " + message);
+                    }
+
                     transaction.rollback ();
                 }
             } catch (Exception e) {
@@ -173,6 +191,17 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
             }
         }
         return digits.toString ();
+    }
+
+    private School findBySchool (final String schoolName,
+                                 final SchoolHome schoolHome) {
+        School result = null;
+        try {
+            result = schoolHome.findBySchoolName (schoolName);
+        } catch (FinderException finderException) {
+            // nothing, just return null
+        }
+        return result;
     }
 
 	private SchoolSeason getPreviousSeason () throws RemoteException,
