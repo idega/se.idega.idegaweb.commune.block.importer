@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.1 2003/11/24 11:11:29 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.2 2003/12/02 16:33:28 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -63,10 +63,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2003/11/24 11:11:29 $ by $Author: anders $
+ * Last modified: $Date: 2003/12/02 16:33:28 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -97,14 +97,13 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	private final static String LOC_KEY_SPECIAL_HIGH_SCHOOL = "sch_type.school_type_gymnasiesarskola";
 	
 	private final static int COLUMN_PERSONAL_ID = 0;
-	private final static int COLUMN_STUDENT_LAST_NAME = 1;
-	private final static int COLUMN_STUDENT_FIRST_NAME = 2;
-	private final static int COLUMN_STREET_ADDRESS = 3;
-	private final static int COLUMN_COMMUNE_CODE = 4;
-	private final static int COLUMN_SCHOOL_CLASS = 5;
-	private final static int COLUMN_STUDY_PATH = 6;
-	private final static int COLUMN_SCHOOL_YEAR = 7;
-	private final static int COLUMN_POSTAL_ADDRESS = 8;
+	private final static int COLUMN_STUDENT_NAME = 1;
+	private final static int COLUMN_STREET_ADDRESS = 2;
+	private final static int COLUMN_COMMUNE_CODE = 3;
+	private final static int COLUMN_STUDY_PATH = 4;
+	private final static int COLUMN_SCHOOL_YEAR = 5;
+	private final static int COLUMN_POSTAL_ADDRESS = 6;
+	private final static int COLUMN_SCHOOL_CLASS = 7;
 	
 	private final static String SCHOOL_NAME = "Nacka Gymnasium";
 
@@ -278,15 +277,16 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			return false;
 		}
 		personalId = "19" + personalId.replaceFirst("-", "");
-		
-		String studentFirstName = getUserProperty(COLUMN_STUDENT_FIRST_NAME);
-		if (studentFirstName == null) {
-			studentFirstName = "";
-		}
-		
-		String studentLastName = getUserProperty(COLUMN_STUDENT_LAST_NAME);
-		if (studentFirstName == null) {
-			studentFirstName = "";
+
+		String name = getUserProperty(COLUMN_STUDENT_NAME);
+		int cutPos = name.lastIndexOf(' ');
+		String studentFirstName = "";
+		String studentLastName = "";
+		if (cutPos != -1) {
+			studentLastName = name.substring(0, cutPos);
+			studentLastName = name.substring(cutPos + 1);
+		} else {
+			errorLog.put(new Integer(row), "Student name must contain lastname and firstname: " + name);
 		}
 		
 		String homeCommuneCode = getUserProperty(COLUMN_COMMUNE_CODE);
@@ -294,6 +294,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			homeCommuneCode = "";
 		}
 
+		
 		String address = getUserProperty(COLUMN_STREET_ADDRESS);
 		if (address == null) {
 			address = "";
@@ -310,11 +311,11 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			zipCode = postalAddress.substring(0, 6);
 			zipCode = zipCode.replaceFirst(" ", "");
 			zipArea = postalAddress.substring(6);
-		}
+		}		
 		
 		String schoolTypeKey = LOC_KEY_HIGH_SCHOOL;
 		String schoolYearPrefix = "G";
-		String s = getUserProperty(COLUMN_SCHOOL_CLASS);
+		String s = getUserProperty(COLUMN_STUDY_PATH);
 		if (s.length() > 5) {
 			if (s.substring(2, 5).equals("GYS")) {
 				schoolTypeKey = LOC_KEY_SPECIAL_HIGH_SCHOOL;
@@ -364,15 +365,18 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			return false;
 		}
 				
-		Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
 		boolean hasSchoolType = false;
-		while (schoolTypeIter.hasNext()) {
-			SchoolType st = (SchoolType) schoolTypeIter.next();
-			if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
-				hasSchoolType = true;
-				break;
+		try {
+			Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
+			while (schoolTypeIter.hasNext()) {
+				SchoolType st = (SchoolType) schoolTypeIter.next();
+				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
+					hasSchoolType = true;
+					break;
+				}
 			}
-		}
+		} catch (Exception e) {}
+		
 		if (!hasSchoolType) {
 			errorLog.put(new Integer(row), "School type '" + schoolTypeKey + "' not found in high school: " + SCHOOL_NAME);
 			return false;
