@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.6 2004/01/07 10:28:24 anders Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.7 2004/01/08 17:18:58 anders Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -63,10 +63,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/07 10:28:24 $ by $Author: anders $
+ * Last modified: $Date: 2004/01/08 17:18:58 $ by $Author: anders $
  *
  * @author Anders Lindman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -82,6 +82,9 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	private SchoolStudyPathHome studyPathHome = null;
 
 	private School school = null;
+	private School schoolA = null;
+	private School schoolB = null;
+	private School schoolC = null;
 	private SchoolSeason season = null;
     
 	private ImportFile file;
@@ -105,7 +108,9 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	private final static int COLUMN_POSTAL_ADDRESS = 6;
 	private final static int COLUMN_SCHOOL_CLASS = 7;
 	
-	private final static String SCHOOL_NAME = "Nacka Gymnasium";
+	private final static String SCHOOL_NAME_A = "Nacka Gymnasium A-enheten";
+	private final static String SCHOOL_NAME_B = "Nacka Gymnasium B-enheten";
+	private final static String SCHOOL_NAME_C = "Nacka Gymnasium C-enheten";
 
 	private Gender female = null;
 	private Gender male = null;
@@ -149,9 +154,21 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			}
 			
 			try {
-				school = schoolHome.findBySchoolName(SCHOOL_NAME);
+				schoolA = schoolHome.findBySchoolName(SCHOOL_NAME_A);
 			} catch (FinderException e) {
-				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME + "' not found.");
+				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_A + "' not found.");
+				return false;
+			}
+			try {
+				schoolB = schoolHome.findBySchoolName(SCHOOL_NAME_B);
+			} catch (FinderException e) {
+				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_B + "' not found.");
+				return false;
+			}
+			try {
+				schoolC = schoolHome.findBySchoolName(SCHOOL_NAME_C);
+			} catch (FinderException e) {
+				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_C + "' not found.");
 				return false;
 			}
             		
@@ -316,6 +333,8 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			zipArea = postalAddress.substring(6);
 		}		
 		
+		boolean isCompulsory = false;
+		
 		String schoolTypeKey = LOC_KEY_HIGH_SCHOOL;
 		String schoolYearPrefix = "G";
 		String s = getUserProperty(COLUMN_STUDY_PATH);
@@ -323,7 +342,52 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			if (s.substring(0, 3).equals("GYS")) {
 				schoolTypeKey = LOC_KEY_SPECIAL_HIGH_SCHOOL;
 				schoolYearPrefix += "S";
+				isCompulsory = true;
 			}
+		}
+
+		// school
+		school = null;
+		
+		if (isCompulsory) school = schoolB;
+		
+		else if (studyPathCode.equals("HP")) school = schoolA;
+		else if (studyPathCode.equals("HPHS")) school = schoolA;
+		else if (studyPathCode.equals("HPTU")) school = schoolA;
+		else if (studyPathCode.equals("SMSP")) school = schoolA;
+		else if (studyPathCode.equals("SP")) school = schoolA;
+		else if (studyPathCode.equals("SPEI")) school = schoolA;
+		else if (studyPathCode.equals("SPKU")) school = schoolA;
+		else if (studyPathCode.equals("SPSK")) school = schoolA;
+		else if (studyPathCode.equals("SPSP")) school = schoolA;
+		else if (studyPathCode.equals("SPSPUT")) school = schoolA;
+		
+		else if (studyPathCode.equals("BFPD")) school = schoolB;
+		else if (studyPathCode.equals("ECL001")) school = schoolB;
+		else if (studyPathCode.equals("HVL009")) school = schoolB;
+		else if (studyPathCode.equals("HVL010")) school = schoolB;
+		else if (studyPathCode.equals("IV")) school = schoolB;
+		else if (studyPathCode.equals("IVIK")) school = schoolB;
+		else if (studyPathCode.equals("IVYTK")) school = schoolB;
+		else if (studyPathCode.equals("SMBI")) school = schoolB;
+		
+		else if (studyPathCode.equals("BP")) school = schoolC;
+		else if (studyPathCode.equals("BPHU")) school = schoolC;
+		else if (studyPathCode.equals("EC")) school = schoolC;
+		else if (studyPathCode.equals("ECDT")) school = schoolC;
+		else if (studyPathCode.equals("ECEL")) school = schoolC;
+		else if (studyPathCode.equals("NV")) school = schoolC;
+		else if (studyPathCode.equals("NVMD")) school = schoolC;
+		else if (studyPathCode.equals("NVMV")) school = schoolC;
+		else if (studyPathCode.equals("NVNV")) school = schoolC;
+		else if (studyPathCode.equals("NVNVUT")) school = schoolC;
+		else if (studyPathCode.equals("SMDE")) school = schoolC;
+		else if (studyPathCode.equals("TEL101")) school = schoolC;
+		else if (studyPathCode.equals("TELDT")) school = schoolC;
+
+		if (school == null) {
+			errorLog.put(new Integer(row), "School not found for study path: " + studyPathCode);
+			return false;			
 		}
 		
 		// user		
@@ -381,7 +445,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		} catch (Exception e) {}
 		
 		if (!hasSchoolType) {
-			errorLog.put(new Integer(row), "School type '" + schoolTypeKey + "' not found in high school: " + SCHOOL_NAME);
+			errorLog.put(new Integer(row), "School type '" + schoolTypeKey + "' not found in high school: " + school.getName());
 			return false;
 		}
 
@@ -400,7 +464,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		} catch (Exception e) {}
 		
 		if (!schoolYearFoundInSchool) {
-			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + SCHOOL_NAME  + "'.");
+			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + school.getName()  + "'.");
 			return false;
 		}
 
@@ -431,7 +495,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 				throw new FinderException();
 			}				
 		} catch (Exception e) {
-			log(Level.INFO, "School Class not found, creating '" + schoolClassName + "' for high school '" + SCHOOL_NAME + "'.");	
+			log(Level.INFO, "School Class not found, creating '" + schoolClassName + "' for high school '" + school.getName() + "'.");	
 			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
 			int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
 			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
