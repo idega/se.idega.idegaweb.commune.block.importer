@@ -32,7 +32,7 @@ import java.io.*;
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler{
 
   private Map userPropertiesMap;
-  private Map RelationialMap;
+  private Map relationsMap;
   private UserBusiness biz;
   private UserHome home;
   private MemberFamilyLogic relationBiz;
@@ -46,6 +46,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   private final String HISTORIC_SECTION_ENDS = "04999";
   private final String SPECIALCASE_RELATIONAL_SECTION_STARTS = "06000";
   private final String SPECIALCASE_RELATIONAL_SECTION_ENDS = "06999";
+
+  private final String RELATION_TYPE_CHILD = "B";
+  private final String RELATION_TYPE_SPOUSE = "M";
+  private final String RELATION_TYPE_SPOUSE2 = "VF";
+  private final String RELATION_TYPE_FATHER = "FA";
 
   //not needed..yet?
   /*private final String USER_SECTION_STARTS = "01001";
@@ -76,15 +81,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
         count++;
         String item = (String) iter.next();
 
-        //if( this.importAtATimeLimit >= count ){
         processRecord(item);
+
         if( (count % 1000) == 0 ){
           System.out.println("NackaImportFileHandler processing RECORD ["+count+"]");
         }
-        //}
       }
 
-      //fimily stuff
+      //family relations
       storeRelations();
 
       records = null;
@@ -137,17 +141,6 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     //addRelations
 
     userPropertiesMap = null;
-
-        /*
-    Iterator iter = ((ArrayList)userPropertiesMap.get("02000")).iterator();
-    while (iter.hasNext()) {
-      Map item = (Map) iter.next();
-      System.out.println((String) item.get("02001"));
-    }*/
-
-
-
-
 
     return true;
   }
@@ -235,10 +228,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
   protected boolean storeUserInfo() throws RemoteException{
 
     User user = null;
-    String PID = (String)userPropertiesMap.get("01001");
+    String PIN = getUserProperty("01001");
 
     try{
-      user = home.findByPersonalID(PID);
+      user = home.findByPersonalID(PIN);
     }
     catch(FinderException ex){
       try {
@@ -250,15 +243,18 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
       }
     }
 
-    String firstName = (String)userPropertiesMap.get("01012");
-    String middleName = (String)userPropertiesMap.get("01013");
-    String lastName = (String)userPropertiesMap.get("1014");
+    //variables
+    String firstName = getUserProperty("01012");
+    String middleName = getUserProperty("01013");
+    String lastName = getUserProperty("01014");
 
+    //variables-to-bean variables
+    user.setPersonalID(PIN);
     user.setFirstName(firstName);
     user.setMiddleName(middleName);
     user.setLastName(lastName);
 
-    user.setPersonalID(PID);
+
 
     //user info
 
@@ -276,7 +272,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
     user.store();
 
     //family and other releation stuff
-
+    addRelations();
 
 
     return true;
@@ -284,8 +280,106 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
   }
 
-  protected void storeRelations(){
+  protected void addRelations(){
+    if( relationsMap == null ) relationsMap = new HashMap();
+    ArrayList relatives = (ArrayList)userPropertiesMap.get(RELATIONAL_SECTION_STARTS);
+    relationsMap.put(getUserProperty("01001"),relatives);
+  }
 
+  protected void storeRelations() throws RemoteException{
+
+  //get keys <- pins
+  //get user bean
+  //get relative bean
+  //if found link with RelationBusiness
+  //else skip relative and log somewhere
+
+    if( relationsMap != null ){
+      Iterator iter = relationsMap.keySet().iterator();
+      User user;
+      User relative;
+      String relativePIN;
+      String PIN;
+      String relationType;
+
+      while (iter.hasNext()) {
+        PIN = (String) iter.next();
+        user = null;
+        try{
+        /**@todo
+         * IS THE LIST EVER NULL?
+         */
+          ArrayList relatives = (ArrayList) relationsMap.get(PIN);
+          if(relatives!=null){
+            user = home.findByPersonalID(PIN);
+
+            Iterator iter2 = relatives.iterator();
+            while (iter2.hasNext()) {
+              Map relativeMap = (Map) iter2.next();
+              relativePIN = (String) relativeMap.get("02001");
+              relationType = (String) relativeMap.get("02003");
+
+              /**
+               * @todo use this second parameter if first is missing??? ask kjell
+               */
+              //if( relativePIN == null ) relativePIN = (String) item.get("02002"));
+
+              if( relativePIN !=null ){
+                try {
+                  relative = home.findByPersonalID(relativePIN);
+
+                  try {
+
+                    if( relationType.equals(this.RELATION_TYPE_CHILD) ){
+                      relationBiz.setAsChildFor(relative,user);
+                    }
+                    else if( relationType.equals(this.RELATION_TYPE_SPOUSE) ){
+                      relationBiz.setAsSpouseFor(relative,user);
+                    }
+                    //other types
+                  }
+                  catch (CreateException ex) {
+                    System.out.println("NackaImporter : Error adding relation for user: "+PIN);
+                    ex.printStackTrace();
+                  }
+
+                }
+                catch (FinderException ex) {
+                  System.out.println("NackaImporter : Error relative (pin "+relativePIN+") not found in database for user: "+PIN);
+                  ex.printStackTrace();
+                }
+
+
+              }
+              else{
+                System.out.println("NackaImporter : Error relative has no PIN and skipping for parent user: "+PIN);
+              }
+
+
+            }
+
+
+
+
+
+          }
+        }
+        catch(FinderException ex){
+          ex.printStackTrace();
+        }
+      }
+    }
+  }
+
+
+  protected String getUserProperty(String propertyName){
+    return (String) userPropertiesMap.get(propertyName);
+  }
+
+  protected String getUserProperty(String propertyName, String StringToReturnIfNotSet){
+    String value = getUserProperty(propertyName);
+    if(value==null) value = StringToReturnIfNotSet;
+    return value;
   }
 
   }
