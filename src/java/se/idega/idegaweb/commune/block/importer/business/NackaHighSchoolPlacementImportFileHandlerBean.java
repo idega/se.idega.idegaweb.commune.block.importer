@@ -1,5 +1,5 @@
 /*
- * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.19 2004/04/15 11:49:45 anders Exp $
+ * $Id: NackaHighSchoolPlacementImportFileHandlerBean.java,v 1.20 2005/05/11 07:15:37 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -69,10 +69,10 @@ import com.idega.util.Timer;
  * Note that the "11" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/04/15 11:49:45 $ by $Author: anders $
+ * Last modified: $Date: 2005/05/11 07:15:37 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.19 $
+ * @version $Revision: 1.20 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
 
@@ -169,7 +169,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
 
 			try {
-				season = schoolBusiness.getCurrentSchoolSeason();    	
+				season = schoolBusiness.getCurrentSchoolSeason(schoolBusiness.getCategoryHighSchool());    	
 			} catch(FinderException e) {
 				e.printStackTrace();
 				println("NackaHighSchoolPlacementHandler: School season is not defined.");
