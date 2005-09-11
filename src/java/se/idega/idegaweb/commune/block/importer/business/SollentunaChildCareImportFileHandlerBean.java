@@ -93,6 +93,7 @@ implements ImportFileHandler
 	private static final int COLUMN_PLACEMENT_TO = 8;
 	private static final int COLUMN_START_DATE = 9;
 	private static final int COLUMN_END_DATE = 10;
+	private static final int COLUMN_SCHOOL_TYPE = 11;
 	
 //	private Gender female;
 //	private Gender male;
@@ -395,8 +396,27 @@ implements ImportFileHandler
 			school.store();
 		}
 		// set school type id
-		if (school != null){
+		if (getUserProperty(COLUMN_SCHOOL_TYPE) != null){
 			try {
+				//Collection schoolTypes = school.getSchoolTypes();
+				//Iterator iterTypes = schoolTypes.iterator();
+				String schType = getUserProperty(COLUMN_SCHOOL_TYPE);
+				//iterator through the school types but there is only one per provider :)
+				/*while (iterTypes.hasNext()) {
+					SchoolType type = (SchoolType) iterTypes.next();					
+					schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
+				}
+				*/
+				SchoolType type = schoolBiz.getSchoolTypeHome().findByTypeString(schType);
+				schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
+				
+			}
+			catch (FinderException fe){
+				log (fe);
+			}
+		}
+		else if (school != null){
+			try{
 				Collection schoolTypes = school.getSchoolTypes();
 				Iterator iterTypes = schoolTypes.iterator();
 				
@@ -404,13 +424,16 @@ implements ImportFileHandler
 				while (iterTypes.hasNext()) {
 					SchoolType type = (SchoolType) iterTypes.next();					
 					schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
-				}
-				
+				}	
 			}
-			catch (IDORelationshipException e){
-				log (e);
+			catch (IDORelationshipException re){
+				log(re);
 			}
+			
+			
 		}
+		
+		
 		//school Class		
 		try {
 			sClass = sClassHome.findByNameAndSchool(groupName, school);
