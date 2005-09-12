@@ -254,7 +254,7 @@ implements ImportFileHandler
 		String unitId = getUserProperty(COLUMN_UNIT_ID);
 		if (unitId == null) {
 			report.append("Could not read the unit ID");
-			return false;
+			//return false;
 		}
 		
 		String unit = getUserProperty(COLUMN_UNIT);
@@ -440,18 +440,24 @@ implements ImportFileHandler
 //			System.out.println("School cls found");
 		} catch (FinderException e) {
 			report.append("School cls for "+school.getName()+" not found creating...");
-			sClass = schoolBiz.storeSchoolClass(groupName, school, null, null);
+			sClass = schoolBiz.storeSchoolClass(groupName, school, null, null);			
+					
 			sClass.store();
 			if (sClass == null){
 				report.append("Could not create the Class for "+school.getName());
 				return false;
 			}
 		}
-		if (sClass.getGroupStringId() == null || sClass.getGroupStringId().equals("null")) {
+		if (sClass.getGroupStringId() == null || sClass.getGroupStringId().equals("null") || sClass.getGroupStringId().equals("") ) {
 			sClass.setGroupStringId(groupId);
 			sClass.store();
 		}
 		
+		if (sClass.getSchoolTypeId() == -1){
+			sClass.setSchoolTypeId(schoolTypeID);
+			sClass.store();
+		}
+			
 		//school cls member
 		//SchoolClassMember member = null;
 		try {
