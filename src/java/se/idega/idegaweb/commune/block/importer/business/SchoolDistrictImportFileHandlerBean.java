@@ -3,14 +3,18 @@ package se.idega.idegaweb.commune.block.importer.business;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.ejb.CreateException;
 import javax.ejb.FinderException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
+
 import com.idega.block.importer.business.ImportFileHandler;
 import com.idega.block.importer.data.ImportFile;
 import com.idega.block.school.business.SchoolBusiness;
 import com.idega.block.school.data.School;
+import com.idega.block.school.data.SchoolArea;
+import com.idega.block.school.data.SchoolAreaHome;
 import com.idega.block.school.data.SchoolDistrict;
 import com.idega.block.school.data.SchoolDistrictHome;
 import com.idega.block.school.data.SchoolHome;
@@ -31,6 +35,7 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 	private UserTransaction transaction;
 	private SchoolBusiness schoolBiz;
 	private SchoolHome sHome;
+	private SchoolAreaHome saHome;
 	private SchoolDistrictHome sdHome;
 	
 	private ImportFile file;
@@ -45,6 +50,7 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
 			sHome = schoolBiz.getSchoolHome();
 			sdHome = (SchoolDistrictHome) IDOLookup.getHome(SchoolDistrict.class);
+			saHome = (SchoolAreaHome) IDOLookup.getHome(SchoolArea.class);
 			
 			transaction.begin();
 			
@@ -98,6 +104,22 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 	}
 	protected boolean storeInfo(String address, String streetNumber,String houseNumber,String schoolName,String district) {
 		
+		SchoolArea schoolArea = null;
+		
+		try {
+			schoolArea = saHome.findSchoolAreaByAreaName(district);
+		}
+		catch(FinderException e) {
+			try {
+				schoolArea = saHome.create();
+				schoolArea.setSchoolAreaName(district);
+				schoolArea.store();
+			}
+			catch(CreateException ce) {
+				return false;
+			}
+		}
+		
 		School school = null;
 		
 		try {
@@ -107,6 +129,7 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 			try {
 				school = sHome.create();
 				school.setSchoolName(schoolName);
+				school.setSchoolArea(schoolArea);
 				school.store();
 			}
 			catch(CreateException ce) {
