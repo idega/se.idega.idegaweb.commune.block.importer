@@ -93,6 +93,8 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		//data elements from file
 		int index = 1;
 		String address = file.getValueAtIndexFromRecordString(index++,record);
+		index++;
+		//String address2 = file.getValueAtIndexFromRecordString(index++,record);
 		String streetNumber = file.getValueAtIndexFromRecordString(index++,record);
 		String houseNumber = file.getValueAtIndexFromRecordString(index++,record);
 		String school = file.getValueAtIndexFromRecordString(index++,record);
