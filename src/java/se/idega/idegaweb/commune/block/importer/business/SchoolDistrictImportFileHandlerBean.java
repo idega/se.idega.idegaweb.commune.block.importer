@@ -126,6 +126,8 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		
 		try {
 			school = sHome.findBySchoolName(schoolName);
+			school.setSchoolArea(schoolArea);
+			school.store();
 		}
 		catch(FinderException e) {
 			try {
@@ -142,6 +144,8 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		SchoolDistrict schoolDistrict = null;
 		try {
 			schoolDistrict = sdHome.findByStreetAndHouseNumber(streetNumber, houseNumber);
+			schoolDistrict.setAddress(address);
+			schoolDistrict.store();
 		}
 		catch (FinderException fe) {
 			try {
