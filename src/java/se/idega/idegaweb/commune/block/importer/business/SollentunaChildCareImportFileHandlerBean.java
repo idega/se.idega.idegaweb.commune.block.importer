@@ -461,7 +461,7 @@ implements ImportFileHandler
 		//school cls member
 		//SchoolClassMember member = null;
 		try {
-			Collection classMembers = sClassMemberHome.findByStudentAndTypes(((Integer)child.getPrimaryKey()).intValue(), getSchoolTypes());
+			Collection classMembers = sClassMemberHome.findByStudentAndTypes(((Integer)child.getPrimaryKey()).intValue(), getChildCareTypes());
 			Iterator oldClasses = classMembers.iterator();
 			while (oldClasses.hasNext()) {
 				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
@@ -586,6 +586,12 @@ implements ImportFileHandler
 	private Collection getSchoolTypes() throws RemoteException {
 		if (childcareTypes == null)
 			childcareTypes = schoolBiz.findAllSchoolTypesForSchool();
+		return childcareTypes;
+	}
+	
+	private Collection getChildCareTypes() throws RemoteException {
+		if (childcareTypes == null)
+			childcareTypes = schoolBiz.findAllSchoolTypesForChildCare();
 		return childcareTypes;
 	}
 	
