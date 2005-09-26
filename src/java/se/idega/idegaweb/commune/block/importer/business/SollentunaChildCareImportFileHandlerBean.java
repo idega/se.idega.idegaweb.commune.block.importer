@@ -583,12 +583,6 @@ implements ImportFileHandler
 		this.file = file;
 	}
 	
-	private Collection getSchoolTypes() throws RemoteException {
-		if (childcareTypes == null)
-			childcareTypes = schoolBiz.findAllSchoolTypesForSchool();
-		return childcareTypes;
-	}
-	
 	private Collection getChildCareTypes() throws RemoteException {
 		if (childcareTypes == null)
 			childcareTypes = schoolBiz.findAllSchoolTypesForChildCare();
