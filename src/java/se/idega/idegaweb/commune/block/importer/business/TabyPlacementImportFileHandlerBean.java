@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.12 2005/10/06 16:05:44 malin Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.13 2005/10/07 12:56:07 malin Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -70,10 +70,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2005/10/06 16:05:44 $ by $Author: malin $
+ * Last modified: $Date: 2005/10/07 12:56:07 $ by $Author: malin $
  *
  * @author Anders Lindman
- * @version $Revision: 1.12 $
+ * @version $Revision: 1.13 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -640,15 +640,19 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 								int oldSchoolClassId = ((Integer) placement.getSchoolClass().getPrimaryKey()).intValue();
 								int newSchoolClassId = ((Integer) sClass.getPrimaryKey()).intValue();
 								if (oldSchoolClassId != newSchoolClassId) { 
-									IWTimestamp yesterday = new IWTimestamp();
-									yesterday.addDays(-1);
-									placement.setRemovedDate(yesterday.getTimestamp());
+									//IWTimestamp yesterday = new IWTimestamp();
+									//yesterday.addDays(-1);
+									IWTimestamp removedDateOldPlacement = new IWTimestamp(season.getSchoolSeasonStart());
+									//placement.setRemovedDate(yesterday.getTimestamp());
+									removedDateOldPlacement.addDays(-1);
+									placement.setRemovedDate(removedDateOldPlacement.getTimestamp());
 									placement.store();
 									Collection c = resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
 									Iterator resourceMemberIter = c.iterator();
 									while (resourceMemberIter.hasNext()) {
 										ResourceClassMember m = (ResourceClassMember) resourceMemberIter.next();
-										m.setEndDate(yesterday.getDate());
+										//m.setEndDate(yesterday.getDate());
+										m.setEndDate(removedDateOldPlacement.getDate());
 										m.store();
 									}
 								} else {
