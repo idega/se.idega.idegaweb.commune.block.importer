@@ -1,5 +1,5 @@
 /*
- * $Id: NackaImportFileHandlerBean.java,v 1.93 2005/05/23 10:28:16 palli Exp $
+ * $Id: NackaImportFileHandlerBean.java,v 1.94 2005/12/21 14:23:23 laddi Exp $
  * 
  * Copyright (C) 2002 Idega Software hf. All Rights Reserved.
  * 
@@ -60,10 +60,10 @@ import com.idega.util.text.TextSoap;
 /**
  * NackaImportFileHandlerBean
  * 
- * Last modified: $Date: 2005/05/23 10:28:16 $ by $Author: palli $
+ * Last modified: $Date: 2005/12/21 14:23:23 $ by $Author: laddi $
  * 
  * @author <a href="mailto:eiki@idega.com">eiki </a>
- * @version $Revision: 1.93 $
+ * @version $Revision: 1.94 $
  */
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler {
 
@@ -152,12 +152,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			Collection row1 = new Vector();
 			row1.add("Personal ID changes");
 			TFlist.add(row1);
-			String fixer = getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
+			/*String fixer = getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
 			log("NackaImportFileHandler [STARTING] time: " + IWTimestamp.getTimestampRightNow().toString());
 			if ("TRUE".equals(fixer)) {
 				log("NackaImportFileHandler [WARNING] FIX (run_fix) is set to TRUE");
 				fix = true;
-			}
+			}*/
 
 			// iterate through the records and process them
 			String item;
