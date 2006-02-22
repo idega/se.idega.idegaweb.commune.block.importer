@@ -1,5 +1,5 @@
 /*
- * $Id: NackaImportFileHandlerBean.java,v 1.94 2005/12/21 14:23:23 laddi Exp $
+ * $Id: NackaImportFileHandlerBean.java,v 1.95 2006/02/22 21:00:25 laddi Exp $
  * 
  * Copyright (C) 2002 Idega Software hf. All Rights Reserved.
  * 
@@ -60,14 +60,12 @@ import com.idega.util.text.TextSoap;
 /**
  * NackaImportFileHandlerBean
  * 
- * Last modified: $Date: 2005/12/21 14:23:23 $ by $Author: laddi $
+ * Last modified: $Date: 2006/02/22 21:00:25 $ by $Author: laddi $
  * 
  * @author <a href="mailto:eiki@idega.com">eiki </a>
- * @version $Revision: 1.94 $
+ * @version $Revision: 1.95 $
  */
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler {
-
-	private static final String FIX_PARAMETER_NAME = "run_fix";
 
 	private String HOME_COMMUNE_CODE;
 
