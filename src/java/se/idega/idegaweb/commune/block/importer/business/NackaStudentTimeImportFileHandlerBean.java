@@ -19,10 +19,10 @@ import se.idega.util.PIDChecker;
  * Reads records in a format specified in {@link
  * se.idega.idegaweb.commune.block.importer.business.NackaStudentTimeImportFileHandler}.
  * <p>
- * Last modified: $Date: 2004/02/20 16:36:50 $ by $Author: tryggvil $
+ * Last modified: $Date: 2006/04/09 11:48:50 $ by $Author: laddi $
  *
  * @author <a href="http://www.staffannoteberg.com">Staffan Nöteberg</a>
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  * @see com.idega.block.importer.data.ImportFile
  * @see com.idega.block.importer.business.ImportFileHandler
  * @see com.idega.block.school.data.SchoolTime
@@ -55,7 +55,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
     public boolean handleRecords () {
         log ("Importing records: " + getClass ().getName ());
         boolean readSuccess = true;
-        failedRecords.clear ();
+        this.failedRecords.clear ();
         final SessionContext sessionContext = getSessionContext();
         final UserTransaction transaction = sessionContext.getUserTransaction();
         final Set unknownSchools = new HashSet ();
@@ -75,11 +75,11 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
             final SchoolSeason schoolSeason = getPreviousSeason ();
             final Date now = new Date ();
             // traverse all records
-            for (String record = (String) importFile.getNextRecord ();
+            for (String record = (String) this.importFile.getNextRecord ();
                  record != null && record.trim ().length () > 0;
-                 record = (String) importFile.getNextRecord ()) {
+                 record = (String) this.importFile.getNextRecord ()) {
                 final List fields
-                        = importFile.getValuesFromRecordString (record);
+                        = this.importFile.getValuesFromRecordString (record);
                 if (fields.size () >= 3 && fields.get (HOURS_COL) != null
                     && Character.isDigit
                     (fields.get (HOURS_COL).toString ().charAt (0))) {
@@ -114,7 +114,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                     }
                     if (school == null) {
                         logWarning (record + " - Unknown school");
-                        failedRecords.add (record + " - Unknown school");
+                        this.failedRecords.add (record + " - Unknown school");
                         unknownSchools.add (schoolName);
                         readSuccess = false;
                     }
@@ -146,7 +146,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
                 } else {
                     logWarning (getClass ().getName ()
                                         + " import failed:");
-                    for (Iterator i = failedRecords.iterator ();
+                    for (Iterator i = this.failedRecords.iterator ();
                          i.hasNext ();) {
                         final String message = (String) i.next ();
                         logWarning ("> " + message);
@@ -171,7 +171,7 @@ public class NackaStudentTimeImportFileHandlerBean extends IBOServiceBean
     }
     
     public List getFailedRecords () {
-        return failedRecords;
+        return this.failedRecords;
     }
     
     private static int getIntInBeginningOfString (final String rawString) {

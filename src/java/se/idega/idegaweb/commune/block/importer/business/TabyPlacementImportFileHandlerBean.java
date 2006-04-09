@@ -1,5 +1,5 @@
 /*
- * $Id: TabyPlacementImportFileHandlerBean.java,v 1.14 2005/10/13 08:32:43 palli Exp $
+ * $Id: TabyPlacementImportFileHandlerBean.java,v 1.15 2006/04/09 11:48:50 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -69,10 +69,10 @@ import com.idega.util.Timer;
  * Note that the "15" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2005/10/13 08:32:43 $ by $Author: palli $
+ * Last modified: $Date: 2006/04/09 11:48:50 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.14 $
+ * @version $Revision: 1.15 $
  */
 public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implements TabyPlacementImportFileHandler, ImportFileHandler {
 
@@ -138,44 +138,44 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords() 
 	 */
 	public boolean handleRecords(){
-		failedRecords = new ArrayList();
-		failedSchools = new TreeMap();
-		errorLog = new TreeMap();
+		this.failedRecords = new ArrayList();
+		this.failedSchools = new TreeMap();
+		this.errorLog = new TreeMap();
 		
 		// cache initialization 
-		mapOfSchoolTypes = new HashMap();
-		mapOfCommunes = new HashMap();
-		mapOfSchools = new HashMap();
-		mapOfSchoolRelatedTypes = new HashMap();
-		mapOfSchoolYears = new HashMap();
-		mapOfSchoolYearMaps = new HashMap();
+		this.mapOfSchoolTypes = new HashMap();
+		this.mapOfCommunes = new HashMap();
+		this.mapOfSchools = new HashMap();
+		this.mapOfSchoolRelatedTypes = new HashMap();
+		this.mapOfSchoolYears = new HashMap();
+		this.mapOfSchoolYearMaps = new HashMap();
 		
-		transaction = this.getSessionContext().getUserTransaction();
+		this.transaction = this.getSessionContext().getUserTransaction();
         
 		Timer clock = new Timer();
 		clock.start();
 
 		try {
 			//initialize business beans and data homes
-			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
 			//home = biz.getUserHome();      
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-			resourceBiz = (ResourceBusiness) this.getServiceInstance(ResourceBusiness.class);
+			this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.resourceBiz = (ResourceBusiness) this.getServiceInstance(ResourceBusiness.class);
 
-			sHome = schoolBiz.getSchoolHome();           
-			sYearHome = schoolBiz.getSchoolYearHome();
-			sTypeHome = schoolBiz.getSchoolTypeHome();
-			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
-			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
-			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
-			languageHome = (ICLanguageHome) this.getIDOHome(ICLanguage.class);			
+			this.sHome = this.schoolBiz.getSchoolHome();           
+			this.sYearHome = this.schoolBiz.getSchoolYearHome();
+			this.sTypeHome = this.schoolBiz.getSchoolTypeHome();
+			this.sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			this.sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			this.languageHome = (ICLanguageHome) this.getIDOHome(ICLanguage.class);			
 			//CareBusiness careBusiness = (CareBusiness)this.getServiceInstance(SchoolChoiceBusiness.class);
 			CareBusiness careBusiness = (CareBusiness)this.getServiceInstance(CareBusiness.class);
 			//SchoolCategory schoolCat = (SchoolCategoryHome)this.getIDOHome(SchoolCategory.class);
 
 			try {
 				//season = schoolBiz.getCurrentSchoolSeason();
-				season = careBusiness.getCurrentSeason();
+				this.season = careBusiness.getCurrentSeason();
 				
 			} catch(FinderException e) {
 				e.printStackTrace();
@@ -185,26 +185,26 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
       
       		// Get resources (change primary keys to the correct values)
       		
-			System.out.println("ID for resource native language = " + RESOURCE_ID_NATIVE_LANGUAGE);
-			motherTongueResource = resourceBiz.getResourceByPrimaryKey(new Integer(RESOURCE_ID_NATIVE_LANGUAGE));
-			if (motherTongueResource == null) {
+			System.out.println("ID for resource native language = " + this.RESOURCE_ID_NATIVE_LANGUAGE);
+			this.motherTongueResource = this.resourceBiz.getResourceByPrimaryKey(new Integer(this.RESOURCE_ID_NATIVE_LANGUAGE));
+			if (this.motherTongueResource == null) {
 				System.out.println("Resource for mother tongue not found.");
 				return false;
 			}
       		
 			//if the transaction failes all the users and their relations are removed
-			transaction.begin();
+			this.transaction.begin();
 
 			//iterate through the records and process them
 			String item;
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 					failed = true;
 					break;
 				} 
@@ -224,10 +224,10 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 
 			//success commit changes
 			if (!failed) {
-				transaction.commit();
+				this.transaction.commit();
 				System.out.println("Imported data committed to database");
 			} else {
-				transaction.rollback(); 
+				this.transaction.rollback(); 
 				System.out.println("Imported data rollbacked from database");
 			}
 			
@@ -236,7 +236,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			} catch (SystemException e2) {
 				e2.printStackTrace();
 			}
@@ -254,9 +254,9 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			return true;
 		}
 //		userValues = file.getValuesFromRecordString2(record);
-		userValues = getValuesFromRecordString2(record);
+		this.userValues = getValuesFromRecordString2(record);
 		boolean success = storeUserInfo(count);
-		userValues = null;
+		this.userValues = null;
 				
 		return success;
 	}
@@ -273,24 +273,24 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	 */
 	public void printFailedRecords() {
 		System.out.println("\n--------------------------------------------------\n");
-		if (failedRecords.isEmpty()) {
-			if (failedSchools.isEmpty()) {
+		if (this.failedRecords.isEmpty()) {
+			if (this.failedSchools.isEmpty()) {
 				System.out.println("All records imported successfully.");
 			}
 		} else {
 			System.out.println("Import failed for these records, please fix and import again:\n");
 		}
   
-		Iterator iter = failedRecords.iterator();
+		Iterator iter = this.failedRecords.iterator();
 
 		while (iter.hasNext()) {
 			System.out.println((String) iter.next());
 		}
 
-		if (!failedSchools.isEmpty()) {
+		if (!this.failedSchools.isEmpty()) {
 			System.out.println("\nSchools missing from database or have different names:\n");
 		}
-		Collection cols = failedSchools.values();
+		Collection cols = this.failedSchools.values();
 		Iterator schools = cols.iterator();
 		
 		while (schools.hasNext()) {
@@ -298,13 +298,13 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			System.out.println(name);
 		}
 		
-		if (!errorLog.isEmpty()) {
+		if (!this.errorLog.isEmpty()) {
 			System.out.println("\nThe following error(s) logged:\n");
 		}
-		Iterator rowIter = errorLog.keySet().iterator();
+		Iterator rowIter = this.errorLog.keySet().iterator();
 		while (rowIter.hasNext()) {
 			Integer row = (Integer) rowIter.next();
-			String message = (String) errorLog.get(row);
+			String message = (String) this.errorLog.get(row);
 			System.out.println("Row " + row + ": " + message);
 		}
 		
@@ -322,7 +322,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 
 		String schoolTypeName = getUserProperty(this.COLUMN_SCHOOL_TYPE);
 		if (schoolTypeName == null ) {
-			errorLog.put(row, "School type cannot be empty.");
+			this.errorLog.put(row, "School type cannot be empty.");
 			return false;
 		}
 
@@ -405,13 +405,13 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		}
 		
 		// caching of schooltype
-		if(mapOfSchoolTypes.containsKey(typeKey)){
-			schoolType = (SchoolType) mapOfSchoolTypes.get(typeKey);
+		if(this.mapOfSchoolTypes.containsKey(typeKey)){
+			schoolType = (SchoolType) this.mapOfSchoolTypes.get(typeKey);
 		}
 		else{
 			try {
-				schoolType = sTypeHome.findByTypeKey(typeKey);
-				mapOfSchoolTypes.put(typeKey,schoolType);
+				schoolType = this.sTypeHome.findByTypeKey(typeKey);
+				this.mapOfSchoolTypes.put(typeKey,schoolType);
 			} catch (FinderException e) {
 				log(row, "School type: " + schoolTypeName + " not found in database (key = " + typeKey + ").");
 				return false;
@@ -422,12 +422,12 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		boolean isNewUser = false;
 		boolean updateUser = false;
 		try {
-			user = biz.getUserHome().findByPersonalID(personalId);
+			user = this.biz.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
 			System.out.println("User not found for PIN : " + personalId + " CREATING");
 			
 			try {
-				user = biz.createSpecialCitizenByPersonalIDIfDoesNotExist(
+				user = this.biz.createSpecialCitizenByPersonalIDIfDoesNotExist(
 						studentFirstName, 
 						"",
 						studentLastName,
@@ -452,16 +452,16 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 				Integer communeId = null;
 				if (!homeCommuneCode.equals("") && !homeCommuneCode.equals("0")) {
 					// caching added
-					if(mapOfCommunes.containsKey(homeCommuneCode)){
-						communeId = (Integer) mapOfCommunes.get(homeCommuneCode);
+					if(this.mapOfCommunes.containsKey(homeCommuneCode)){
+						communeId = (Integer) this.mapOfCommunes.get(homeCommuneCode);
 					}
 					else{
-						Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+						Commune homeCommune = this.communeHome.findByCommuneCode(homeCommuneCode);
 						communeId = (Integer) homeCommune.getPrimaryKey();
-						mapOfCommunes.put(homeCommuneCode,communeId);
+						this.mapOfCommunes.put(homeCommuneCode,communeId);
 					}
 				}
-				biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
+				this.biz.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), studentAddress, studentZipCode, studentZipArea, communeId);
 			} catch (FinderException e) {
 				log(row, "Commune not found: " + homeCommuneCode);
 				return false;
@@ -471,7 +471,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 
 		if (motherTongue.length() > 0) {
 			try {
-				ICLanguage nativeLanguage = languageHome.findByDescription(motherTongue);
+				ICLanguage nativeLanguage = this.languageHome.findByDescription(motherTongue);
 				user.setNativeLanguage(nativeLanguage);
 				updateUser = true;		
 			} catch (FinderException e) {
@@ -489,16 +489,16 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			description = "";	
 		}
 		if (!"secret".equals(description)) {
-			if(mapOfSchools.containsKey(schoolName)){
-				school = (School) mapOfSchools.get(schoolName);
+			if(this.mapOfSchools.containsKey(schoolName)){
+				school = (School) this.mapOfSchools.get(schoolName);
 			}
 			else{
 				try {
 					//this can only work if there is only one school with this name. add more parameters for other areas
-					school = sHome.findBySchoolName(schoolName);
-					mapOfSchools.put(schoolName,school);
+					school = this.sHome.findBySchoolName(schoolName);
+					this.mapOfSchools.put(schoolName,school);
 				} catch (FinderException e) {
-					failedSchools.put(schoolName,schoolName);
+					this.failedSchools.put(schoolName,schoolName);
 					return false;
 				}
 			}
@@ -507,12 +507,12 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			boolean hasSchoolType = false;
 			try {
 				Map types = null;
-				if(mapOfSchoolRelatedTypes.containsKey(schoolKey)){
-					types = (Map) mapOfSchoolRelatedTypes.get(schoolKey);
+				if(this.mapOfSchoolRelatedTypes.containsKey(schoolKey)){
+					types = (Map) this.mapOfSchoolRelatedTypes.get(schoolKey);
 				}
 				else{
-					 types = schoolBiz.getSchoolRelatedSchoolTypes(school);
-					 mapOfSchoolRelatedTypes.put(schoolKey,types);
+					 types = this.schoolBiz.getSchoolRelatedSchoolTypes(school);
+					 this.mapOfSchoolRelatedTypes.put(schoolKey,types);
 				}
 				/*
 				Iterator schoolTypeIter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
@@ -538,14 +538,14 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 				schoolYearName = schoolYearPrefix + schoolYearName; 
 			}
 			// caching added 
-			if(mapOfSchoolYears.containsKey(schoolYearName)){
-				schoolYear = (SchoolYear) mapOfSchoolYears.get(schoolYearName);
+			if(this.mapOfSchoolYears.containsKey(schoolYearName)){
+				schoolYear = (SchoolYear) this.mapOfSchoolYears.get(schoolYearName);
 			}
 			else{
 				try {
 					//school year	
-					schoolYear = sYearHome.findByYearName(schoolYearName);
-					mapOfSchoolYears.put(schoolYearName,schoolYear);
+					schoolYear = this.sYearHome.findByYearName(schoolYearName);
+					this.mapOfSchoolYears.put(schoolYearName,schoolYear);
 				} catch (FinderException e) {
 					log(row, "School year not found: " + schoolYearName);
 					return false;
@@ -554,12 +554,12 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 
 			// caching added
 			Map schoolYears = null;
-			if(mapOfSchoolYearMaps.containsKey(schoolKey)){
-				schoolYears = (Map) mapOfSchoolYearMaps.get(schoolKey);
+			if(this.mapOfSchoolYearMaps.containsKey(schoolKey)){
+				schoolYears = (Map) this.mapOfSchoolYearMaps.get(schoolKey);
 			}
 			else{
-				schoolYears =schoolBiz.getSchoolRelatedSchoolYears(school);
-				mapOfSchoolYearMaps.put(schoolKey,schoolYears);
+				schoolYears =this.schoolBiz.getSchoolRelatedSchoolYears(school);
+				this.mapOfSchoolYearMaps.put(schoolKey,schoolYears);
 			}
 			
 			Iterator schoolYearIter = schoolYears.values().iterator();
@@ -583,8 +583,8 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			
 			try {	
 				int schoolId = ((Integer) school.getPrimaryKey()).intValue();
-				int seasonId = ((Integer) season.getPrimaryKey()).intValue();
-				Collection c = sClassHome.findBySchoolAndSeason(schoolId, seasonId);
+				int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
+				Collection c = this.sClassHome.findBySchoolAndSeason(schoolId, seasonId);
 				Iterator iter = c.iterator();
 				while (iter.hasNext()) {
 					SchoolClass sc = (SchoolClass) iter.next();
@@ -603,11 +603,11 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 				System.out.println("School Class not found, creating '" + schoolClass + "' for school '" + schoolName + "'.");	
 				int schoolId = ((Integer) school.getPrimaryKey()).intValue();
 				int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
-				int seasonId = ((Integer) season.getPrimaryKey()).intValue();
+				int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
 //				String[] schoolYearIds = {schoolYear.getPrimaryKey().toString()};
 //				int schoolClassId = -1;
 				try {
-					sClass = sClassHome.create();
+					sClass = this.sClassHome.create();
 					sClass.setSchoolClassName(schoolClass);
 					sClass.setSchoolId(schoolId);
 					sClass.setSchoolTypeId(schoolTypeId);
@@ -628,7 +628,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			boolean createNewPlacement = true;
 			try {
 //				Collection placements = sClassMemberHome.findAllByUserAndSeason(user, season);
-				Collection placements = sClassMemberHome.findByStudent(user);
+				Collection placements = this.sClassMemberHome.findByStudent(user);
 				if (placements != null) {
 					Iterator oldPlacements = placements.iterator();
 					while (oldPlacements.hasNext()) {
@@ -641,12 +641,12 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 								if (oldSchoolClassId != newSchoolClassId) { 
 									//IWTimestamp yesterday = new IWTimestamp();
 									//yesterday.addDays(-1);
-									IWTimestamp removedDateOldPlacement = new IWTimestamp(season.getSchoolSeasonStart());
+									IWTimestamp removedDateOldPlacement = new IWTimestamp(this.season.getSchoolSeasonStart());
 									//placement.setRemovedDate(yesterday.getTimestamp());
 									removedDateOldPlacement.addDays(-1);
 									placement.setRemovedDate(removedDateOldPlacement.getTimestamp());
 									placement.store();
-									Collection c = resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
+									Collection c = this.resourceBiz.getResourcePlacementsByMemberId((Integer) placement.getPrimaryKey());
 									Iterator resourceMemberIter = c.iterator();
 									while (resourceMemberIter.hasNext()) {
 										ResourceClassMember m = (ResourceClassMember) resourceMemberIter.next();
@@ -669,13 +669,13 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			} catch (FinderException f) {}
 
 			if (createNewPlacement) {			
-				member = schoolBiz.storeSchoolClassMember(sClass, user);
+				member = this.schoolBiz.storeSchoolClassMember(sClass, user);
 				if (member == null) {
 					log(row, "School Class member could not be created for personal id: " + personalId);	
 					return false;
 				}
 				//IWTimestamp registerDate = new IWTimestamp(REGISTER_DATE);
-				IWTimestamp registerDate = new IWTimestamp(season.getSchoolSeasonStart());
+				IWTimestamp registerDate = new IWTimestamp(this.season.getSchoolSeasonStart());
 				member.setRegisterDate(registerDate.getTimestamp());
 				member.setRegistrationCreatedDate(IWTimestamp.getTimestampRightNow());
 				member.setSchoolYear(((Integer) schoolYear.getPrimaryKey()).intValue()); 
@@ -687,13 +687,13 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			int resourceId = -1;
 			
 			boolean createMotherTongueResource = !motherTongue.equals("");
-			resourceId = ((Integer) motherTongueResource.getPrimaryKey()).intValue();
-			Collection rm = resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
+			resourceId = ((Integer) this.motherTongueResource.getPrimaryKey()).intValue();
+			Collection rm = this.resourceBiz.getResourcePlacementsByMemberId((Integer) member.getPrimaryKey());
 			Iterator rmIter = rm.iterator();
 			while (rmIter.hasNext()) {
 				ResourceClassMember m = (ResourceClassMember) rmIter.next();
 				int mId = m.getResourceFK();
-				if (mId == RESOURCE_ID_NATIVE_LANGUAGE) {
+				if (mId == this.RESOURCE_ID_NATIVE_LANGUAGE) {
 					if (!createMotherTongueResource) {
 						IWTimestamp yesterday = new IWTimestamp();
 						yesterday.addDays(-1);
@@ -707,7 +707,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 			}
 			if (createMotherTongueResource) {
 				try {
-					resourceBiz.createResourcePlacement(resourceId, memberId,new IWTimestamp(season.getSchoolSeasonStart()).toString());
+					this.resourceBiz.createResourcePlacement(resourceId, memberId,new IWTimestamp(this.season.getSchoolSeasonStart()).toString());
 				} catch (Exception e) {
 					log(row, "Could not create resource placement (" + motherTongue + ") for personal id: " + personalId);
 					return false;
@@ -716,7 +716,7 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		} else {//remove secret market person from all schools this season
 			System.out.println("TabyPlacementImportHandler Removing protected citizen from all classes (pin:" + user.getPersonalID() + ")");
 			try{		
-				Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user, season);
+				Collection classMembers =  this.sClassMemberHome.findAllByUserAndSeason(user, this.season);
 				
 				Iterator oldClasses = classMembers.iterator();
 				while (oldClasses.hasNext()) {
@@ -744,14 +744,14 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	private String getUserProperty(int columnIndex){
 		String value = null;
 		
-		if (userValues!=null) {
+		if (this.userValues!=null) {
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
 	 		//System.out.println("Index: "+columnIndex+" Value: "+value);
-	 		if (file.getEmptyValueString().equals(value)) {
+	 		if (this.file.getEmptyValueString().equals(value)) {
 	 			return null;
 	 		} else {
 	 			return value;
@@ -777,15 +777,15 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 		try {
 			GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
 			if (Integer.parseInt(pin.substring(10, 11)) % 2 == 0) {
-				if (female == null) {
-					female = home.getFemaleGender();
+				if (this.female == null) {
+					this.female = home.getFemaleGender();
 				}
-				return female;
+				return this.female;
 			} else {
-				if (male == null) {
-					male = home.getMaleGender();
+				if (this.male == null) {
+					this.male = home.getMaleGender();
 				}
-				return male;
+				return this.male;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -811,11 +811,11 @@ public class TabyPlacementImportFileHandlerBean extends IBOServiceBean implement
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords(){
-		return failedRecords;	
+		return this.failedRecords;	
 	}
 
 	private void log(Integer row, String message) {
-		errorLog.put(row, message);
+		this.errorLog.put(row, message);
 		System.out.println("Line " + row + ": " + message);
 	}
 }
