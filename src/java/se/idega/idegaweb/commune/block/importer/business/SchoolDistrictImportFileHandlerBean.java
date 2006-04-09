@@ -44,36 +44,36 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 	public SchoolDistrictImportFileHandlerBean() {}
 	
 	public boolean handleRecords() throws RemoteException{
-		transaction =  this.getSessionContext().getUserTransaction();
+		this.transaction =  this.getSessionContext().getUserTransaction();
 		
 		try {
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-			sHome = schoolBiz.getSchoolHome();
-			sdHome = (SchoolDistrictHome) IDOLookup.getHome(SchoolDistrict.class);
-			saHome = (SchoolAreaHome) IDOLookup.getHome(SchoolArea.class);
+			this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.sHome = this.schoolBiz.getSchoolHome();
+			this.sdHome = (SchoolDistrictHome) IDOLookup.getHome(SchoolDistrict.class);
+			this.saHome = (SchoolAreaHome) IDOLookup.getHome(SchoolArea.class);
 			
-			transaction.begin();
+			this.transaction.begin();
 			
 			String item;
 			int count = 1;
 
-			while ( !(item=(String)file.getNextRecord()).equals("") ) {
+			while ( !(item=(String)this.file.getNextRecord()).equals("") ) {
 				
 				if(!processRecord(item)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 				}
 				else {
 					System.out.println("Processed record number: "+ (count++));
 				}
 			}
 			
-			transaction.commit();
+			this.transaction.commit();
 			return true;
 		}catch (Exception ex) {
 			ex.printStackTrace();
 
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			}
 			catch (SystemException e) {
 				e.printStackTrace();
@@ -92,13 +92,13 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 	private boolean processRecord(String record) {
 		//data elements from file
 		int index = 1;
-		String address = file.getValueAtIndexFromRecordString(index++,record);
+		String address = this.file.getValueAtIndexFromRecordString(index++,record);
 		index++;
 		//String address2 = file.getValueAtIndexFromRecordString(index++,record);
-		String streetNumber = file.getValueAtIndexFromRecordString(index++,record);
-		String houseNumber = file.getValueAtIndexFromRecordString(index++,record);
-		String school = file.getValueAtIndexFromRecordString(index++,record);
-		String district = file.getValueAtIndexFromRecordString(index++,record);
+		String streetNumber = this.file.getValueAtIndexFromRecordString(index++,record);
+		String houseNumber = this.file.getValueAtIndexFromRecordString(index++,record);
+		String school = this.file.getValueAtIndexFromRecordString(index++,record);
+		String district = this.file.getValueAtIndexFromRecordString(index++,record);
 
 		boolean success = storeInfo(address, streetNumber, houseNumber, school, district);
 
@@ -109,11 +109,11 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		SchoolArea schoolArea = null;
 		
 		try {
-			schoolArea = saHome.findSchoolAreaByAreaName(district);
+			schoolArea = this.saHome.findSchoolAreaByAreaName(district);
 		}
 		catch(FinderException e) {
 			try {
-				schoolArea = saHome.create();
+				schoolArea = this.saHome.create();
 				schoolArea.setSchoolAreaName(district);
 				schoolArea.store();
 			}
@@ -125,13 +125,13 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		School school = null;
 		
 		try {
-			school = sHome.findBySchoolName(schoolName);
+			school = this.sHome.findBySchoolName(schoolName);
 			school.setSchoolArea(schoolArea);
 			school.store();
 		}
 		catch(FinderException e) {
 			try {
-				school = sHome.create();
+				school = this.sHome.create();
 				school.setSchoolName(schoolName);
 				school.setSchoolArea(schoolArea);
 				school.store();
@@ -143,13 +143,13 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 		
 		SchoolDistrict schoolDistrict = null;
 		try {
-			schoolDistrict = sdHome.findByStreetAndHouseNumber(streetNumber, houseNumber);
+			schoolDistrict = this.sdHome.findByStreetAndHouseNumber(streetNumber, houseNumber);
 			schoolDistrict.setAddress(address);
 			schoolDistrict.store();
 		}
 		catch (FinderException fe) {
 			try {
-				schoolDistrict = sdHome.create();
+				schoolDistrict = this.sdHome.create();
 				schoolDistrict.setAddress(address);
 				schoolDistrict.setStreetNumber(streetNumber);
 				schoolDistrict.setHouseNumber(houseNumber);
@@ -173,6 +173,6 @@ public class SchoolDistrictImportFileHandlerBean extends IBOServiceBean implemen
 	}
 	
 	public List getFailedRecords() throws RemoteException{
-		return failedRecords;
+		return this.failedRecords;
 	}
 }

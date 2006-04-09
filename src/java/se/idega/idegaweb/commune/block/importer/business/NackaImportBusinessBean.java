@@ -132,22 +132,27 @@ public class NackaImportBusinessBean extends ImportBusinessBean implements Nacka
 		 */
 		if (updateName) {
 			if (firstName != null) {
-				if (firstName.endsWith(" "))
+				if (firstName.endsWith(" ")) {
 					firstName = firstName.substring(0, firstName.length() - 1);
+				}
 			}
 
 			if (middleName != null) {
-				if (middleName.startsWith(" "))
+				if (middleName.startsWith(" ")) {
 					middleName = middleName.substring(1, middleName.length());
-				if (middleName.endsWith(" "))
+				}
+				if (middleName.endsWith(" ")) {
 					middleName = middleName.substring(0, middleName.length() - 1);
+				}
 			}
 
 			if (lastName != null) {
-				if (lastName.startsWith(" "))
+				if (lastName.startsWith(" ")) {
 					lastName = lastName.substring(1, lastName.length());
-				if (lastName.endsWith(" "))
+				}
+				if (lastName.endsWith(" ")) {
 					lastName = lastName.substring(0, lastName.length() - 1);
+				}
 			}
 
 			user.setFirstName(firstName);

@@ -1,5 +1,5 @@
 /*
- * $Id: NackaParagraphImportFileHandlerBean.java,v 1.4 2004/01/12 09:05:03 laddi Exp $
+ * $Id: NackaParagraphImportFileHandlerBean.java,v 1.5 2006/04/09 12:05:08 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -44,10 +44,10 @@ import com.idega.util.Timer;
  * Note that the "9" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/01/12 09:05:03 $ by $Author: laddi $
+ * Last modified: $Date: 2006/04/09 12:05:08 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implements NackaParagraphImportFileHandler, ImportFileHandler {
 
@@ -72,29 +72,29 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords() 
 	 */
 	public boolean handleRecords(){
-		failedRecords = new ArrayList();
-		transaction = this.getSessionContext().getUserTransaction();
+		this.failedRecords = new ArrayList();
+		this.transaction = this.getSessionContext().getUserTransaction();
         
 		Timer clock = new Timer();
 		clock.start();
 
 		try {
 			//initialize business beans and data homes
-			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
             		
-			transaction.begin();
+			this.transaction.begin();
 
 			//iterate through the records and process them
 			String item;
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).trim().equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 					failed = true;
 					break;
 				} 
@@ -114,9 +114,9 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 
 			//success commit changes
 			if (!failed) {
-				transaction.commit();
+				this.transaction.commit();
 			} else {
-				transaction.rollback(); 
+				this.transaction.rollback(); 
 			}
 			
 			return !failed;
@@ -124,7 +124,7 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			} catch (SystemException e2) {
 				e2.printStackTrace();
 			}
@@ -141,9 +141,9 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 			// Skip header
 			return true;
 		}
-		userValues = file.getValuesFromRecordString(record);
+		this.userValues = this.file.getValuesFromRecordString(record);
 		boolean success = storeUserInfo();
-		userValues = null;
+		this.userValues = null;
 				
 		return success;
 	}
@@ -152,13 +152,13 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 	 * @see com.idega.block.importer.business.ImportFileHandler#printFailedRecords() 
 	 */
 	public void printFailedRecords() {
-		if (failedRecords.isEmpty()) {
+		if (this.failedRecords.isEmpty()) {
 			System.out.println("All records imported successfully.");
 		} else {
 			System.out.println("Import failed for these records, please fix and import again:");
 		}
   
-		Iterator iter = failedRecords.iterator();
+		Iterator iter = this.failedRecords.iterator();
 
 		while (iter.hasNext()) {
 			System.out.println((String) iter.next());
@@ -173,21 +173,23 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 		User user = null;
 
 		String personalId = getUserProperty(this.COLUMN_PERSONAL_ID);
-		if (personalId == null) return false;
+		if (personalId == null) {
+			return false;
+		}
 
 		String paragraph = getUserProperty(this.COLUMN_PARAGRAPH);
 		paragraph = paragraph == null ? "" : paragraph;
 			
 		// user
 		try {
-			user = biz.getUserHome().findByPersonalID(personalId);
+			user = this.biz.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
 			System.out.println("User not found for PIN : " + personalId);
 			return false;
 		}	
 				
 		try {
-			Collection placements = sClassMemberHome.findByStudent(user);
+			Collection placements = this.sClassMemberHome.findByStudent(user);
 			if (placements != null) {
 				Iterator placementsIter = placements.iterator();
 				while (placementsIter.hasNext()) {
@@ -221,14 +223,14 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 	private String getUserProperty(int columnIndex){
 		String value = null;
 		
-		if (userValues!=null) {
+		if (this.userValues!=null) {
 		
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
-	 		if (file.getEmptyValueString().equals(value)) {
+	 		if (this.file.getEmptyValueString().equals(value)) {
 	 			return null;
 	 		} else {
 	 			return value;
@@ -256,6 +258,6 @@ public class NackaParagraphImportFileHandlerBean extends IBOServiceBean implemen
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords(){
-		return failedRecords;	
+		return this.failedRecords;	
 	}
 }

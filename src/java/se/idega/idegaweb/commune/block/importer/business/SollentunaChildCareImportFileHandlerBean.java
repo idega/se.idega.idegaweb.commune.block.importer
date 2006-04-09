@@ -106,63 +106,64 @@ implements ImportFileHandler
 	}
 
 	public boolean handleRecords() {
-		failedSchools = new ArrayList();
-		failedRecords = new ArrayList();
-		notFoundChildren = new ArrayList();
-		notFoundParent = new ArrayList();
-		transaction = this.getSessionContext().getUserTransaction();
-		report = new Report(file.getFile().getName());	//Create a report file. I will be located in the Report dir
+		this.failedSchools = new ArrayList();
+		this.failedRecords = new ArrayList();
+		this.notFoundChildren = new ArrayList();
+		this.notFoundParent = new ArrayList();
+		this.transaction = this.getSessionContext().getUserTransaction();
+		this.report = new Report(this.file.getFile().getName());	//Create a report file. I will be located in the Report dir
 		//Zero all counters used just for reporting purposes
 		//IWBundle bundle = getIWMainApplication().getBundle("se.idega.idegaweb.commune");
 		//schoolTypeID =  Integer.parseInt(bundle.getProperty("child_care_school_type", "2"));
-		count = 0;
-		failCount = 0;
-		successCount = 0;
-		alreadyChoosenCount = 0;
+		this.count = 0;
+		this.failCount = 0;
+		this.successCount = 0;
+		this.alreadyChoosenCount = 0;
 
 		Timer clock = new Timer();
 		clock.start();
 		try {
 			//initialize business beans and data homes
-			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
 			//home = biz.getUserHome();
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-			sHome = schoolBiz.getSchoolHome();
-			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
-			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.sHome = this.schoolBiz.getSchoolHome();
+			this.sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			this.sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
 //			sClassMemberLogHome = (SchoolClassMemberLogHome) this.getIDOHome(SchoolClassMemberLog.class);
 			//if the transaction failes all the users and their relations are removed
-			transaction.begin();
+			this.transaction.begin();
 			//iterate through the records and process them
-			file.getNextRecord();	//Skip header
-			while (!(item = (String) file.getNextRecord()).equals("")) {
-				if (!processRecord(item))
-					failedRecords.add(item);
-				if ((count % 50) == 0) {
+			this.file.getNextRecord();	//Skip header
+			while (!(this.item = (String) this.file.getNextRecord()).equals("")) {
+				if (!processRecord(this.item)) {
+					this.failedRecords.add(this.item);
+				}
+				if ((this.count % 50) == 0) {
 					System.out.println(
-						"NackaPlacedChildHandler processing RECORD [" + count + "] time: "
+						"NackaPlacedChildHandler processing RECORD [" + this.count + "] time: "
 							+ IWTimestamp.getTimestampRightNow().toString());
 				}
-				item = null;
+				this.item = null;
 			}
 			clock.stop();
 			
 			printFailedRecords();
-			report.append("\nNackaQueueHandler processed "+ successCount
-					+ " records successfuly out of "+ count+ "records.\n");
-			report.append(alreadyChoosenCount+" of the selections had already been imported.\n");
-			report.append("Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int) (clock.getTime() / 1000)) + " s\n");
-			report.store();
+			this.report.append("\nNackaQueueHandler processed "+ this.successCount
+					+ " records successfuly out of "+ this.count+ "records.\n");
+			this.report.append(this.alreadyChoosenCount+" of the selections had already been imported.\n");
+			this.report.append("Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int) (clock.getTime() / 1000)) + " s\n");
+			this.report.store();
 			System.out.println(
 				"Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int) (clock.getTime() / 1000)) + " s");
 			// System.gc();
 			//success commit changes
-			transaction.commit();
+			this.transaction.commit();
 			return true;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			} catch (SystemException e) {
 				e.printStackTrace();
 			}
@@ -171,58 +172,58 @@ implements ImportFileHandler
 	}
 	
 	private boolean processRecord(String record) throws RemoteException {
-		userValues = file.getValuesFromRecordString(record);
+		this.userValues = this.file.getValuesFromRecordString(record);
 		//System.out.println("THE RECORD = "+record);
 		boolean success = true;
 		try {
 			success = storeUserInfo();
 			if (success) {
-				successCount++;
-				count++;
+				this.successCount++;
+				this.count++;
 			} else {
-				report.append("The problems above comes from the following line in the file:\n" + record + "\n");
-				failCount++;
-				count++;
+				this.report.append("The problems above comes from the following line in the file:\n" + record + "\n");
+				this.failCount++;
+				this.count++;
 			}
 		} catch (AlreadyCreatedException e) {
-			report.append("The following line will not be imported:\n" + record + "\n");
-			alreadyChoosenCount++;
+			this.report.append("The following line will not be imported:\n" + record + "\n");
+			this.alreadyChoosenCount++;
 		}
-		userValues = null;
+		this.userValues = null;
 		return success;
 	}
 	
 	public void printFailedRecords() {
-		if(!failedRecords.isEmpty())
+		if(!this.failedRecords.isEmpty())
 		{
-			report.append("\nImport failed for these records, please fix and import again:\n");
-			Iterator iter = failedRecords.iterator();
+			this.report.append("\nImport failed for these records, please fix and import again:\n");
+			Iterator iter = this.failedRecords.iterator();
 			while (iter.hasNext()) {
-				report.append((String) iter.next());
+				this.report.append((String) iter.next());
 			}
 		}
 
-		if (!failedSchools.isEmpty()) {
-			report.append("\nChild caretakers missing from database or have different names:\n");
-			Iterator schools = failedSchools.iterator();
+		if (!this.failedSchools.isEmpty()) {
+			this.report.append("\nChild caretakers missing from database or have different names:\n");
+			Iterator schools = this.failedSchools.iterator();
 			while (schools.hasNext()) {
-				report.append((String) schools.next());
+				this.report.append((String) schools.next());
 			}
 		}
-		if (!notFoundChildren.isEmpty()) {
-			report.append("\nChildren missing from database or have different names. These have been created:\n");
-			Iterator chIterator = notFoundChildren.iterator();
+		if (!this.notFoundChildren.isEmpty()) {
+			this.report.append("\nChildren missing from database or have different names. These have been created:\n");
+			Iterator chIterator = this.notFoundChildren.iterator();
 			while (chIterator.hasNext()) {
 				String name = (String) chIterator.next();
-				report.append(name + "\n");
+				this.report.append(name + "\n");
 			}
 		}
-		if (!notFoundParent.isEmpty()) {
-			report.append("\nNo parent found for child:\n");
-			Iterator parents = notFoundParent.iterator();
+		if (!this.notFoundParent.isEmpty()) {
+			this.report.append("\nNo parent found for child:\n");
+			Iterator parents = this.notFoundParent.iterator();
 			while (parents.hasNext()) {
 				String name = (String) parents.next();
-				report.append(name + "\n");
+				this.report.append(name + "\n");
 			}
 		}
 	}
@@ -236,11 +237,11 @@ implements ImportFileHandler
 		String PIN = getUserProperty(COLUMN_CHILD_PERSONAL_ID);
 		if (PIN == null)
 		{
-			report.append("Could not read the personal ID");
+			this.report.append("Could not read the personal ID");
 			return false;
 		}
 		if (!PIDChecker.getInstance().isValid(PIN, false)) {
-			report.append("Personal ID is invalid: " + PIN);
+			this.report.append("Personal ID is invalid: " + PIN);
 			return false;
 		}
 		PIN = PIDChecker.getInstance().trim(PIN);
@@ -248,12 +249,12 @@ implements ImportFileHandler
 		String childName = getUserProperty(COLUMN_CHILD_NAME);
 		if (childName == null)
 		{
-			report.append("Could not read the Child name");
+			this.report.append("Could not read the Child name");
 //			return false;
 		}
 		String unitId = getUserProperty(COLUMN_UNIT_ID);
 		if (unitId == null) {
-			report.append("Could not read the unit ID");
+			this.report.append("Could not read the unit ID");
 			//return false;
 		}
 		
@@ -265,13 +266,13 @@ implements ImportFileHandler
 			caretaker = unit;
 		}
 		else {
-			report.append("Could not read the childcaretaker for child "+PIN);
+			this.report.append("Could not read the childcaretaker for child "+PIN);
 			return false;
 		}
 		
 		String groupId = getUserProperty(COLUMN_GROUP_ID);
 		if (groupId == null) {
-			report.append("Could not read the group ID");
+			this.report.append("Could not read the group ID");
 			return false;
 		}
 		
@@ -280,14 +281,14 @@ implements ImportFileHandler
 		String hours = getUserProperty(COLUMN_HOURS);
 		String placementDate = getUserProperty(COLUMN_PLACEMENT_FROM);
 		if (placementDate == null) {
-			report.append("Failed parsing placement for " + childName);
+			this.report.append("Failed parsing placement for " + childName);
 			return false;
 		}
 		IWTimestamp placementFrom = new IWTimestamp();
 		try {
 			placementFrom.setDate(formatDate(placementDate));
 		} catch (DateFormatException e1) {
-			report.append("Failed parsing placement date "+placementDate+" for " + childName);
+			this.report.append("Failed parsing placement date "+placementDate+" for " + childName);
 			return false;
 		}
 		String placementEndDate = getUserProperty(COLUMN_PLACEMENT_TO);
@@ -306,14 +307,14 @@ implements ImportFileHandler
 		}
 		String sDate = getUserProperty(COLUMN_START_DATE);
 		if (sDate == null) {
-			report.append("Failed parsing start date for " + childName);
+			this.report.append("Failed parsing start date for " + childName);
 			return false;
 		}
 		IWTimestamp sDateT = new IWTimestamp();
 		try {
 			sDateT.setDate(formatDate(sDate));
 		} catch (DateFormatException e1) {
-			report.append("Failed parsing start date "+sDate+" for " + childName);
+			this.report.append("Failed parsing start date "+sDate+" for " + childName);
 			return false;
 		}
 
@@ -324,7 +325,7 @@ implements ImportFileHandler
 				eDateT = new IWTimestamp();
 				eDateT.setDate(formatDate(eDate));
 			} catch (DateFormatException e1) {
-				report.append("Failed parsing contract end date "+eDate+" for " + childName);
+				this.report.append("Failed parsing contract end date "+eDate+" for " + childName);
 				return false;
 			}
 		}
@@ -335,17 +336,17 @@ implements ImportFileHandler
 //		SchoolYear year;
 		// user
 		try {
-			child = biz.getUserHome().findByPersonalID(PIN);
+			child = this.biz.getUserHome().findByPersonalID(PIN);
 			//debug
 			if (child == null)
 			{
-				report.append("Could not find child with personal id "+PIN+" in database");
+				this.report.append("Could not find child with personal id "+PIN+" in database");
 				return false;
 			}
 		} catch (FinderException e) {
 			try {
-				report.append("Could not find any child with personal id " + PIN + "  ");
-				report.append("Child name is " + childName);
+				this.report.append("Could not find any child with personal id " + PIN + "  ");
+				this.report.append("Child name is " + childName);
 				//create a temporary user for the child
 				//initialize business beans and data homes
 				CommuneUserBusiness biz;
@@ -370,12 +371,12 @@ implements ImportFileHandler
 				}
 				
 				child = biz.createSpecialCitizen(firstName, "", lastName, PIN, gender, dateOfBirth);
-				if (!notFoundChildren.contains(childName)) {
-					notFoundChildren.add(childName);
+				if (!this.notFoundChildren.contains(childName)) {
+					this.notFoundChildren.add(childName);
 				}
 //				success = false;
 			} catch (Exception ex) {
-				report.append("There was an error while creating special user "+PIN+" "+childName+"\n");
+				this.report.append("There was an error while creating special user "+PIN+" "+childName+"\n");
 				ex.printStackTrace();
 				return false;
 			}
@@ -383,11 +384,11 @@ implements ImportFileHandler
 		try {
 			//school
 			//this can only work if there is only one school with this name. add more parameters for other areas
-			school = sHome.findBySchoolName(caretaker);
+			school = this.sHome.findBySchoolName(caretaker);
 		} catch (FinderException e) {
-			report.append("Could not find any childcare taker with name " + caretaker);
-			if (!failedSchools.contains(caretaker)) {
-				failedSchools.add(caretaker);
+			this.report.append("Could not find any childcare taker with name " + caretaker);
+			if (!this.failedSchools.contains(caretaker)) {
+				this.failedSchools.add(caretaker);
 			}
 			return false;
 		}
@@ -407,8 +408,8 @@ implements ImportFileHandler
 					schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
 				}
 				*/
-				SchoolType type = schoolBiz.getSchoolTypeHome().findByTypeString(schType);
-				schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
+				SchoolType type = this.schoolBiz.getSchoolTypeHome().findByTypeString(schType);
+				this.schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
 				
 			}
 			catch (FinderException fe){
@@ -423,7 +424,7 @@ implements ImportFileHandler
 				//iterator through the school types but there is only one per provider :)
 				while (iterTypes.hasNext()) {
 					SchoolType type = (SchoolType) iterTypes.next();					
-					schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
+					this.schoolTypeID = ((Integer) type.getPrimaryKey()).intValue();
 				}	
 			}
 			catch (IDORelationshipException re){
@@ -436,15 +437,15 @@ implements ImportFileHandler
 		
 		//school Class		
 		try {
-			sClass = sClassHome.findByNameAndSchool(groupName, school);
+			sClass = this.sClassHome.findByNameAndSchool(groupName, school);
 //			System.out.println("School cls found");
 		} catch (FinderException e) {
-			report.append("School cls for "+school.getName()+" not found creating...");
-			sClass = schoolBiz.storeSchoolClass(groupName, school, null, null);			
+			this.report.append("School cls for "+school.getName()+" not found creating...");
+			sClass = this.schoolBiz.storeSchoolClass(groupName, school, null, null);			
 					
 			sClass.store();
 			if (sClass == null){
-				report.append("Could not create the Class for "+school.getName());
+				this.report.append("Could not create the Class for "+school.getName());
 				return false;
 			}
 		}
@@ -454,24 +455,25 @@ implements ImportFileHandler
 		}
 		
 		if (sClass.getSchoolTypeId() == -1){
-			sClass.setSchoolTypeId(schoolTypeID);
+			sClass.setSchoolTypeId(this.schoolTypeID);
 			sClass.store();
 		}
 			
 		//school cls member
 		//SchoolClassMember member = null;
 		try {
-			Collection classMembers = sClassMemberHome.findByStudentAndTypes(((Integer)child.getPrimaryKey()).intValue(), getChildCareTypes());
+			Collection classMembers = this.sClassMemberHome.findByStudentAndTypes(((Integer)child.getPrimaryKey()).intValue(), getChildCareTypes());
 			Iterator oldClasses = classMembers.iterator();
 			while (oldClasses.hasNext()) {
 				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
 				if(!temp.getSchoolClass().getSchoolClassName().equals(groupName))
 				{
-					report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
-					if (!isDBV)
+					this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
+					if (!isDBV) {
 						throw new AlreadyCreatedException();
+					}
 				} else {
-					report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
+					this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
 				}
 //				try {
 //					temp.remove();
@@ -495,27 +497,29 @@ implements ImportFileHandler
 		
 		//Create the contract
 		ChildCareBusiness cc = (ChildCareBusiness) getServiceInstance(ChildCareBusiness.class);
-		User parent = biz.getCustodianForChild(child);
+		User parent = this.biz.getCustodianForChild(child);
 		if (parent == null) {
-			notFoundParent.add(PIN + ": " + childName);
+			this.notFoundParent.add(PIN + ": " + childName);
 		}
 		
 		IWContext iwc;
 		try {
 			iwc = IWContext.getInstance();
-			if (performer == null)
-				performer = iwc.getCurrentUser();
-			if (locale == null)
-				locale = iwc.getCurrentLocale();
+			if (this.performer == null) {
+				this.performer = iwc.getCurrentUser();
+			}
+			if (this.locale == null) {
+				this.locale = iwc.getCurrentLocale();
+			}
 			
 			if (parent == null) {
-				parent = performer;
+				parent = this.performer;
 			}
 				
 			int schoolID = Integer.parseInt(school.getPrimaryKey().toString());
 			int classID = Integer.parseInt(sClass.getPrimaryKey().toString());
-			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, schoolTypeID, null, sDateT, eDateT,
-				locale, parent, performer);
+			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, this.schoolTypeID, null, sDateT, eDateT,
+				this.locale, parent, this.performer);
 			if (importDone) {
 				try {
 					SchoolClassMember member = cc.getLatestPlacement(((Integer)child.getPrimaryKey()).intValue(), schoolID);
@@ -526,7 +530,7 @@ implements ImportFileHandler
 						member.setRemovedDate(null);
 					}
 					try {
-						SchoolClassMemberLog log = schoolBiz.getSchoolClassMemberLogHome().findOpenLogByUser(member);
+						SchoolClassMemberLog log = this.schoolBiz.getSchoolClassMemberLogHome().findOpenLogByUser(member);
 						if (log != null) {
 							if (placementTo != null) {
 								log.setEndDate(placementTo.getDate());
@@ -550,20 +554,21 @@ implements ImportFileHandler
 //					log.store();
 				}
 				catch (FinderException fe) {
-					report.append("Placement not found for child " + child.getName());
+					this.report.append("Placement not found for child " + child.getName());
 				}
 //				catch (CreateException e) {
 //					report.append("Could not create placement log for child " + child.getName());					
 //				}
-				report.append("Contract created for child "+child.getName());
+				this.report.append("Contract created for child "+child.getName());
 			}
-			else
-				report.append("Failed to create contract for child "+child.getName());
+			else {
+				this.report.append("Failed to create contract for child "+child.getName());
+			}
 		} catch (UnavailableIWContext e2) {
-			report.append("Could not get the IWContext. Cannot create the contract.");
+			this.report.append("Could not get the IWContext. Cannot create the contract.");
 			return false;
 		} catch (NumberFormatException e3) {
-			report.append("NumberFormatException. SchoolID or ClassID is not a number. Cannot create the contract.");
+			this.report.append("NumberFormatException. SchoolID or ClassID is not a number. Cannot create the contract.");
 			return false;
 		}
 		//finished with this user
@@ -584,26 +589,31 @@ implements ImportFileHandler
 	}
 	
 	private Collection getChildCareTypes() throws RemoteException {
-		if (childcareTypes == null)
-			childcareTypes = schoolBiz.findAllSchoolTypesForChildCare();
-		return childcareTypes;
+		if (this.childcareTypes == null) {
+			this.childcareTypes = this.schoolBiz.findAllSchoolTypesForChildCare();
+		}
+		return this.childcareTypes;
 	}
 	
 	private String getUserProperty(int columnIndex) {
 		String value = null;
-		if (userValues != null) {
+		if (this.userValues != null) {
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
 			//System.out.println("Index: "+columnIndex+" Value: "+value);
-			if (file.getEmptyValueString().equals(value))
+			if (this.file.getEmptyValueString().equals(value)) {
 				return null;
-			else
+			}
+			else {
 				return value;
-		} else
+			}
+		}
+		else {
 			return null;
+		}
 	}
 	/**
 	 * Rturns the value from getQueueProperty() parsed into an int
@@ -658,6 +668,6 @@ implements ImportFileHandler
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords() {
-		return failedRecords;
+		return this.failedRecords;
 	}
 }

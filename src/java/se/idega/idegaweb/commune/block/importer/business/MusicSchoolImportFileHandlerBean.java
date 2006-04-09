@@ -64,39 +64,39 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	public MusicSchoolImportFileHandlerBean() {}
 	
 	public boolean handleRecords() throws RemoteException{
-		transaction =  this.getSessionContext().getUserTransaction();
+		this.transaction =  this.getSessionContext().getUserTransaction();
 		
 		try {
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-			sHome = schoolBiz.getSchoolHome();
+			this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.sHome = this.schoolBiz.getSchoolHome();
 			
-			fullStudy = getFullTimeStudySchoolType(schoolBiz);
-			halfStudy = getHalfTimeStudySchoolType(schoolBiz);
-			SchoolSeasonHome schoolSeasonHome = schoolBiz.getSchoolSeasonHome();
-			schoolSeason = schoolSeasonHome.findSeasonByDate(schoolBiz.getCategoryMusicSchool(), new IWTimestamp().getDate());
+			this.fullStudy = getFullTimeStudySchoolType(this.schoolBiz);
+			this.halfStudy = getHalfTimeStudySchoolType(this.schoolBiz);
+			SchoolSeasonHome schoolSeasonHome = this.schoolBiz.getSchoolSeasonHome();
+			this.schoolSeason = schoolSeasonHome.findSeasonByDate(this.schoolBiz.getCategoryMusicSchool(), new IWTimestamp().getDate());
 			
-			transaction.begin();
+			this.transaction.begin();
 			
 			String item;
 			int count = 1;
 
-			while ( !(item=(String)file.getNextRecord()).equals("") ) {
+			while ( !(item=(String)this.file.getNextRecord()).equals("") ) {
 				
 				if(!processRecord(item)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 				}
 				else {
 					System.out.println("Processed record number: "+ (count++));
 				}
 			}
 			
-			transaction.commit();
+			this.transaction.commit();
 			return true;
 		}catch (Exception ex) {
 			ex.printStackTrace();
 
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			}
 			catch (SystemException e) {
 				e.printStackTrace();
@@ -116,23 +116,23 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		//data elements from file
 		int index = 1;
 		index++;
-		String musicSchoolName = file.getValueAtIndexFromRecordString(index++,record);
-		String studentSSN = file.getValueAtIndexFromRecordString(index++,record);
-		String studentName = file.getValueAtIndexFromRecordString(index++,record);
+		String musicSchoolName = this.file.getValueAtIndexFromRecordString(index++,record);
+		String studentSSN = this.file.getValueAtIndexFromRecordString(index++,record);
+		String studentName = this.file.getValueAtIndexFromRecordString(index++,record);
 		index++;
 		index++;
-		String studentTelNr = file.getValueAtIndexFromRecordString(index++,record);
-		String preSchool = file.getValueAtIndexFromRecordString(index++,record);
-		String instrument1 = file.getValueAtIndexFromRecordString(index++,record);
-		String singing = file.getValueAtIndexFromRecordString(index++,record);
-		String level1 = file.getValueAtIndexFromRecordString(index++,record);
-		String level1Nr = file.getValueAtIndexFromRecordString(index++,record);
-		String instrument2 = file.getValueAtIndexFromRecordString(index++,record);
-		String level2Nr = file.getValueAtIndexFromRecordString(index++,record);
-		String level2 = file.getValueAtIndexFromRecordString(index++,record);
-		String instrument3 = file.getValueAtIndexFromRecordString(index++,record);
-		String level3Nr = file.getValueAtIndexFromRecordString(index++,record);
-		String level3 = file.getValueAtIndexFromRecordString(index++,record);
+		String studentTelNr = this.file.getValueAtIndexFromRecordString(index++,record);
+		String preSchool = this.file.getValueAtIndexFromRecordString(index++,record);
+		String instrument1 = this.file.getValueAtIndexFromRecordString(index++,record);
+		String singing = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level1 = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level1Nr = this.file.getValueAtIndexFromRecordString(index++,record);
+		String instrument2 = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level2Nr = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level2 = this.file.getValueAtIndexFromRecordString(index++,record);
+		String instrument3 = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level3Nr = this.file.getValueAtIndexFromRecordString(index++,record);
+		String level3 = this.file.getValueAtIndexFromRecordString(index++,record);
 
 		boolean success = storeInfo(musicSchoolName,studentName,studentSSN,studentTelNr,preSchool,
 				instrument1,singing,level1,level1Nr,
@@ -154,18 +154,18 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		SchoolStudyPath secondInstrument = null;
 		SchoolStudyPath thirdInstrument = null;
 		String mainClassName = "mainClass";
-		SchoolClassHome schoolClassHome = schoolBiz.getSchoolClassHome();
+		SchoolClassHome schoolClassHome = this.schoolBiz.getSchoolClassHome();
 		
 		
 		try {
-			musicSchool = sHome.findBySchoolName(musicSchoolName);
+			musicSchool = this.sHome.findBySchoolName(musicSchoolName);
 		}catch(FinderException e) {
 			try {
-				musicSchool = sHome.create();
+				musicSchool = this.sHome.create();
 				musicSchool.setSchoolName(musicSchoolName);
 				musicSchool.store();
-				musicSchool.addSchoolType(fullStudy);
-				musicSchool.addSchoolType(halfStudy);
+				musicSchool.addSchoolType(this.fullStudy);
+				musicSchool.addSchoolType(this.halfStudy);
 			}catch(CreateException ce) {
 				musicSchool = null;
 			}catch(IDOAddRelationshipException idoe) {
@@ -181,8 +181,8 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				mainClass.setSchoolClassName(mainClassName);
 				Integer id = (Integer) musicSchool.getPrimaryKey();
 				mainClass.setSchoolId(id.intValue());
-				if(schoolSeason != null) {
-					Integer seaId = (Integer) schoolSeason.getPrimaryKey();
+				if(this.schoolSeason != null) {
+					Integer seaId = (Integer) this.schoolSeason.getPrimaryKey();
 					mainClass.setSchoolSeasonId(seaId.intValue());
 				}
 				mainClass.store();
@@ -201,13 +201,13 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 		
 //		student = processStudent(studentSSN, studentTelNr, musicSchool, schoolSeason, mainClass, instrument);
 		if(instrument1 != null && !instrument1.equals(" ")) {
-			processInstrument(instrument1, musicSchool, mainClass, schoolSeason, firstInstrument, level1Nr, level1, studentName, studentSSN, studentTelNr);
+			processInstrument(instrument1, musicSchool, mainClass, this.schoolSeason, firstInstrument, level1Nr, level1, studentName, studentSSN, studentTelNr);
 		}
 		if(instrument2 != null && !instrument2.equals(" ")) {
-			processInstrument(instrument2, musicSchool, mainClass, schoolSeason, secondInstrument, level2Nr, level2, studentName, studentSSN, studentTelNr);
+			processInstrument(instrument2, musicSchool, mainClass, this.schoolSeason, secondInstrument, level2Nr, level2, studentName, studentSSN, studentTelNr);
 		}
 		if(instrument3 != null && !instrument3.equals(" ")) {
-			processInstrument(instrument3, musicSchool, mainClass, schoolSeason, thirdInstrument, level3Nr, level3, studentName, studentSSN, studentTelNr);
+			processInstrument(instrument3, musicSchool, mainClass, this.schoolSeason, thirdInstrument, level3Nr, level3, studentName, studentSSN, studentTelNr);
 		}
 		
 		return true;
@@ -225,7 +225,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @throws RemoteException
 	 */
 	private SchoolClassMember processStudent(String studentName, String studentSSN, String studentTelNr, School musicSchool, SchoolSeason schoolSeason, SchoolClass mainClass, SchoolStudyPath instrument) throws RemoteException {
-		SchoolClassMemberHome studentHome = schoolBiz.getSchoolClassMemberHome();
+		SchoolClassMemberHome studentHome = this.schoolBiz.getSchoolClassMemberHome();
 		UserBusiness userBiz = (UserBusiness) this.getServiceInstance(UserBusiness.class);
 		SchoolClassMember student = null;
 		User studentUser = null;
@@ -319,8 +319,8 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	 * @param instrumentHome
 	 */
 	private void processInstrument(String instrumentCode, School musicSchool, SchoolClass mainClass, SchoolSeason schoolSeason, SchoolStudyPath instrument, String levelNr, String levelString, String studentName, String studentSSN, String studentTelNr) throws RemoteException{
-		SchoolStudyPathHome instrumentHome = schoolBiz.getSchoolStudyPathHome();
-		SchoolYearHome levelHome = schoolBiz.getSchoolYearHome();
+		SchoolStudyPathHome instrumentHome = this.schoolBiz.getSchoolStudyPathHome();
+		SchoolYearHome levelHome = this.schoolBiz.getSchoolYearHome();
 		SchoolYear level = null;
 		SchoolYear levelStr = null;
 		SchoolClassMember student = null;
@@ -332,7 +332,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				instrument = instrumentHome.create();
 				instrument.setCode(instrumentCode);
 				instrument.setDescription(instrumentCode);
-				instrument.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
+				instrument.setSchoolCategory(this.schoolBiz.getCategoryMusicSchool());
 				instrument.store();
 			}
 			catch(CreateException crEx) {
@@ -360,11 +360,11 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 			try {
 				if(levelNr != null && !levelNr.equals(" ")) {
 					try {
-						level = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelNr);
+						level = this.schoolBiz.getSchoolYearHome().findByYearName(this.schoolBiz.getCategoryMusicSchool(), levelNr);
 					}
 					catch (FinderException fe) {
 						level = levelHome.create();
-						level.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
+						level.setSchoolCategory(this.schoolBiz.getCategoryMusicSchool());
 						level.setSchoolYearName(levelNr);
 						level.setLocalizedKey("sch_year." + levelNr);
 						level.setIsSelectable(false);
@@ -388,11 +388,11 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 				}
 				if(levelString != null && !levelString.equals(" ")) {
 					try {
-						levelStr = schoolBiz.getSchoolYearHome().findByYearName(schoolBiz.getCategoryMusicSchool(), levelString);
+						levelStr = this.schoolBiz.getSchoolYearHome().findByYearName(this.schoolBiz.getCategoryMusicSchool(), levelString);
 					}
 					catch (FinderException fe) {
 						levelStr = levelHome.create();
-						levelStr.setSchoolCategory(schoolBiz.getCategoryMusicSchool());
+						levelStr.setSchoolCategory(this.schoolBiz.getCategoryMusicSchool());
 						levelStr.setSchoolYearName(levelString);
 						levelStr.setLocalizedKey("sch_year." + levelString);
 						levelStr.setIsSelectable(true);
@@ -472,7 +472,7 @@ public class MusicSchoolImportFileHandlerBean extends IBOServiceBean implements 
 	public void setRootGroup(Group rootGroup) throws RemoteException{
 	}
 	public List getFailedRecords() throws RemoteException{
-		return failedRecords;
+		return this.failedRecords;
 	}
 	
 }

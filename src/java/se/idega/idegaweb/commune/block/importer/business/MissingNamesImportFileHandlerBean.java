@@ -65,7 +65,7 @@ public class MissingNamesImportFileHandlerBean extends IBOServiceBean implements
 		String item;
 		int count = 0,fixcount = 0;
 		Map fieldMap;
-		while (!(item = (String) file.getNextRecord()).equals("")) {
+		while (!(item = (String) this.file.getNextRecord()).equals("")) {
 			item = TextSoap.findAndCut(item, "#UP ");
 			fieldMap = stripOutFields(item);
 			if(fieldMap.containsKey(ImportFileFieldConstants.PIN_COLUMN)){

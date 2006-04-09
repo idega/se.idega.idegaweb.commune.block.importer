@@ -96,35 +96,37 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
   public NackaSchoolImportFileHandlerBean(){}
   
   public synchronized boolean handleRecords(){
-    transaction =  this.getSessionContext().getUserTransaction();
+    this.transaction =  this.getSessionContext().getUserTransaction();
     
     Timer clock = new Timer();
     clock.start();
 
     try {
       //initialize business beans and data homes           
-      schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-      sHome = schoolBiz.getSchoolHome();
+      this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+      this.sHome = this.schoolBiz.getSchoolHome();
 			
 			//preSchoolOnly = schoolBiz.getSchoolTypeHome().findByPrimaryKey(new Integer(1));
-			preSchoolOnly = getPreSchoolSchoolType(schoolBiz);
-			caretakerPreSchool = getCareTakerSchoolType(schoolBiz);
-			regularSchool = getElementarySchoolType(schoolBiz);
-			schoolWithPreSchoolClass = getElementarySchoolWithPreschoolClassSchoolType(schoolBiz);
+			this.preSchoolOnly = getPreSchoolSchoolType(this.schoolBiz);
+			this.caretakerPreSchool = getCareTakerSchoolType(this.schoolBiz);
+			this.regularSchool = getElementarySchoolType(this.schoolBiz);
+			this.schoolWithPreSchoolClass = getElementarySchoolWithPreschoolClassSchoolType(this.schoolBiz);
 			
 
       
       //if the transaction failes all the users and their relations are removed
-      transaction.begin();
+      this.transaction.begin();
 
       //iterate through the records and process them
       String item;
 
       int count = 0;
-      while ( !(item=(String)file.getNextRecord()).equals("") ) {
+      while ( !(item=(String)this.file.getNextRecord()).equals("") ) {
         count++;
         		
-        if( ! processRecord(item) ) failedRecords.add(item);
+        if( ! processRecord(item) ) {
+					this.failedRecords.add(item);
+				}
 
         if( (count % 500) == 0 ){
           System.out.println("NackaSchoolHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
@@ -135,8 +137,8 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
       
       printFailedRecords();
       
-      checkIfPreSchool = true;
-      isPreSchoolFile = false;
+      this.checkIfPreSchool = true;
+      this.isPreSchoolFile = false;
 
       clock.stop();
       System.out.println("Time to handleRecords: "+clock.getTime()+" ms  OR "+((int)(clock.getTime()/1000))+" s");
@@ -144,7 +146,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
       // System.gc();
       //success commit changes
       
-      transaction.commit();
+      this.transaction.commit();
       
       return true;
     }
@@ -152,7 +154,7 @@ public class NackaSchoolImportFileHandlerBean extends IBOServiceBean implements 
      ex.printStackTrace();
 
      try {
-      transaction.rollback();
+      this.transaction.rollback();
      }
      catch (SystemException e) {
        e.printStackTrace();
@@ -237,12 +239,12 @@ private SchoolType getSchoolType(
 }
 
 private boolean processRecord(String record) throws RemoteException{
-    schoolValues = file.getValuesFromRecordString(record);
+    this.schoolValues = this.file.getValuesFromRecordString(record);
     //System.out.println("THE RECORD = "+record);
     
 	boolean success = storeSchoolInfo();
   
-    schoolValues = null;
+    this.schoolValues = null;
 
     return success;
   }
@@ -250,7 +252,7 @@ private boolean processRecord(String record) throws RemoteException{
   public void printFailedRecords(){
   	System.out.println("Import failed for these records, please fix and import again:");
   
-  	Iterator iter = failedRecords.iterator();
+  	Iterator iter = this.failedRecords.iterator();
   	while (iter.hasNext()) {
 		System.out.println((String) iter.next());
 	}
@@ -262,29 +264,31 @@ private boolean processRecord(String record) throws RemoteException{
 
 //variables
   
-  	String schoolArea = getProperty(COLUMN_SCHOOL_AREA);  
+  	String schoolArea = getProperty(this.COLUMN_SCHOOL_AREA);  
     String schoolName = getProperty(this.COLUMN_SCHOOL_NAME);
-	  String schoolAddress = getProperty(COLUMN_SCHOOL_ADDRESS);
-	  String schoolPostalName = getProperty(COLUMN_SCHOOL_POSTAL_NAME);
-	  String schoolPostalCode= getProperty(COLUMN_SCHOOL_POSTAL_CODE);
-	  String schoolPhoneNumber = getProperty(COLUMN_SCHOOL_PHONE_NUMBER);
+	  String schoolAddress = getProperty(this.COLUMN_SCHOOL_ADDRESS);
+	  String schoolPostalName = getProperty(this.COLUMN_SCHOOL_POSTAL_NAME);
+	  String schoolPostalCode= getProperty(this.COLUMN_SCHOOL_POSTAL_CODE);
+	  String schoolPhoneNumber = getProperty(this.COLUMN_SCHOOL_PHONE_NUMBER);
 	  
-	  String caretakerName = getProperty(COLUMN_CARETAKER_NAME);
-	  String caretakerAddress = getProperty(COLUMN_CARETAKER_ADDRESS);
-	  String caretakerPostalName = getProperty(COLUMN_CARETAKER_POSTAL_NAME);
+	  String caretakerName = getProperty(this.COLUMN_CARETAKER_NAME);
+	  String caretakerAddress = getProperty(this.COLUMN_CARETAKER_ADDRESS);
+	  String caretakerPostalName = getProperty(this.COLUMN_CARETAKER_POSTAL_NAME);
 	  //String caretakerPIN = getProperty(COLUMN_CARETAKER_PIN);
-	  String caretakerPostalCode = getProperty(COLUMN_CARETAKER_POSTAL_CODE);
-	  String caretakerPhoneNumber = getProperty(COLUMN_CARETAKER_PHONE);
+	  String caretakerPostalCode = getProperty(this.COLUMN_CARETAKER_POSTAL_CODE);
+	  String caretakerPhoneNumber = getProperty(this.COLUMN_CARETAKER_PHONE);
         
    
-		if( checkIfPreSchool ){//only done once, the first row cannot contain anything other than the column names
-			if(caretakerName!=null) isPreSchoolFile = true;
-			checkIfPreSchool = false;
+		if( this.checkIfPreSchool ){//only done once, the first row cannot contain anything other than the column names
+			if(caretakerName!=null) {
+				this.isPreSchoolFile = true;
+			}
+			this.checkIfPreSchool = false;
 			return true;
 		}
 	
     boolean found = false;
-    boolean caretaker = (isPreSchoolFile && caretakerName!=null);
+    boolean caretaker = (this.isPreSchoolFile && caretakerName!=null);
     
     if( caretaker ){	
     		schoolName = caretakerName;
@@ -297,7 +301,7 @@ private boolean processRecord(String record) throws RemoteException{
 		try{
 			//create or find the school and update min data
 			//this can only work if there is only one school with this name. add more parameters for other areas
-			school = sHome.findBySchoolName(schoolName);
+			school = this.sHome.findBySchoolName(schoolName);
 			school.setSchoolAddress(schoolAddress);
 			school.setSchoolZipCode(schoolPostalCode);
 			school.setSchoolZipArea(schoolPostalName);
@@ -307,7 +311,7 @@ private boolean processRecord(String record) throws RemoteException{
 		catch (FinderException e) {
 			int[] nullType = null;
 			System.out.println("School not found creating : "+schoolName);	
-			school = schoolBiz.createSchool(schoolName,schoolAddress,schoolPostalCode,schoolPostalName,schoolPhoneNumber,-1,nullType); 
+			school = this.schoolBiz.createSchool(schoolName,schoolAddress,schoolPostalCode,schoolPostalName,schoolPhoneNumber,-1,nullType); 
 		}
 		
 		
@@ -322,19 +326,19 @@ private boolean processRecord(String record) throws RemoteException{
 		}
 						
 		//add types and areas
-		if( isPreSchoolFile && !caretaker){
+		if( this.isPreSchoolFile && !caretaker){
 			//add type
 			if(found){
 
 				if( schoolTypes==null || isPreSchoolOnly(schoolTypes)  ){//check if it has any other types or none
 					try{
-						school.addSchoolType(preSchoolOnly);
+						school.addSchoolType(this.preSchoolOnly);
 					}
 					catch(Exception e){}
 				}
 				else{
 					try{
-						school.addSchoolType(schoolWithPreSchoolClass);
+						school.addSchoolType(this.schoolWithPreSchoolClass);
 					}
 					catch(Exception e){}
 					
@@ -345,7 +349,7 @@ private boolean processRecord(String record) throws RemoteException{
 			else{
 				//add only preschool type 1
 				try{
-					school.addSchoolType(preSchoolOnly);
+					school.addSchoolType(this.preSchoolOnly);
 				}
 				catch(Exception e){}
 					
@@ -354,7 +358,7 @@ private boolean processRecord(String record) throws RemoteException{
 		else if (caretaker){//familie...
 			//add type 2
 			try{
-				school.addSchoolType(caretakerPreSchool);
+				school.addSchoolType(this.caretakerPreSchool);
 			}
 			catch(Exception e){}
 			
@@ -371,7 +375,7 @@ private boolean processRecord(String record) throws RemoteException{
 			//what if the school changes from a preschoolonly to a mixed school?
 			if( !isPreSchoolOnly(schoolTypes) ){
 				try{
-						school.addSchoolType(regularSchool);
+						school.addSchoolType(this.regularSchool);
 				}
 				catch(Exception e){}
 			}		
@@ -380,13 +384,13 @@ private boolean processRecord(String record) throws RemoteException{
 		
 		if( schoolArea!=null ){
 			 try{
-			 	area = schoolBiz.getSchoolAreaHome().findSchoolAreaByAreaName(schoolArea);
+			 	area = this.schoolBiz.getSchoolAreaHome().findSchoolAreaByAreaName(schoolArea);
 			 }
 			 catch (FinderException e) {
 			 	
 			 	try {
 					System.out.println("SchoolArea not found creating : "+schoolArea);	
-					area = schoolBiz.getSchoolAreaHome().create();
+					area = this.schoolBiz.getSchoolAreaHome().create();
 					area.setSchoolAreaName(schoolArea);
 					area.store();
 				}catch (CreateException ex) {
@@ -415,18 +419,24 @@ private boolean processRecord(String record) throws RemoteException{
 	private String getProperty(int columnIndex){
 		String value = null;
 		
-		if( schoolValues!=null ){
+		if( this.schoolValues!=null ){
 		
 			try {
-				value = (String)schoolValues.get(columnIndex);
+				value = (String)this.schoolValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
 	 			//System.out.println("Index: "+columnIndex+" Value: "+value);
-	 		if( file.getEmptyValueString().equals( value ) ) return null;
-		 	else return value;
+	 		if( this.file.getEmptyValueString().equals( value ) ) {
+				return null;
+			}
+			else {
+				return value;
+			}
   		}
-  		else return null;
+		else {
+			return null;
+		}
   }
 
 
@@ -441,7 +451,7 @@ public void setRootGroup(Group rootGroup) {
  * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
  */
 public List getFailedRecords(){
-	return failedRecords;	
+	return this.failedRecords;	
 }
 
 	private boolean isPreSchoolOnly(Collection schoolTypes){
@@ -450,10 +460,12 @@ public List getFailedRecords(){
 			Iterator iter = schoolTypes.iterator();
 				while (iter.hasNext()) {
 					SchoolType element = (SchoolType) iter.next();
-					if( element.equals(preSchoolOnly) ){
+					if( element.equals(this.preSchoolOnly) ){
 						return true;	
 					}
-					else return false;
+					else {
+						return false;
+					}
 					
 				}
 		}

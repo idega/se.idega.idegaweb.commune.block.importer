@@ -40,9 +40,9 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 
     try {
       //initialize business beans and data homes
-      comUserBiz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+      this.comUserBiz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
   
-			failedRecords = new ArrayList();
+			this.failedRecords = new ArrayList();
 
 			System.out.println("Userfix [STARTING] time: "+IWTimestamp.getTimestampRightNow().toString());
        
@@ -50,11 +50,13 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
       String item;
 
       int count = 0;
-      while ( !(item=(String)file.getNextRecord()).equals("") ) {
+      while ( !(item=(String)this.file.getNextRecord()).equals("") ) {
         count++;
 
         
-        if( ! processRecord(item) ) failedRecords.add(item);
+        if( ! processRecord(item) ) {
+					this.failedRecords.add(item);
+				}
         
 
         if( (count % 250) == 0 ){
@@ -77,7 +79,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
   }
 
   private boolean processRecord(String record){
-  	ArrayList list = file.getValuesFromRecordString(record);
+  	ArrayList list = this.file.getValuesFromRecordString(record);
     return storeUserInfo(list);
   }
 
@@ -103,7 +105,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 				//System.out.println("userid : "+userId+" personalId : "+PIN);
 				
 				
-				user = comUserBiz.getUser(userId);
+				user = this.comUserBiz.getUser(userId);
 				
 				user.setPersonalID(PIN);
 				
@@ -159,7 +161,7 @@ public class UserFixImportFileHandlerBean extends IBOServiceBean implements User
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords(){
-		return failedRecords;	
+		return this.failedRecords;	
 	}
 	
 

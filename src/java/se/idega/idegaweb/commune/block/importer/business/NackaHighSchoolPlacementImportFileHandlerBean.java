@@ -73,10 +73,10 @@ import com.idega.util.Timer;
  * depending on the number of records already inserted in the table.
  * </p>
  * <p>
- * Last modified: $Date: 2005/09/06 11:37:00 $ by $Author: palli $
+ * Last modified: $Date: 2006/04/09 12:05:08 $ by $Author: laddi $
  * 
  * @author Anders Lindman
- * @version $Revision: 1.22 $
+ * @version $Revision: 1.23 $
  */
 public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBean implements
 		NackaHighSchoolPlacementImportFileHandler, ImportFileHandler {
@@ -169,41 +169,41 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords()
 	 */
 	public boolean handleRecords() {
-		failedRecords = new ArrayList();
-		errorLog = new TreeMap();
-		report = new Report(file.getFile().getName()); // Create a report file.
+		this.failedRecords = new ArrayList();
+		this.errorLog = new TreeMap();
+		this.report = new Report(this.file.getFile().getName()); // Create a report file.
 														// It will be located in
 														// the Report dir
 
 		IWTimestamp t = IWTimestamp.RightNow();
 		t.setAsDate();
-		today = t.getDate();
+		this.today = t.getDate();
 		t.setDay(1);
-		firstDayInCurrentMonth = t.getTimestamp();
+		this.firstDayInCurrentMonth = t.getTimestamp();
 		t.addDays(-1);
-		lastDayInPreviousMonth = t.getTimestamp();
+		this.lastDayInPreviousMonth = t.getTimestamp();
 
-		transaction = this.getSessionContext().getUserTransaction();
+		this.transaction = this.getSessionContext().getUserTransaction();
 
 		Timer clock = new Timer();
 		clock.start();
 
 		try {
 			// initialize business beans and data homes
-			communeUserBusiness = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			schoolBusiness = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.communeUserBusiness = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.schoolBusiness = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
 
-			schoolHome = schoolBusiness.getSchoolHome();
-			schoolTypeHome = schoolBusiness.getSchoolTypeHome();
-			schoolYearHome = schoolBusiness.getSchoolYearHome();
-			schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
-			schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
-			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
-			studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
-			placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
+			this.schoolHome = this.schoolBusiness.getSchoolHome();
+			this.schoolTypeHome = this.schoolBusiness.getSchoolTypeHome();
+			this.schoolYearHome = this.schoolBusiness.getSchoolYearHome();
+			this.schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			this.schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			this.studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
+			this.placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
 
 			try {
-				season = schoolBusiness.getCurrentSchoolSeason(schoolBusiness.getCategoryElementarySchool());
+				this.season = this.schoolBusiness.getCurrentSchoolSeason(this.schoolBusiness.getCategoryElementarySchool());
 			}
 			catch (FinderException e) {
 				e.printStackTrace();
@@ -211,18 +211,18 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 				return false;
 			}
 
-			transaction.begin();
+			this.transaction.begin();
 
 			// iterate through the records and process them
 			String item;
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).trim().equals("")) {
 				count++;
 
 				if (!processRecord(item, count)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 					failed = true;
 					// break;
 				}
@@ -249,13 +249,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 			// success commit changes
 			if (!failed) {
-				transaction.commit();
+				this.transaction.commit();
 			}
 			else {
-				transaction.rollback();
+				this.transaction.rollback();
 			}
 
-			report.store(false);
+			this.report.store(false);
 
 			return !failed;
 
@@ -263,13 +263,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		catch (Exception e) {
 			e.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			}
 			catch (SystemException e2) {
 				e2.printStackTrace();
 			}
 
-			report.store(false);
+			this.report.store(false);
 
 			return false;
 		}
@@ -283,9 +283,9 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			// Skip header
 			return true;
 		}
-		userValues = file.getValuesFromRecordString(record);
+		this.userValues = this.file.getValuesFromRecordString(record);
 		boolean success = storeUserInfo(count);
-		userValues = null;
+		this.userValues = null;
 
 		return success;
 	}
@@ -295,27 +295,27 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 */
 	public void printFailedRecords() {
 		println("\n----------------------------------------------\n");
-		if (failedRecords.isEmpty()) {
+		if (this.failedRecords.isEmpty()) {
 			println("All records imported successfully.");
 		}
 		else {
 			println("Import failed for these records, please fix and import again:\n");
 		}
 
-		Iterator iter = failedRecords.iterator();
+		Iterator iter = this.failedRecords.iterator();
 
 		while (iter.hasNext()) {
 			println((String) iter.next());
 		}
 
-		if (!errorLog.isEmpty()) {
+		if (!this.errorLog.isEmpty()) {
 			println("Errors during import:\n");
 		}
-		Iterator rowIter = errorLog.keySet().iterator();
+		Iterator rowIter = this.errorLog.keySet().iterator();
 
 		while (rowIter.hasNext()) {
 			Integer row = (Integer) rowIter.next();
-			String message = (String) errorLog.get(row);
+			String message = (String) this.errorLog.get(row);
 			println("Line " + row + ": " + message);
 		}
 
@@ -333,19 +333,19 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		String providerName = getUserProperty(COLUMN_PROVIDER_NAME);
 		if (providerName == null) {
-			errorLog.put(new Integer(row), "The name of the high school is empty.");
+			this.errorLog.put(new Integer(row), "The name of the high school is empty.");
 			return false;
 		}
 
 		String schoolClassName = getUserProperty(COLUMN_SCHOOL_CLASS);
 		if (schoolClassName == null) {
-			errorLog.put(new Integer(row), "The class name is empty.");
+			this.errorLog.put(new Integer(row), "The class name is empty.");
 			return false;
 		}
 
 		String schoolYearName = getUserProperty(COLUMN_SCHOOL_YEAR);
 		if (schoolYearName == null) {
-			errorLog.put(new Integer(row), "The school year is empty.");
+			this.errorLog.put(new Integer(row), "The school year is empty.");
 		}
 
 		String studyPathCode = getUserProperty(COLUMN_STUDY_PATH);
@@ -355,7 +355,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		String personalId = getUserProperty(COLUMN_PERSONAL_ID);
 		if (personalId == null) {
-			errorLog.put(new Integer(row), "The personal id is empty.");
+			this.errorLog.put(new Integer(row), "The personal id is empty.");
 			return false;
 		}
 
@@ -400,20 +400,20 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		String highSchoolType = getUserProperty(COLUMN_HIGH_SCHOOL_TYPE);
 		if (highSchoolType == null) {
-			errorLog.put(new Integer(row), "The high school type is empty.");
+			this.errorLog.put(new Integer(row), "The high school type is empty.");
 			return false;
 		}
 
 		// user
 		boolean isNewUser = false;
 		try {
-			user = communeUserBusiness.getUserHome().findByPersonalID(personalId);
+			user = this.communeUserBusiness.getUserHome().findByPersonalID(personalId);
 		}
 		catch (FinderException e) {
 			println("User not found for PIN : " + personalId + " CREATING");
 
 			try {
-				user = communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(studentFirstName, "",
+				user = this.communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(studentFirstName, "",
 						studentLastName, personalId, getGenderFromPin(personalId), getBirthDateFromPin(personalId));
 				isNewUser = true;
 			}
@@ -425,13 +425,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		if (isNewUser) {
 			try {
-				Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+				Commune homeCommune = this.communeHome.findByCommuneCode(homeCommuneCode);
 				Integer communeId = (Integer) homeCommune.getPrimaryKey();
-				communeUserBusiness.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), address, zipCode,
+				this.communeUserBusiness.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), address, zipCode,
 						zipArea, communeId);
 			}
 			catch (FinderException e) {
-				errorLog.put(new Integer(row), "Commune not found: " + homeCommuneCode);
+				this.errorLog.put(new Integer(row), "Commune not found: " + homeCommuneCode);
 				return false;
 			}
 			user.store();
@@ -449,27 +449,27 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 
 		try {
-			schoolType = schoolTypeHome.findByTypeKey(typeKey);
+			schoolType = this.schoolTypeHome.findByTypeKey(typeKey);
 		}
 		catch (FinderException e) {
-			errorLog.put(new Integer(row), "School type: " + highSchoolType + " not found in database (key = "
+			this.errorLog.put(new Integer(row), "School type: " + highSchoolType + " not found in database (key = "
 					+ typeKey + ").");
 			return false;
 		}
 
 		// school
 		try {
-			school = schoolHome.findBySchoolName(providerName);
+			school = this.schoolHome.findBySchoolName(providerName);
 		}
 		catch (FinderException e) {
-			errorLog.put(new Integer(row), "Cannot find school with name '" + providerName + "'");
+			this.errorLog.put(new Integer(row), "Cannot find school with name '" + providerName + "'");
 			return false;
 		}
 
 		// school type
 		boolean hasSchoolType = false;
 		try {
-			Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
+			Iterator schoolTypeIter = this.schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
 			while (schoolTypeIter.hasNext()) {
 				SchoolType st = (SchoolType) schoolTypeIter.next();
 				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
@@ -482,7 +482,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 
 		if (!hasSchoolType) {
-			errorLog.put(new Integer(row), "School type '" + highSchoolType + "' not found in high school: "
+			this.errorLog.put(new Integer(row), "School type '" + highSchoolType + "' not found in high school: "
 					+ providerName);
 			return false;
 		}
@@ -491,13 +491,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		SchoolYear schoolYear = null;
 		schoolYearName = schoolYearPrefix + schoolYearName;
 		try {
-			schoolYear = schoolYearHome.findByYearName(schoolYearName);
+			schoolYear = this.schoolYearHome.findByYearName(schoolYearName);
 		}
 		catch (FinderException e) {
-			errorLog.put(new Integer(row), "School year: " + schoolYearName + " not found in database.");
+			this.errorLog.put(new Integer(row), "School year: " + schoolYearName + " not found in database.");
 		}
 		boolean schoolYearFoundInSchool = false;
-		Map m = schoolBusiness.getSchoolRelatedSchoolYears(school);
+		Map m = this.schoolBusiness.getSchoolRelatedSchoolYears(school);
 		try {
 			schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());
 		}
@@ -505,7 +505,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		}
 
 		if (!schoolYearFoundInSchool) {
-			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '"
+			this.errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '"
 					+ providerName + "'.");
 			return false;
 		}
@@ -513,10 +513,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		// study path
 		SchoolStudyPath studyPath = null;
 		try {
-			studyPath = studyPathHome.findByCode(studyPathCode);
+			studyPath = this.studyPathHome.findByCode(studyPathCode);
 		}
 		catch (Exception e) {
-			errorLog.put(new Integer(row), "Cannot find study path: " + studyPathCode);
+			this.errorLog.put(new Integer(row), "Cannot find study path: " + studyPathCode);
 			return false;
 		}
 
@@ -524,8 +524,8 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		SchoolClass schoolClass = null;
 		try {
 			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
-			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
-			Collection c = schoolClassHome.findBySchoolAndSeason(schoolId, seasonId);
+			int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
+			Collection c = this.schoolClassHome.findBySchoolAndSeason(schoolId, seasonId);
 			Iterator iter = c.iterator();
 			while (iter.hasNext()) {
 				SchoolClass sc = (SchoolClass) iter.next();
@@ -543,9 +543,9 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 					+ "'.");
 			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
 			int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
-			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
+			int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
 			try {
-				schoolClass = schoolClassHome.create();
+				schoolClass = this.schoolClassHome.create();
 				schoolClass.setSchoolClassName(schoolClassName);
 				schoolClass.setSchoolId(schoolId);
 				schoolClass.setSchoolTypeId(schoolTypeId);
@@ -558,7 +558,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			}
 
 			if (schoolClass == null) {
-				errorLog.put(new Integer(row), "Could not create school Class: " + schoolClassName);
+				this.errorLog.put(new Integer(row), "Could not create school Class: " + schoolClassName);
 				return false;
 			}
 		}
@@ -566,10 +566,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		// school Class member
 		int schoolClassId = ((Integer) schoolClass.getPrimaryKey()).intValue();
 		SchoolClassMember member = null;
-		Timestamp registerDate = firstDayInCurrentMonth;
+		Timestamp registerDate = this.firstDayInCurrentMonth;
 
 		try {
-			Collection placements = schoolClassMemberHome.findByStudent(user);
+			Collection placements = this.schoolClassMemberHome.findByStudent(user);
 			if (placements != null) {
 				Iterator placementsIter = placements.iterator();
 				while (placementsIter.hasNext()) {
@@ -595,13 +595,13 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 							else {
 								IWTimestamp t1 = new IWTimestamp(placement.getRegisterDate());
 								t1.setAsDate();
-								IWTimestamp t2 = new IWTimestamp(firstDayInCurrentMonth);
+								IWTimestamp t2 = new IWTimestamp(this.firstDayInCurrentMonth);
 								t2.setAsDate();
 								if (t1.equals(t2)) {
 									try {
 										PlacementImportDate p = null;
 										try {
-											p = placementImportDateHome.findByPrimaryKey(placement.getPrimaryKey());
+											p = this.placementImportDateHome.findByPrimaryKey(placement.getPrimaryKey());
 										}
 										catch (FinderException e) {
 										}
@@ -615,10 +615,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 									}
 								}
 								else {
-									placement.setRemovedDate(lastDayInPreviousMonth);
+									placement.setRemovedDate(this.lastDayInPreviousMonth);
 									placement.store();
 								}
-								registerDate = firstDayInCurrentMonth;
+								registerDate = this.firstDayInCurrentMonth;
 							}
 						}
 					}
@@ -630,10 +630,10 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		if (member == null) {
 			try {
-				member = schoolClassMemberHome.create();
+				member = this.schoolClassMemberHome.create();
 			}
 			catch (CreateException e) {
-				errorLog.put(new Integer(row), "School Class member could not be created for personal id: "
+				this.errorLog.put(new Integer(row), "School Class member could not be created for personal id: "
 						+ personalId);
 				return false;
 			}
@@ -649,22 +649,22 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		PlacementImportDate p = null;
 		try {
-			p = placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+			p = this.placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
 		}
 		catch (FinderException e) {
 		}
 		if (p == null) {
 			try {
-				p = placementImportDateHome.create();
+				p = this.placementImportDateHome.create();
 				p.setSchoolClassMemberId(((Integer) member.getPrimaryKey()).intValue());
 			}
 			catch (CreateException e) {
-				errorLog.put(new Integer(row), "Could not create import date from school class member: "
+				this.errorLog.put(new Integer(row), "Could not create import date from school class member: "
 						+ member.getPrimaryKey());
 				return false;
 			}
 		}
-		p.setImportDate(today);
+		p.setImportDate(this.today);
 		p.store();
 
 		return true;
@@ -681,7 +681,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		School schoolB = null;
 		School schoolC = null;
 		try {
-			schoolA = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
+			schoolA = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
 		}
 		catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '"
@@ -689,7 +689,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			return false;
 		}
 		try {
-			schoolB = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
+			schoolB = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
 		}
 		catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '"
@@ -697,7 +697,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			return false;
 		}
 		try {
-			schoolC = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
+			schoolC = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
 		}
 		catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '"
@@ -712,7 +712,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		SchoolCategory highSchoolCategory = null;
 		try {
-			highSchoolCategory = schoolBusiness.getCategoryHighSchool();
+			highSchoolCategory = this.schoolBusiness.getCategoryHighSchool();
 		}
 		catch (RemoteException e) {
 			println("NackaHighSchoolPlacementHandler: High school category not found.");
@@ -721,7 +721,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 
 		Collection placements = null;
 		try {
-			placements = schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, season,
+			placements = this.schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, this.season,
 					schoolIds, true);
 		}
 		catch (FinderException e) {
@@ -753,7 +753,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			SchoolClassMember member = (SchoolClassMember) iter.next();
 			IWTimestamp placementDate = null;
 			try {
-				PlacementImportDate p = placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+				PlacementImportDate p = this.placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
 				placementDate = new IWTimestamp(p.getImportDate());
 				placementDate.setAsDate();
 			}
@@ -763,7 +763,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 			if ((placementDate == null || placementDate.isEarlierThan(now))
 					&& (memberSchool.getManagementTypeId().equals(SchoolManagementTypeBMPBean.TYPE_COMMUNE))
 					&& (memberSchool.getCommune().equals(defaultCommune))) {
-				member.setRemovedDate(lastDayInPreviousMonth);
+				member.setRemovedDate(this.lastDayInPreviousMonth);
 				member.store();
 				println("Terminating placement with id: " + member.getPrimaryKey());
 			}
@@ -778,7 +778,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 */
 	private void println(String s) {
 		System.out.println(s);
-		report.append(s);
+		this.report.append(s);
 	}
 
 	/*
@@ -787,15 +787,15 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	private String getUserProperty(int columnIndex) {
 		String value = null;
 
-		if (userValues != null) {
+		if (this.userValues != null) {
 
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			}
 			catch (RuntimeException e) {
 				return null;
 			}
-			if (file.getEmptyValueString().equals(value)) {
+			if (this.file.getEmptyValueString().equals(value)) {
 				return null;
 			}
 			else {
@@ -827,7 +827,7 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords() {
-		return failedRecords;
+		return this.failedRecords;
 	}
 
 	private IWTimestamp getBirthDateFromPin(String pin) {
@@ -846,16 +846,16 @@ public class NackaHighSchoolPlacementImportFileHandlerBean extends IBOServiceBea
 		try {
 			GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
 			if (Integer.parseInt(pin.substring(10, 11)) % 2 == 0) {
-				if (female == null) {
-					female = home.getFemaleGender();
+				if (this.female == null) {
+					this.female = home.getFemaleGender();
 				}
-				return female;
+				return this.female;
 			}
 			else {
-				if (male == null) {
-					male = home.getMaleGender();
+				if (this.male == null) {
+					this.male = home.getMaleGender();
 				}
-				return male;
+				return this.male;
 			}
 		}
 		catch (Exception e) {

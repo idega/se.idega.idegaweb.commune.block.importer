@@ -1,5 +1,5 @@
 /*
- * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.21 2005/05/11 07:15:37 laddi Exp $
+ * $Id: NackaProgmaPlacementImportFileHandlerBean.java,v 1.22 2006/04/09 12:05:08 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -70,10 +70,10 @@ import com.idega.util.Timer;
  * Note that the "13" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2005/05/11 07:15:37 $ by $Author: laddi $
+ * Last modified: $Date: 2006/04/09 12:05:08 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.21 $
+ * @version $Revision: 1.22 $
  */
 public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean implements NackaProgmaPlacementImportFileHandler, ImportFileHandler {
 
@@ -139,39 +139,39 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords() 
 	 */
 	public boolean handleRecords(){
-		failedRecords = new ArrayList();
-		errorLog = new TreeMap();
-		report = new Report(file.getFile().getName());	// Create a report file. It will be located in the Report dir
+		this.failedRecords = new ArrayList();
+		this.errorLog = new TreeMap();
+		this.report = new Report(this.file.getFile().getName());	// Create a report file. It will be located in the Report dir
 
 		IWTimestamp t = IWTimestamp.RightNow();
 		t.setAsDate();
-		today = t.getDate();
+		this.today = t.getDate();
 		t.setDay(1);
-		firstDayInCurrentMonth = t.getTimestamp();
+		this.firstDayInCurrentMonth = t.getTimestamp();
 		t.addDays(-1);
-		lastDayInPreviousMonth = t.getTimestamp();
+		this.lastDayInPreviousMonth = t.getTimestamp();
 		
-		transaction = this.getSessionContext().getUserTransaction();
+		this.transaction = this.getSessionContext().getUserTransaction();
         
 		Timer clock = new Timer();
 		clock.start();
 
 		try {
 			//initialize business beans and data homes
-			communeUserBusiness = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			schoolBusiness = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.communeUserBusiness = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.schoolBusiness = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
 			
-			schoolHome = schoolBusiness.getSchoolHome();           
-			schoolTypeHome = schoolBusiness.getSchoolTypeHome();
-			schoolYearHome = schoolBusiness.getSchoolYearHome();
-			schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
-			schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
-			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
-			studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
-			placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
+			this.schoolHome = this.schoolBusiness.getSchoolHome();           
+			this.schoolTypeHome = this.schoolBusiness.getSchoolTypeHome();
+			this.schoolYearHome = this.schoolBusiness.getSchoolYearHome();
+			this.schoolClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
+			this.schoolClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			this.studyPathHome = (SchoolStudyPathHome) this.getIDOHome(SchoolStudyPath.class);
+			this.placementImportDateHome = (PlacementImportDateHome) this.getIDOHome(PlacementImportDate.class);
 
 			try {
-				season = schoolBusiness.getCurrentSchoolSeason(schoolBusiness.getCategoryElementarySchool());    	
+				this.season = this.schoolBusiness.getCurrentSchoolSeason(this.schoolBusiness.getCategoryElementarySchool());    	
 			} catch(FinderException e) {
 				e.printStackTrace();
 				log(Level.SEVERE, "NackaProgmaPlacementHandler: School season is not defined.");
@@ -179,36 +179,36 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			}
 			
 			try {
-				schoolA = schoolHome.findBySchoolName(SCHOOL_NAME_A);
+				this.schoolA = this.schoolHome.findBySchoolName(SCHOOL_NAME_A);
 			} catch (FinderException e) {
 				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_A + "' not found.");
 				return false;
 			}
 			try {
-				schoolB = schoolHome.findBySchoolName(SCHOOL_NAME_B);
+				this.schoolB = this.schoolHome.findBySchoolName(SCHOOL_NAME_B);
 			} catch (FinderException e) {
 				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_B + "' not found.");
 				return false;
 			}
 			try {
-				schoolC = schoolHome.findBySchoolName(SCHOOL_NAME_C);
+				this.schoolC = this.schoolHome.findBySchoolName(SCHOOL_NAME_C);
 			} catch (FinderException e) {
 				log(Level.SEVERE, "NackaProgmaPlacementHandler: School '" + SCHOOL_NAME_C + "' not found.");
 				return false;
 			}
             		
-			transaction.begin();
+			this.transaction.begin();
 
 			//iterate through the records and process them
 			String item;
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).trim().equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 					failed = true;
 //					break;
 				} 
@@ -234,24 +234,24 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 
 			//success commit changes
 			if (!failed) {
-				transaction.commit();
+				this.transaction.commit();
 			} else {
-				transaction.rollback(); 
+				this.transaction.rollback(); 
 			}
 
-			report.store(false);
+			this.report.store(false);
 			
 			return !failed;
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			} catch (SystemException e2) {
 				e2.printStackTrace();
 			}
 
-			report.store(false);
+			this.report.store(false);
 
 			return false;
 		}
@@ -261,9 +261,9 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	 * Processes one record 
 	 */
 	private boolean processRecord(String record, int count) throws RemoteException {
-		userValues = file.getValuesFromRecordString(record);
+		this.userValues = this.file.getValuesFromRecordString(record);
 		boolean success = storeUserInfo(count);
-		userValues = null;
+		this.userValues = null;
 				
 		return success;
 	}
@@ -273,26 +273,26 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	 */
 	public void printFailedRecords() {
 		log(Level.INFO, "\n----------------------------------------------\n");
-		if (failedRecords.isEmpty()) {
+		if (this.failedRecords.isEmpty()) {
 			log(Level.INFO, "All records imported successfully.");
 		} else {
 			log(Level.SEVERE, "Import failed for these records, please fix and import again:\n");
 		}
   
-		Iterator iter = failedRecords.iterator();
+		Iterator iter = this.failedRecords.iterator();
 
 		while (iter.hasNext()) {
 			log(Level.SEVERE, (String) iter.next());
 		}
 
-		if (!errorLog.isEmpty()) {
+		if (!this.errorLog.isEmpty()) {
 			log(Level.SEVERE, "\nErrors during import:\n");
 		}
-		Iterator rowIter = errorLog.keySet().iterator();
+		Iterator rowIter = this.errorLog.keySet().iterator();
 		
 		while (rowIter.hasNext()) {
 			Integer row = (Integer) rowIter.next(); 
-			String message = (String) errorLog.get(row);
+			String message = (String) this.errorLog.get(row);
 			log(Level.SEVERE, "Line " + row + ": " + message);
 		}	
 		
@@ -309,13 +309,13 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 
 		String schoolClassName = getUserProperty(COLUMN_SCHOOL_CLASS);
 		if (schoolClassName == null) {
-			errorLog.put(new Integer(row), "The Class name is empty.");
+			this.errorLog.put(new Integer(row), "The Class name is empty.");
 			return false;
 		}
 
 		String schoolYearName = getUserProperty(COLUMN_SCHOOL_YEAR);
 		if (schoolYearName == null) {
-			errorLog.put(new Integer(row), "The school year is empty.");
+			this.errorLog.put(new Integer(row), "The school year is empty.");
 		}
 
 		String studyPathCode = getUserProperty(COLUMN_STUDY_PATH);
@@ -328,7 +328,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		
 		String personalId = getUserProperty(COLUMN_PERSONAL_ID);
 		if (personalId == null) {
-			errorLog.put(new Integer(row), "The personal id is empty.");
+			this.errorLog.put(new Integer(row), "The personal id is empty.");
 			return false;
 		}
 		personalId = "19" + personalId.replaceFirst("-", "");
@@ -341,7 +341,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			studentLastName = name.substring(0, cutPos);
 			studentFirstName = name.substring(cutPos + 1);
 		} else {
-			errorLog.put(new Integer(row), "Student name must contain lastname and firstname: " + name);
+			this.errorLog.put(new Integer(row), "Student name must contain lastname and firstname: " + name);
 		}
 		
 		String homeCommuneCode = getUserProperty(COLUMN_COMMUNE_CODE);
@@ -382,58 +382,119 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		}
 
 		// school
-		school = null;
+		this.school = null;
 		
-		if (isCompulsory) school = schoolB;
-		
-		else if (studyPathCode.equals("HP")) school = schoolA;
-		else if (studyPathCode.equals("HPHS")) school = schoolA;
-		else if (studyPathCode.equals("HPTU")) school = schoolA;
-		else if (studyPathCode.equals("SMSP")) school = schoolA;
-		else if (studyPathCode.equals("SP")) school = schoolA;
-		else if (studyPathCode.equals("SPEI")) school = schoolA;
-		else if (studyPathCode.equals("SPKU")) school = schoolA;
-		else if (studyPathCode.equals("SPSK")) school = schoolA;
-		else if (studyPathCode.equals("SPSP")) school = schoolA;
-		else if (studyPathCode.equals("SPSPUT")) school = schoolA;
-		
-		else if (studyPathCode.equals("BFPD")) school = schoolB;
-		else if (studyPathCode.equals("ECL001")) school = schoolB;
-		else if (studyPathCode.equals("HVL009")) school = schoolB;
-		else if (studyPathCode.equals("HVL010")) school = schoolB;
-		else if (studyPathCode.equals("IV")) school = schoolB;
-		else if (studyPathCode.equals("IVIK")) school = schoolB;
-		else if (studyPathCode.equals("IVYTK")) school = schoolB;
-		else if (studyPathCode.equals("SMBI")) school = schoolB;
-		
-		else if (studyPathCode.equals("BP")) school = schoolC;
-		else if (studyPathCode.equals("BPHU")) school = schoolC;
-		else if (studyPathCode.equals("EC")) school = schoolC;
-		else if (studyPathCode.equals("ECDT")) school = schoolC;
-		else if (studyPathCode.equals("ECEL")) school = schoolC;
-		else if (studyPathCode.equals("NV")) school = schoolC;
-		else if (studyPathCode.equals("NVMD")) school = schoolC;
-		else if (studyPathCode.equals("NVMV")) school = schoolC;
-		else if (studyPathCode.equals("NVNV")) school = schoolC;
-		else if (studyPathCode.equals("NVNVUT")) school = schoolC;
-		else if (studyPathCode.equals("SMDE")) school = schoolC;
-		else if (studyPathCode.equals("TEL101")) school = schoolC;
-		else if (studyPathCode.equals("TELDT")) school = schoolC;
+		if (isCompulsory) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("HP")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("HPHS")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("HPTU")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SMSP")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SP")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SPEI")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SPKU")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SPSK")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SPSP")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("SPSPUT")) {
+			this.school = this.schoolA;
+		}
+		else if (studyPathCode.equals("BFPD")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("ECL001")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("HVL009")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("HVL010")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("IV")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("IVIK")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("IVYTK")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("SMBI")) {
+			this.school = this.schoolB;
+		}
+		else if (studyPathCode.equals("BP")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("BPHU")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("EC")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("ECDT")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("ECEL")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("NV")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("NVMD")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("NVMV")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("NVNV")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("NVNVUT")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("SMDE")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("TEL101")) {
+			this.school = this.schoolC;
+		}
+		else if (studyPathCode.equals("TELDT")) {
+			this.school = this.schoolC;
+		}
 
-		if (school == null) {
-			errorLog.put(new Integer(row), "School not found for study path: " + studyPathCode);
+		if (this.school == null) {
+			this.errorLog.put(new Integer(row), "School not found for study path: " + studyPathCode);
 			return false;			
 		}
 		
 		// user		
 		boolean isNewUser = false;
 		try {
-			user = communeUserBusiness.getUserHome().findByPersonalID(personalId);
+			user = this.communeUserBusiness.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
 			log(Level.INFO, "User not found for PIN : " + personalId + " CREATING");
 			
 			try {
-				user = communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(
+				user = this.communeUserBusiness.createSpecialCitizenByPersonalIDIfDoesNotExist(
 						studentFirstName, 
 						"",
 						studentLastName,
@@ -449,11 +510,11 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		
 		if (isNewUser) {
 			try {
-				Commune homeCommune = communeHome.findByCommuneCode(homeCommuneCode);
+				Commune homeCommune = this.communeHome.findByCommuneCode(homeCommuneCode);
 				Integer communeId = (Integer) homeCommune.getPrimaryKey();
-				communeUserBusiness.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), address, zipCode, zipArea, communeId);
+				this.communeUserBusiness.updateCitizenAddress(((Integer) user.getPrimaryKey()).intValue(), address, zipCode, zipArea, communeId);
 			} catch (FinderException e) {
-				errorLog.put(new Integer(row), "Commune not found: " + homeCommuneCode);
+				this.errorLog.put(new Integer(row), "Commune not found: " + homeCommuneCode);
 				return false;
 			}
 			user.store();
@@ -461,15 +522,15 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 				
 		// school type		
 		try {
-			schoolType = schoolTypeHome.findByTypeKey(schoolTypeKey);
+			schoolType = this.schoolTypeHome.findByTypeKey(schoolTypeKey);
 		} catch (FinderException e) {
-			errorLog.put(new Integer(row), "School type: " + schoolTypeKey + " not found in database.");
+			this.errorLog.put(new Integer(row), "School type: " + schoolTypeKey + " not found in database.");
 			return false;
 		}
 				
 		boolean hasSchoolType = false;
 		try {
-			Iterator schoolTypeIter = schoolBusiness.getSchoolRelatedSchoolTypes(school).values().iterator();
+			Iterator schoolTypeIter = this.schoolBusiness.getSchoolRelatedSchoolTypes(this.school).values().iterator();
 			while (schoolTypeIter.hasNext()) {
 				SchoolType st = (SchoolType) schoolTypeIter.next();
 				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
@@ -480,7 +541,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		} catch (Exception e) {}
 		
 		if (!hasSchoolType) {
-			errorLog.put(new Integer(row), "School type '" + schoolTypeKey + "' not found in high school: " + school.getName());
+			this.errorLog.put(new Integer(row), "School type '" + schoolTypeKey + "' not found in high school: " + this.school.getName());
 			return false;
 		}
 
@@ -488,36 +549,36 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		SchoolYear schoolYear = null;
 		schoolYearName = schoolYearPrefix + schoolYearName;
 		try {
-			schoolYear = schoolYearHome.findByYearName(schoolYearName);
+			schoolYear = this.schoolYearHome.findByYearName(schoolYearName);
 		} catch (FinderException e) {
-			errorLog.put(new Integer(row), "School year: " + schoolYearName + " not found in database.");
+			this.errorLog.put(new Integer(row), "School year: " + schoolYearName + " not found in database.");
 		}
 		boolean schoolYearFoundInSchool = false;
-		Map m = schoolBusiness.getSchoolRelatedSchoolYears(school);
+		Map m = this.schoolBusiness.getSchoolRelatedSchoolYears(this.school);
 		try {
 			schoolYearFoundInSchool = m.containsKey(schoolYear.getPrimaryKey());			
 		} catch (Exception e) {}
 		
 		if (!schoolYearFoundInSchool) {
-			errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + school.getName()  + "'.");
+			this.errorLog.put(new Integer(row), "School year: '" + schoolYearName + "' not found in school: '" + this.school.getName()  + "'.");
 			return false;
 		}
 
 		// study path
 		SchoolStudyPath studyPath = null;
 		try {
-			studyPath = studyPathHome.findByCode(studyPathCode);
+			studyPath = this.studyPathHome.findByCode(studyPathCode);
 		} catch (Exception e) {
-			errorLog.put(new Integer(row), "Cannot find study path: " + studyPathCode);
+			this.errorLog.put(new Integer(row), "Cannot find study path: " + studyPathCode);
 			return false;
 		}
 		
 		// school Class		
 		SchoolClass schoolClass = null;
 		try {	
-			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
-			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
-			Collection c = schoolClassHome.findBySchoolAndSeason(schoolId, seasonId);
+			int schoolId = ((Integer) this.school.getPrimaryKey()).intValue();
+			int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
+			Collection c = this.schoolClassHome.findBySchoolAndSeason(schoolId, seasonId);
 			Iterator iter = c.iterator();
 			while (iter.hasNext()) {
 				SchoolClass sc = (SchoolClass) iter.next();
@@ -530,12 +591,12 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 				throw new FinderException();
 			}				
 		} catch (Exception e) {
-			log(Level.INFO, "School Class not found, creating '" + schoolClassName + "' for high school '" + school.getName() + "'.");	
-			int schoolId = ((Integer) school.getPrimaryKey()).intValue();
+			log(Level.INFO, "School Class not found, creating '" + schoolClassName + "' for high school '" + this.school.getName() + "'.");	
+			int schoolId = ((Integer) this.school.getPrimaryKey()).intValue();
 			int schoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
-			int seasonId = ((Integer) season.getPrimaryKey()).intValue();
+			int seasonId = ((Integer) this.season.getPrimaryKey()).intValue();
 			try {
-				schoolClass = schoolClassHome.create();
+				schoolClass = this.schoolClassHome.create();
 				schoolClass.setSchoolClassName(schoolClassName);
 				schoolClass.setSchoolId(schoolId);
 				schoolClass.setSchoolTypeId(schoolTypeId);
@@ -546,7 +607,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			} catch (Exception e2) {}
 
 			if (schoolClass == null) {
-				errorLog.put(new Integer(row), "Could not create school Class: " + schoolClassName);
+				this.errorLog.put(new Integer(row), "Could not create school Class: " + schoolClassName);
 				return false;
 			}				
 		}
@@ -554,10 +615,10 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		// school Class member
 		int schoolClassId = ((Integer) schoolClass.getPrimaryKey()).intValue();
 		SchoolClassMember member = null;
-		Timestamp registerDate = firstDayInCurrentMonth;
+		Timestamp registerDate = this.firstDayInCurrentMonth;
 		
 		try {
-			Collection placements = schoolClassMemberHome.findByStudent(user);
+			Collection placements = this.schoolClassMemberHome.findByStudent(user);
 			if (placements != null) {
 				Iterator placementsIter = placements.iterator();
 				while (placementsIter.hasNext()) {
@@ -583,13 +644,13 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 							} else {
 								IWTimestamp t1 = new IWTimestamp(placement.getRegisterDate());
 								t1.setAsDate();
-								IWTimestamp t2 = new IWTimestamp(firstDayInCurrentMonth);
+								IWTimestamp t2 = new IWTimestamp(this.firstDayInCurrentMonth);
 								t2.setAsDate();
 								if (t1.equals(t2)) {
 									try {
 										PlacementImportDate p = null;
 										try {
-											p = placementImportDateHome.findByPrimaryKey(placement.getPrimaryKey());
+											p = this.placementImportDateHome.findByPrimaryKey(placement.getPrimaryKey());
 										} catch (FinderException e) {}
 										if (p != null) {
 											p.remove();
@@ -599,10 +660,10 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 										log(e);
 									}
 								} else {								
-									placement.setRemovedDate(lastDayInPreviousMonth);
+									placement.setRemovedDate(this.lastDayInPreviousMonth);
 									placement.store();
 								}
-								registerDate = firstDayInCurrentMonth;
+								registerDate = this.firstDayInCurrentMonth;
 							}
 						}
 					}
@@ -612,9 +673,9 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 
 		if (member == null) {			
 			try {
-				member = schoolClassMemberHome.create();
+				member = this.schoolClassMemberHome.create();
 			} catch (CreateException e) {
-				errorLog.put(new Integer(row), "School Class member could not be created for personal id: " + personalId);	
+				this.errorLog.put(new Integer(row), "School Class member could not be created for personal id: " + personalId);	
 				return false;				
 			}
 			member.setSchoolClassId(((Integer) schoolClass.getPrimaryKey()).intValue());
@@ -629,18 +690,18 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		
 		PlacementImportDate p = null;
 		try {
-			p = placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+			p = this.placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
 		} catch (FinderException e) {}
 		if (p == null) {
 			try {
-				p = placementImportDateHome.create();
+				p = this.placementImportDateHome.create();
 				p.setSchoolClassMemberId(((Integer) member.getPrimaryKey()).intValue());
 			} catch (CreateException e) {
-				errorLog.put(new Integer(row), "Could not create import date from school class member: " + member.getPrimaryKey());	
+				this.errorLog.put(new Integer(row), "Could not create import date from school class member: " + member.getPrimaryKey());	
 				return false;								
 			}
 		}
-		p.setImportDate(today);
+		p.setImportDate(this.today);
 		p.store();
 
 		return true;
@@ -656,19 +717,19 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		School schoolB = null;
 		School schoolC = null;
 		try {
-			schoolA = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
+			schoolA = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A);
 		} catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_A + "' not found.");
 			return false;
 		}
 		try {
-			schoolB = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
+			schoolB = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B);
 		} catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_B + "' not found.");
 			return false;
 		}
 		try {
-			schoolC = schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
+			schoolC = this.schoolHome.findBySchoolName(NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C);
 		} catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: School '" + NackaProgmaPlacementImportFileHandlerBean.SCHOOL_NAME_C + "' not found.");
 			return false;
@@ -681,7 +742,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		
 		SchoolCategory highSchoolCategory = null;
 		try {
-			highSchoolCategory = schoolBusiness.getCategoryHighSchool();
+			highSchoolCategory = this.schoolBusiness.getCategoryHighSchool();
 		} catch (RemoteException e) {
 			println("NackaHighSchoolPlacementHandler: High school category not found.");
 			return false;			
@@ -689,7 +750,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		
 		Collection placements = null;
 		try {
-			placements = schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, season, schoolIds, false); 
+			placements = this.schoolClassMemberHome.findActiveByCategorySeasonAndSchools(highSchoolCategory, this.season, schoolIds, false); 
 		} catch (FinderException e) {
 			println("NackaHighSchoolPlacementHandler: Error finding placements.");
 			return false;			
@@ -702,12 +763,12 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 			SchoolClassMember member = (SchoolClassMember) iter.next();
 			IWTimestamp placementDate = null;
 			try {
-				PlacementImportDate p = placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
+				PlacementImportDate p = this.placementImportDateHome.findByPrimaryKey(member.getPrimaryKey());
 				placementDate = new IWTimestamp(p.getImportDate());
 				placementDate.setAsDate();
 			} catch (FinderException e) {}
 			if (placementDate == null || placementDate.isEarlierThan(now)) {
-				member.setRemovedDate(lastDayInPreviousMonth);
+				member.setRemovedDate(this.lastDayInPreviousMonth);
 				member.store();				
 				println("Terminating placement with id: " + member.getPrimaryKey());
 			}
@@ -722,7 +783,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	 */
 	private void println(String s) {
 		System.out.println(s);
-		report.append(s);
+		this.report.append(s);
 	}
 
 	/*
@@ -731,14 +792,14 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	private String getUserProperty(int columnIndex){
 		String value = null;
 		
-		if (userValues!=null) {
+		if (this.userValues!=null) {
 		
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
-			if (file.getEmptyValueString().equals(value)) {
+			if (this.file.getEmptyValueString().equals(value)) {
 				return null;
 			} else {
 				return value;
@@ -766,7 +827,7 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords(){
-		return failedRecords;	
+		return this.failedRecords;	
 	}
 
 	private IWTimestamp getBirthDateFromPin(String pin){
@@ -785,15 +846,15 @@ public class NackaProgmaPlacementImportFileHandlerBean extends IBOServiceBean im
 		try {
 			GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
 			if (Integer.parseInt(pin.substring(10, 11)) % 2 == 0) {
-				if (female == null) {
-					female = home.getFemaleGender();
+				if (this.female == null) {
+					this.female = home.getFemaleGender();
 				}
-				return female;
+				return this.female;
 			} else {
-				if (male == null) {
-					male = home.getMaleGender();
+				if (this.male == null) {
+					this.male = home.getMaleGender();
 				}
-				return male;
+				return this.male;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

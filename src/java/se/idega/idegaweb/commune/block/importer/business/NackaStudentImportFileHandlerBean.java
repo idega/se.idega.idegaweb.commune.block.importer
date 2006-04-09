@@ -82,11 +82,11 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   public NackaStudentImportFileHandlerBean(){}
   
   public boolean handleRecords() throws RemoteException{
-		failedSchools = new HashMap();
-    transaction =  this.getSessionContext().getUserTransaction();
+		this.failedSchools = new HashMap();
+    this.transaction =  this.getSessionContext().getUserTransaction();
     
     try{
-    	season = ((SchoolSeasonHome)this.getIDOHome(SchoolSeason.class)).findByPrimaryKey(new Integer(2));
+    	this.season = ((SchoolSeasonHome)this.getIDOHome(SchoolSeason.class)).findByPrimaryKey(new Integer(2));
     	
     	//((SchoolChoiceBusiness)this.getServiceInstance(SchoolChoiceBusiness.class)).getCurrentSeason();
     }
@@ -101,32 +101,34 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
     try {
       //initialize business beans and data homes
-      biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+      this.biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
       //home = biz.getUserHome();
       
       
-      schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
-      sHome = schoolBiz.getSchoolHome();
+      this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+      this.sHome = this.schoolBiz.getSchoolHome();
            
-      sYearHome = schoolBiz.getSchoolYearHome();
+      this.sYearHome = this.schoolBiz.getSchoolYearHome();
       
-      sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
+      this.sClassHome = (SchoolClassHome)this.getIDOHome(SchoolClass.class);
  	  
- 	  	sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
+ 	  	this.sClassMemberHome = (SchoolClassMemberHome)this.getIDOHome(SchoolClassMember.class);
       
   
       //if the transaction failes all the users and their relations are removed
-      transaction.begin();
+      this.transaction.begin();
 
       //iterate through the records and process them
       String item;
 
       int count = 0;
-      while ( !(item=(String)file.getNextRecord()).equals("") ) {
+      while ( !(item=(String)this.file.getNextRecord()).equals("") ) {
         count++;
 
 		
-           if( ! processRecord(item) ) failedRecords.add(item);
+           if( ! processRecord(item) ) {
+						this.failedRecords.add(item);
+					}
 
         if( (count % 500) == 0 ){
           System.out.println("NackaStudentHandler processing RECORD ["+count+"] time: "+IWTimestamp.getTimestampRightNow().toString());
@@ -142,7 +144,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 
       // System.gc();
       //success commit changes
-      transaction.commit();
+      this.transaction.commit();
 
 
       return true;
@@ -151,7 +153,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
      ex.printStackTrace();
 
      try {
-      transaction.rollback();
+      this.transaction.rollback();
      }
      catch (SystemException e) {
        e.printStackTrace();
@@ -163,12 +165,12 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   }
 
   private boolean processRecord(String record) throws RemoteException{
-    userValues = file.getValuesFromRecordString(record);
+    this.userValues = this.file.getValuesFromRecordString(record);
     //System.out.println("THE RECORD = "+record);
 
 	boolean success = storeUserInfo();
   
-    userValues = null;
+    this.userValues = null;
 
     return success;
   }
@@ -176,13 +178,13 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
   public void printFailedRecords(){
   	System.out.println("Import failed for these records, please fix and import again:");
   
-  	Iterator iter = failedRecords.iterator();
+  	Iterator iter = this.failedRecords.iterator();
   	while (iter.hasNext()) {
 		System.out.println((String) iter.next());
 		}
 		
 		System.out.println("Schools missing from database or have different names:");
-		Collection cols = failedSchools.values();
+		Collection cols = this.failedSchools.values();
 		Iterator schools = cols.iterator();
 		
 		while (schools.hasNext()) {
@@ -201,16 +203,24 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
     //variables
     
     String PIN = getUserProperty(this.COLUMN_PERSONAL_ID);  
-    if(PIN == null ) return false;
+    if(PIN == null ) {
+			return false;
+		}
         
     String schoolName = getUserProperty(this.COLUMN_SCHOOL_NAME);
-    if(schoolName == null ) return false;
+    if(schoolName == null ) {
+			return false;
+		}
 
 	String schoolYear = getUserProperty(this.COLUMN_SCHOOL_YEAR);
-    if(schoolYear == null ) return false;
+    if(schoolYear == null ) {
+			return false;
+		}
 
 	String schoolClass = getUserProperty(this.COLUMN_CLASS);
-    if(schoolClass == null ) return false;
+    if(schoolClass == null ) {
+			return false;
+		}
 
 	//database stuff
 	School school;
@@ -218,9 +228,11 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	
 	// user
 	try {
-		user = biz.getUserHome().findByPersonalID(PIN);
+		user = this.biz.getUserHome().findByPersonalID(PIN);
 		//debug
-		if( user == null ) System.out.println(" USER IS NULL!!??? should cast finderexception");
+		if( user == null ) {
+			System.out.println(" USER IS NULL!!??? should cast finderexception");
+		}
 		
 	}
 	catch (FinderException e) {
@@ -231,7 +243,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		// get dat of birfth
 		
 		try {
-			user = biz.createSpecialCitizenByPersonalIDIfDoesNotExist(PIN,"","",PIN,getGenderFromPin(PIN),getBirthDateFromPin(PIN));
+			user = this.biz.createSpecialCitizenByPersonalIDIfDoesNotExist(PIN,"","",PIN,getGenderFromPin(PIN),getBirthDateFromPin(PIN));
 			//schoolName = "I annan kommun 1";
 		}
 		catch (Exception ex) {
@@ -246,24 +258,26 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		try{
 			//school
 			//this can only work if there is only one school with this name. add more parameters for other areas
-			school = sHome.findBySchoolName(schoolName);
+			school = this.sHome.findBySchoolName(schoolName);
 		}
 		catch (FinderException e) {
 			//System.out.println("School not found : "+schoolName);
 			schoolName = "I annan kommun 1";
 			try {
-				school = sHome.findBySchoolName(schoolName);
+				school = this.sHome.findBySchoolName(schoolName);
 			}
 			catch (FinderException ex) {
-				failedSchools.put(schoolName,schoolName);
+				this.failedSchools.put(schoolName,schoolName);
 				return false;
 			}
 		}		
 		
 		try{
 			//school year	
-			if( schoolYear.equals("0") ) schoolYear = "F";
-			year = sYearHome.findByYearName(schoolYear);
+			if( schoolYear.equals("0") ) {
+				schoolYear = "F";
+			}
+			year = this.sYearHome.findByYearName(schoolYear);
 		}
 		catch (FinderException e) {
 			System.out.println("SchoolYear not found : "+schoolYear);
@@ -286,15 +300,16 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 		SchoolClass sClass = null;
 		
 		try {	
-			sClass = sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,season);
+			sClass = this.sClassHome.findBySchoolClassNameSchoolSchoolYearSchoolSeason(schoolClass,school,year,this.season);
 		}catch (FinderException e) {
 			//e.printStackTrace();
 			System.out.println("School class not found creating...");	
 			
-			sClass = schoolBiz.storeSchoolClass(schoolClass,school,year,season);
+			sClass = this.schoolBiz.storeSchoolClass(schoolClass,school,year,this.season);
 			sClass.store();
-			if (sClass == null)
+			if (sClass == null) {
 				return false;
+			}
 				
 		}
 		
@@ -302,7 +317,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 			SchoolClassMember member = null;
 			try{
 			
-				Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+				Collection classMembers =  this.sClassMemberHome.findAllByUserAndSeason(user,this.season);
 				
 				Iterator oldClasses = classMembers.iterator();
 				while (oldClasses.hasNext()) {
@@ -323,9 +338,11 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 			}
 		
 			//System.out.println("School class member not found creating...");	
-			member = schoolBiz.storeSchoolClassMember(sClass, user);
+			member = this.schoolBiz.storeSchoolClassMember(sClass, user);
 			member.store();
-			if (member == null) return false;
+			if (member == null) {
+				return false;
+			}
 		
 			//schoolclassmember finished
 		}
@@ -333,7 +350,7 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 			System.out.println("NackaStudentImportHandler Removing protected citizen from all classes (pin:"+user.getPersonalID()+")");
 			try{
 			
-				Collection classMembers =  sClassMemberHome.findAllByUserAndSeason(user,season);
+				Collection classMembers =  this.sClassMemberHome.findAllByUserAndSeason(user,this.season);
 				
 				Iterator oldClasses = classMembers.iterator();
 				while (oldClasses.hasNext()) {
@@ -369,18 +386,24 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 	private String getUserProperty(int columnIndex){
 		String value = null;
 		
-		if( userValues!=null ){
+		if( this.userValues!=null ){
 		
 			try {
-				value = (String)userValues.get(columnIndex);
+				value = (String)this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
 	 			//System.out.println("Index: "+columnIndex+" Value: "+value);
-	 		if( file.getEmptyValueString().equals( value ) ) return null;
-		 	else return value;
+	 		if( this.file.getEmptyValueString().equals( value ) ) {
+				return null;
+			}
+			else {
+				return value;
+			}
   		}
-  		else return null;
+		else {
+			return null;
+		}
   }
 
 	private IWTimestamp getBirthDateFromPin(String pin){
@@ -400,16 +423,16 @@ public class NackaStudentImportFileHandlerBean extends IBOServiceBean implements
 			try {
 				GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
 				if( Integer.parseInt(pin.substring(10,11)) % 2 == 0 ){
-					if( female == null ){
-						female = home.getFemaleGender();
+					if( this.female == null ){
+						this.female = home.getFemaleGender();
 					}
-					return female;
+					return this.female;
 				}
 				else{
-					if( male == null ){
-						male = home.getMaleGender();
+					if( this.male == null ){
+						this.male = home.getMaleGender();
 					}
-					return male;
+					return this.male;
 				}
 			}
 			catch (Exception ex) {
@@ -430,7 +453,7 @@ public void setRootGroup(Group rootGroup) {
  * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
  */
 public List getFailedRecords(){
-	return failedRecords;	
+	return this.failedRecords;	
 }
 
   }

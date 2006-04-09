@@ -1,5 +1,5 @@
 /*
- * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.10 2004/10/14 10:53:12 thomas Exp $
+ * $Id: NackaAfterSchoolFixFileHandlerBean.java,v 1.11 2006/04/09 12:05:08 laddi Exp $
  *
  * Copyright (C) 2003 Agura IT. All Rights Reserved.
  *
@@ -60,10 +60,10 @@ import com.idega.util.Timer;
  * Note that the "14" value in the SQL might have to be adjusted in the sql, 
  * depending on the number of records already inserted in the table. </p>
  * <p>
- * Last modified: $Date: 2004/10/14 10:53:12 $ by $Author: thomas $
+ * Last modified: $Date: 2006/04/09 12:05:08 $ by $Author: laddi $
  *
  * @author Anders Lindman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implements NackaAfterSchoolFixFileHandler, ImportFileHandler {
 
@@ -112,27 +112,27 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 	 * @see com.idega.block.importer.business.ImportFileHandler#handleRecords() 
 	 */
 	public boolean handleRecords(){
-		failedRecords = new ArrayList();
-		failedSchools = new TreeMap();
-		errorLog = new TreeMap();
+		this.failedRecords = new ArrayList();
+		this.failedSchools = new TreeMap();
+		this.errorLog = new TreeMap();
 		
-		transaction = this.getSessionContext().getUserTransaction();
+		this.transaction = this.getSessionContext().getUserTransaction();
         
 		Timer clock = new Timer();
 		clock.start();
 
 		try {
 			//initialize business beans and data homes
-			biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
-			schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
+			this.biz = (CommuneUserBusiness) this.getServiceInstance(CommuneUserBusiness.class);
+			this.schoolBiz = (SchoolBusiness) this.getServiceInstance(SchoolBusiness.class);
 //			childCareBiz = (ChildCareBusiness) getServiceInstance(ChildCareBusiness.class);
 			
-			sHome = schoolBiz.getSchoolHome();           
-			sTypeHome = schoolBiz.getSchoolTypeHome();
+			this.sHome = this.schoolBiz.getSchoolHome();           
+			this.sTypeHome = this.schoolBiz.getSchoolTypeHome();
 //			sClassHome = (SchoolClassHome) this.getIDOHome(SchoolClass.class);
-			sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
-			communeHome = (CommuneHome) this.getIDOHome(Commune.class);
-			cccHome = (ChildCareContractHome) this.getIDOHome(ChildCareContract.class);
+			this.sClassMemberHome = (SchoolClassMemberHome) this.getIDOHome(SchoolClassMember.class);
+			this.communeHome = (CommuneHome) this.getIDOHome(Commune.class);
+			this.cccHome = (ChildCareContractHome) this.getIDOHome(ChildCareContract.class);
 
 /*
 			try {
@@ -144,18 +144,18 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			}
 */
 			
-			transaction.begin();
+			this.transaction.begin();
 
 			//iterate through the records and process them
 			String item;
 			int count = 0;
 			boolean failed = false;
 
-			while (!(item = (String) file.getNextRecord()).trim().equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).trim().equals("")) {
 				count++;
 				
 				if(!processRecord(item, count)) {
-					failedRecords.add(item);
+					this.failedRecords.add(item);
 					failed = true;
 //					break;
 				} 
@@ -175,9 +175,9 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 
 			//success commit changes
 			if (!failed) {
-				transaction.commit();
+				this.transaction.commit();
 			} else {
-				transaction.rollback(); 
+				this.transaction.rollback(); 
 			}
 			
 			return !failed;
@@ -185,7 +185,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				transaction.rollback();
+				this.transaction.rollback();
 			} catch (SystemException e2) {
 				e2.printStackTrace();
 			}
@@ -202,9 +202,9 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			// Skip header
 			return true;
 		}
-		userValues = file.getValuesFromRecordString(record);
+		this.userValues = this.file.getValuesFromRecordString(record);
 		boolean success = storeUserInfo(count);
-		userValues = null;
+		this.userValues = null;
 				
 		return success;
 	}
@@ -215,24 +215,24 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 	public void printFailedRecords() {
 		System.out.println("--------------------------------------------\n");
 		
-		if (failedRecords.isEmpty()) {
-			if (failedSchools.isEmpty()) {
+		if (this.failedRecords.isEmpty()) {
+			if (this.failedSchools.isEmpty()) {
 				System.out.println("All records fixed successfully.");
 			}
 		} else {
 			System.out.println("Import failed for these records, please fix and import again:\n");
 		}
   
-		Iterator iter = failedRecords.iterator();
+		Iterator iter = this.failedRecords.iterator();
 
 		while (iter.hasNext()) {
 			System.out.println((String) iter.next());
 		}
 
-		if (!failedSchools.isEmpty()) {
+		if (!this.failedSchools.isEmpty()) {
 			System.out.println("\nSchools missing from database or have different names:\n");
 		}
-		Collection cols = failedSchools.values();
+		Collection cols = this.failedSchools.values();
 		Iterator schools = cols.iterator();
 		
 		while (schools.hasNext()) {
@@ -240,13 +240,13 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			System.out.println(name);
 		}
 		
-		if (!errorLog.isEmpty()) {
+		if (!this.errorLog.isEmpty()) {
 			System.out.println("\nErrors during import:\n");
 		}
-		Iterator rowIter = errorLog.keySet().iterator();
+		Iterator rowIter = this.errorLog.keySet().iterator();
 		while (rowIter.hasNext()) {
 			Integer row = (Integer) rowIter.next();
-			String message = (String) errorLog.get(row);
+			String message = (String) this.errorLog.get(row);
 			System.out.println("Line " + row + ": " + message);
 		}
 		
@@ -265,13 +265,13 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 
 		String personalId = getUserProperty(COLUMN_PERSONAL_ID);
 		if (personalId == null) {
-			errorLog.put(row, "Child's personal ID cannot be empty.");
+			this.errorLog.put(row, "Child's personal ID cannot be empty.");
 			return false;
 		}
 		
 		String providerName = getUserProperty(COLUMN_PROVIDER_NAME);
 		if (providerName == null) {
-			errorLog.put(row, "Provider name cannot be empty.");
+			this.errorLog.put(row, "Provider name cannot be empty.");
 			return false;
 		}
 
@@ -302,17 +302,19 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 
 		String afterSchoolType = getUserProperty(COLUMN_AFTER_SCHOOL_TYPE);
 		if (afterSchoolType == null) {
-			errorLog.put(row, "Provider type cannot be empty.");
+			this.errorLog.put(row, "Provider type cannot be empty.");
 			return false;
 		}
 		
 		String placementFromDate = getUserProperty(COLUMN_PLACEMENT_FROM_DATE);
-		if ((placementFromDate == null) || (placementFromDate.length() != 8)) return false;
+		if ((placementFromDate == null) || (placementFromDate.length() != 8)) {
+			return false;
+		}
 		IWTimestamp placementFrom = new IWTimestamp();
 		try {
 			placementFrom.setDate(placementFromDate);
 		} catch (DateFormatException e) {
-			errorLog.put(row, "Placement from date must be in the form: YYYYMMDD");
+			this.errorLog.put(row, "Placement from date must be in the form: YYYYMMDD");
 			return false;
 		}
 		
@@ -324,14 +326,14 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			try {
 				placementTo.setDate(placementToDate);
 			} catch (DateFormatException e) {
-				errorLog.put(row, "Placement to date must be in the form: YYYYMMDD");
+				this.errorLog.put(row, "Placement to date must be in the form: YYYYMMDD");
 				return false; 
 			}
 		}
 		
 		String hoursText = getUserProperty(COLUMN_HOURS);
 		if (hoursText == null) {
-			errorLog.put(row, "The week hours cannot be empty.");
+			this.errorLog.put(row, "The week hours cannot be empty.");
 			return false;
 		}
 //		int hours = 0;
@@ -344,9 +346,9 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 
 		// user
 		try {
-			child = biz.getUserHome().findByPersonalID(personalId);
+			child = this.biz.getUserHome().findByPersonalID(personalId);
 		} catch (FinderException e) {
-			errorLog.put(row, "Child not found for PIN: " + personalId);
+			this.errorLog.put(row, "Child not found for PIN: " + personalId);
 			return false;
 		}
 
@@ -355,11 +357,11 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 			child.setLastName(childLastName);
 
 			try {
-				Commune homeCommune = communeHome.findByCommuneName(homeCommuneName);
+				Commune homeCommune = this.communeHome.findByCommuneName(homeCommuneName);
 				Integer communeId = (Integer) homeCommune.getPrimaryKey();
-				biz.updateCitizenAddress(((Integer) child.getPrimaryKey()).intValue(), childAddress, childZipCode, childZipArea, communeId);
+				this.biz.updateCitizenAddress(((Integer) child.getPrimaryKey()).intValue(), childAddress, childZipCode, childZipArea, communeId);
 			} catch (FinderException e) {
-				errorLog.put(row, "Commune not found: " + homeCommuneName);
+				this.errorLog.put(row, "Commune not found: " + homeCommuneName);
 				return false;
 			}
 			
@@ -375,24 +377,24 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 		}
 		
 		try {
-			schoolType = sTypeHome.findByTypeKey(typeKey);
+			schoolType = this.sTypeHome.findByTypeKey(typeKey);
 		} catch (FinderException e) {
-			errorLog.put(row, "School type: " + afterSchoolType + " not found in database (key = " + typeKey + ").");
+			this.errorLog.put(row, "School type: " + afterSchoolType + " not found in database (key = " + typeKey + ").");
 			return false;
 		}
 				
 		// school
 		try {
-			school = sHome.findBySchoolName(providerName);
+			school = this.sHome.findBySchoolName(providerName);
 		} catch (FinderException e) {
-			failedSchools.put(providerName, providerName);
+			this.failedSchools.put(providerName, providerName);
 			return false;
 		}
 		
 		// school type
 		boolean hasSchoolType = false;
 		try {
-			Iterator schoolTypeIter = schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
+			Iterator schoolTypeIter = this.schoolBiz.getSchoolRelatedSchoolTypes(school).values().iterator();
 			while (schoolTypeIter.hasNext()) {
 				SchoolType st = (SchoolType) schoolTypeIter.next();
 				if (st.getPrimaryKey().equals(schoolType.getPrimaryKey())) {
@@ -403,7 +405,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 		} catch (Exception e) {}
 		
 		if (!hasSchoolType) {
-			errorLog.put(row, "School type '" + afterSchoolType + "' not found in after-school center: " + providerName);
+			this.errorLog.put(row, "School type '" + afterSchoolType + "' not found in after-school center: " + providerName);
 			return false;
 		}
 										
@@ -533,7 +535,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 		int afterSchoolTypeId = ((Integer) schoolType.getPrimaryKey()).intValue();
 		int childId = ((Integer) child.getPrimaryKey()).intValue();
 		try {
-			Collection contracts = cccHome.findByChild(childId);
+			Collection contracts = this.cccHome.findByChild(childId);
 			Iterator iter = contracts.iterator();
 			while (iter.hasNext()) {
 				cccFound = true;
@@ -547,7 +549,7 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 				
 				if ((stId == 4) || (stId == 5) || (stId == 28)) {
 					// Elementary school, forskoleklass and null placements should not have contracts
-					Collection placements = sClassMemberHome.findByStudent(child);
+					Collection placements = this.sClassMemberHome.findByStudent(child);
 					Iterator iter2 = placements.iterator();
 					int afterSchoolPlacementId = -1;
 					while (iter2.hasNext()) {
@@ -586,14 +588,14 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 	private String getUserProperty(int columnIndex){
 		String value = null;
 		
-		if (userValues!=null) {
+		if (this.userValues!=null) {
 		
 			try {
-				value = (String) userValues.get(columnIndex);
+				value = (String) this.userValues.get(columnIndex);
 			} catch (RuntimeException e) {
 				return null;
 			}
-			if (file.getEmptyValueString().equals(value)) {
+			if (this.file.getEmptyValueString().equals(value)) {
 				return null;
 			} else {
 				return value;
@@ -621,6 +623,6 @@ public class NackaAfterSchoolFixFileHandlerBean extends IBOServiceBean implement
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords(){
-		return failedRecords;	
+		return this.failedRecords;	
 	}
 }

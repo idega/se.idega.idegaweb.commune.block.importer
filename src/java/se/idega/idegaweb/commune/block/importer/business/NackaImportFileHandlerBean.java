@@ -1,5 +1,5 @@
 /*
- * $Id: NackaImportFileHandlerBean.java,v 1.95 2006/02/22 21:00:25 laddi Exp $
+ * $Id: NackaImportFileHandlerBean.java,v 1.96 2006/04/09 12:05:08 laddi Exp $
  * 
  * Copyright (C) 2002 Idega Software hf. All Rights Reserved.
  * 
@@ -60,10 +60,10 @@ import com.idega.util.text.TextSoap;
 /**
  * NackaImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/02/22 21:00:25 $ by $Author: laddi $
+ * Last modified: $Date: 2006/04/09 12:05:08 $ by $Author: laddi $
  * 
  * @author <a href="mailto:eiki@idega.com">eiki </a>
- * @version $Revision: 1.95 $
+ * @version $Revision: 1.96 $
  */
 public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaImportFileHandler {
 
@@ -123,33 +123,33 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	// This method is syncronized because this implementation
 	// is not reentrant (does not allow simultaneous invocation by many callers)
 	public synchronized boolean handleRecords() {
-		transaction2 = this.getSessionContext().getUserTransaction();
+		this.transaction2 = this.getSessionContext().getUserTransaction();
 		try {
-			performer = IWContext.getInstance().getCurrentUser();
+			this.performer = IWContext.getInstance().getCurrentUser();
 		}
 		catch (Exception ex) {
-			performer = null;
+			this.performer = null;
 		}
 		Timer clock = new Timer();
 		clock.start();
 		try {
 			// Initialize the default/home commune
-			homeCommune = getCommuneHome().findDefaultCommune();
-			HOME_COMMUNE_CODE = homeCommune.getCommuneCode();
+			this.homeCommune = getCommuneHome().findDefaultCommune();
+			this.HOME_COMMUNE_CODE = this.homeCommune.getCommuneCode();
 			// initialize business beans and data homes
-			comUserBiz = (CommuneUserBusiness) getServiceInstance(CommuneUserBusiness.class);
-			relationBiz = (FamilyLogic) getServiceInstance(FamilyLogic.class);
-			home = comUserBiz.getUserHome();
-			addressBiz = (AddressBusiness) getServiceInstance(AddressBusiness.class);
-			failedRecords = new ArrayList();
-			relationsMap = new HashMap();
-			deceasedMap = new HashMap();
-			unhandledActions = new HashMap();
-			coordinateMap = new HashMap();
-			TFlist = new Vector();
+			this.comUserBiz = (CommuneUserBusiness) getServiceInstance(CommuneUserBusiness.class);
+			this.relationBiz = (FamilyLogic) getServiceInstance(FamilyLogic.class);
+			this.home = this.comUserBiz.getUserHome();
+			this.addressBiz = (AddressBusiness) getServiceInstance(AddressBusiness.class);
+			this.failedRecords = new ArrayList();
+			this.relationsMap = new HashMap();
+			this.deceasedMap = new HashMap();
+			this.unhandledActions = new HashMap();
+			this.coordinateMap = new HashMap();
+			this.TFlist = new Vector();
 			Collection row1 = new Vector();
 			row1.add("Personal ID changes");
-			TFlist.add(row1);
+			this.TFlist.add(row1);
 			/*String fixer = getIWApplicationContext().getApplicationSettings().getProperty(FIX_PARAMETER_NAME);
 			log("NackaImportFileHandler [STARTING] time: " + IWTimestamp.getTimestampRightNow().toString());
 			if ("TRUE".equals(fixer)) {
@@ -160,11 +160,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			// iterate through the records and process them
 			String item;
 			int count = 0;
-			while (!(item = (String) file.getNextRecord()).equals("")) {
+			while (!(item = (String) this.file.getNextRecord()).equals("")) {
 				count++;
-				if (count > startRecord) {
-					if (!processRecord(item))
-						failedRecords.add(item);
+				if (count > this.startRecord) {
+					if (!processRecord(item)) {
+						this.failedRecords.add(item);
+					}
 				}
 				if ((count % 250) == 0) {
 					log("NackaImportFileHandler processing RECORD [" + count + "] time: "
@@ -176,11 +177,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			log("Time to handleRecords: " + clock.getTime() + " ms  OR " + ((int) (clock.getTime() / 1000))
 					+ " s. Not done yet starting with relation");
 
-			if (importRelations) {
+			if (this.importRelations) {
 				storeRelations();
 			}
 
-			Set errorKeys = unhandledActions.keySet();
+			Set errorKeys = this.unhandledActions.keySet();
 			if (errorKeys == null || errorKeys.isEmpty()) {
 				log("NackaImportFileHandler : NO UNHANDLED ACTIONS :D");
 			}
@@ -193,7 +194,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				int totalValue = 0;
 				while (iter.hasNext()) {
 					key = (String) iter.next();
-					value = ((Integer) unhandledActions.get(key)).intValue();
+					value = ((Integer) this.unhandledActions.get(key)).intValue();
 					totalValue += value;
 					logString.append("\n  " + key + "              : " + value);
 				}
@@ -201,9 +202,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						+ " (were handled with the default action)");
 				log(logString.toString());
 			}
-			if (TFlist.size() > 1) {
+			if (this.TFlist.size() > 1) {
 				// Header is line 1... if nothing else... then nothing to report
-				getImportBusiness().addExcelReport(file.getFile(), "report", TFlist, "\n");
+				getImportBusiness().addExcelReport(this.file.getFile(), "report", this.TFlist, "\n");
 			}
 			return true;
 		}
@@ -214,25 +215,25 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 
 	private boolean processRecord(String record) throws RemoteException {
-		userPropertiesMap = new HashMap();
+		this.userPropertiesMap = new HashMap();
 		record = TextSoap.findAndCut(record, "#UP ");
-		if (importUsers || importAddresses) {
+		if (this.importUsers || this.importAddresses) {
 			// Family relations
-			userPropertiesMap.put(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
+			this.userPropertiesMap.put(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
 					getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
 							ImportFileFieldConstants.RELATIONAL_SECTION_ENDS));
 			// Special case relations
-			userPropertiesMap.put(ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_STARTS,
+			this.userPropertiesMap.put(ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_STARTS,
 					getArrayListWithMapsFromStringFragment(record,
 							ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_STARTS,
 							ImportFileFieldConstants.SPECIALCASE_RELATIONAL_SECTION_ENDS));
 			// Citizen info
-			userPropertiesMap.put(ImportFileFieldConstants.CITIZEN_INFO_SECTION_STARTS,
+			this.userPropertiesMap.put(ImportFileFieldConstants.CITIZEN_INFO_SECTION_STARTS,
 					getArrayListWithMapsFromStringFragment(record,
 							ImportFileFieldConstants.CITIZEN_INFO_SECTION_STARTS,
 							ImportFileFieldConstants.CITIZEN_INFO_SECTION_ENDS));
 			// Historic info
-			userPropertiesMap.put(ImportFileFieldConstants.HISTORIC_SECTION_STARTS,
+			this.userPropertiesMap.put(ImportFileFieldConstants.HISTORIC_SECTION_STARTS,
 					getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.HISTORIC_SECTION_STARTS,
 							ImportFileFieldConstants.HISTORIC_SECTION_ENDS));
 			// the rest e.g. User info and immigration stuff
@@ -240,29 +241,29 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			if (tmp == null || tmp.isEmpty()) {
 				return false;
 			}
-			userPropertiesMap.putAll(tmp);
+			this.userPropertiesMap.putAll(tmp);
 			// log("storeUserInfo");
 			storeUserInfo();
 		}
-		else if (!importUsers && !importAddresses && importRelations) { // only
+		else if (!this.importUsers && !this.importAddresses && this.importRelations) { // only
 			// store
 			// relations
 			// the rest e.g. User info and immigration stuff
-			userPropertiesMap.putAll(getPropertiesMapFromString(record, " ")); // PIN
+			this.userPropertiesMap.putAll(getPropertiesMapFromString(record, " ")); // PIN
 			// number
 			// etc.
 			// Family relations
-			userPropertiesMap.put(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
+			this.userPropertiesMap.put(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
 					getArrayListWithMapsFromStringFragment(record, ImportFileFieldConstants.RELATIONAL_SECTION_STARTS,
 							ImportFileFieldConstants.RELATIONAL_SECTION_ENDS));
 		}
 		/**
 		 * family and other releation stuff
 		 */
-		if (importRelations && !secretPerson) {
+		if (this.importRelations && !this.secretPerson) {
 			addRelations();
 		}
-		userPropertiesMap = null;
+		this.userPropertiesMap = null;
 		record = null;
 		return true;
 	}
@@ -283,7 +284,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		}
 		boolean secretPerson = isSecretPerson();
 		try {
-			user = comUserBiz.getUser(PIN);
+			user = this.comUserBiz.getUser(PIN);
 		}
 		catch (Exception e) {
 			logError("NackaImportFileHandler :  user not found (" + PIN + ")");
@@ -299,7 +300,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				coll.add("");
 				coll.add(refPIN + "\t(referenced PID)");
 				coll.add("Actions = " + actionType);
-				TFlist.add(coll);
+				this.TFlist.add(coll);
 				return true;
 			}
 			else {
@@ -323,7 +324,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		else {
 			if (user != null) {
 				if (refPIN != null) {
-					Address address = comUserBiz.getUsersMainAddress(user);
+					Address address = this.comUserBiz.getUsersMainAddress(user);
 					Collection coll = new Vector();
 					coll.add(PIN + "\t(new PID)");
 					coll.add(user.getName());
@@ -335,7 +336,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					}
 					coll.add(refPIN + "\t(referenced PID)");
 					coll.add("Actions = " + actionType);
-					TFlist.add(coll);
+					this.TFlist.add(coll);
 					return true;
 				}
 			}
@@ -384,7 +385,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						if (dateOfDeactivationString != null) {
 							dateOfDeactivation = getDateFromString(dateOfDeactivationString);
 						}
-						deceasedMap.put(PIN, dateOfDeactivation);
+						this.deceasedMap.put(PIN, dateOfDeactivation);
 					}
 				}
 				else if (action.equals(ImportFileFieldConstants.ACTION_TYPE_MIDDLE_NAME)) {
@@ -416,7 +417,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
 					try {
-						spouse = comUserBiz.getUser(relPIN);
+						spouse = this.comUserBiz.getUser(relPIN);
 					}
 					catch (Exception e) {
 						logError("NackaImportFileHandler : cant find spouse");
@@ -424,7 +425,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					if (spouse != null) {
 						if (ImportFileFieldConstants.ACTION_PREFIX_CANCEL.equals(prefix)) {
 							try {
-								relationBiz.removeAsSpouseFor(spouse, user);
+								this.relationBiz.removeAsSpouseFor(spouse, user);
 							}
 							catch (RemoveException e1) {
 								e1.printStackTrace();
@@ -432,7 +433,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 						}
 						else {
 							try {
-								relationBiz.setAsSpouseFor(spouse, user);
+								this.relationBiz.setAsSpouseFor(spouse, user);
 							}
 							catch (CreateException e1) {
 								e1.printStackTrace();
@@ -454,14 +455,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					String relPIN = getUserProperty(ImportFileFieldConstants.RELATIVE_PIN_COLUMN);
 					User spouse = null;
 					try {
-						spouse = comUserBiz.getUser(relPIN);
+						spouse = this.comUserBiz.getUser(relPIN);
 					}
 					catch (Exception e) {
 						logError("NackaImportFileHandler : cant find spouse");
 					}
 					if (spouse != null) {
 						try {
-							relationBiz.removeAsSpouseFor(spouse, user);
+							this.relationBiz.removeAsSpouseFor(spouse, user);
 						}
 						catch (RemoveException e1) {
 							logError("NackaImportFileHandler : cannot remove spouse");
@@ -489,12 +490,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				}
 				else {
 					/** FULL IMPORT */
-					if (unhandledActions.containsKey(actions[i][3])) {
-						unhandledActions.put(actions[i][3], new Integer(
-								((Integer) unhandledActions.get(actions[i][3])).intValue() + 1));
+					if (this.unhandledActions.containsKey(actions[i][3])) {
+						this.unhandledActions.put(actions[i][3], new Integer(
+								((Integer) this.unhandledActions.get(actions[i][3])).intValue() + 1));
 					}
 					else {
-						unhandledActions.put(actions[i][3], new Integer(1));
+						this.unhandledActions.put(actions[i][3], new Integer(1));
 					}
 					if (!fullImport()) {
 						return false;
@@ -508,8 +509,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 	
 	protected void addRelations() {
-		ArrayList relatives = (ArrayList) userPropertiesMap.get(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS);
-		relationsMap.put(getUserProperty(ImportFileFieldConstants.PIN_COLUMN), relatives);
+		ArrayList relatives = (ArrayList) this.userPropertiesMap.get(ImportFileFieldConstants.RELATIONAL_SECTION_STARTS);
+		this.relationsMap.put(getUserProperty(ImportFileFieldConstants.PIN_COLUMN), relatives);
 	}
 
 	protected Group convertUserToGroup(User user) {
@@ -564,11 +565,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			if (actionType.endsWith(ImportFileFieldConstants.ACTION_CONCERNS_CURRENT_PERSON)) {
 				// why is this person deactivated
 				if (actionType.startsWith(ImportFileFieldConstants.ACTION_TYPE_DEATH)) {
-					deceasedMap.put(pid, dateOfDeactivation);
+					this.deceasedMap.put(pid, dateOfDeactivation);
 				}
 				else if (actionType.startsWith(ImportFileFieldConstants.ACTION_TYPE_MOVED)) {
-					if (commune != null && homeCommune != null) {
-						if (!commune.equals(homeCommune)) {
+					if (commune != null && this.homeCommune != null) {
+						if (!commune.equals(this.homeCommune)) {
 							isMovingFromHomeCommune = true;
 						}
 					}
@@ -584,18 +585,20 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String secrecy = getUserProperty(ImportFileFieldConstants.SECRECY_MARKING_COLUMN);
 		boolean secretPerson = "J".equals(secrecy);
 		// TODO should not be necessary because of deactivation check
-		isMovingFromHomeCommune = isMovingFromHomeCommune || !HOME_COMMUNE_CODE.equals(communeCode);
-		if (secrecy != null && !secrecy.equals(""))
+		isMovingFromHomeCommune = isMovingFromHomeCommune || !this.HOME_COMMUNE_CODE.equals(communeCode);
+		if (secrecy != null && !secrecy.equals("")) {
 			log("SECRET PERSON = " + pid + " Code :" + secrecy + ".");
-		if (pid == null)
+		}
+		if (pid == null) {
 			return false;
+		}
 		Gender gender = getGenderFromPin(pid);
 		IWTimestamp dateOfBirth = getBirthDateFromPin(pid);
 		/**
 		 * basic user info
 		 */
 		try {
-			user = comUserBiz.createOrUpdateCitizenByPersonalID(firstName, middleName, lastName, pid, gender,
+			user = this.comUserBiz.createOrUpdateCitizenByPersonalID(firstName, middleName, lastName, pid, gender,
 					dateOfBirth);
 		}
 		catch (Exception e) {
@@ -615,7 +618,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		if (secretPerson) {
 			user.setDescription("secret");
 			// remove family ties!
-			relationBiz.removeAllFamilyRelationsForUser(user);
+			this.relationBiz.removeAllFamilyRelationsForUser(user);
 			// remove address
 			try {
 				user.removeAllAddresses();
@@ -623,19 +626,19 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			catch (IDORemoveRelationshipException e) {
 				// e.printStackTrace();
 			}
-			if (fix) {
+			if (this.fix) {
 				// this will force a new record in the relation table
 				try {
-					comUserBiz.getRootProtectedCitizenGroup().removeUser(user, performer);
+					this.comUserBiz.getRootProtectedCitizenGroup().removeUser(user, this.performer);
 				}
 				catch (Exception e) {
 				}
 			}
-			comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), performer);
+			this.comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), this.performer);
 		}
 		else if (isMovingFromHomeCommune) {
 			// this will force a new record in the relation table
-			if (fix) {
+			if (this.fix) {
 				// this will force a new record in the relation table
 				try {
 					// try to get the current user
@@ -646,20 +649,20 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					catch (Exception ex) {
 						currentUser = null;
 					}
-					comUserBiz.getRootOtherCommuneCitizensGroup().removeUser(user, currentUser);
+					this.comUserBiz.getRootOtherCommuneCitizensGroup().removeUser(user, currentUser);
 				}
 				catch (Exception e) {
 				}
 			}
 			if (dateOfDeactivation != null) {
-				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), performer);
+				this.comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), this.performer);
 			}
 			else {
-				comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), performer);
+				this.comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), this.performer);
 			}
 		}
 		else {
-			if (fix) {
+			if (this.fix) {
 				// this will force a new record in the relation table
 				try {
 					// try to get the current user
@@ -670,16 +673,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					catch (Exception ex) {
 						currentUser = null;
 					}
-					comUserBiz.getRootCitizenGroup().removeUser(user, currentUser);
+					this.comUserBiz.getRootCitizenGroup().removeUser(user, currentUser);
 				}
 				catch (Exception e) {
 				}
 			}
 			if (dateOfRegistration != null) {
-				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), performer);
+				this.comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), this.performer);
 			}
 			else {
-				comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), performer);
+				this.comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), this.performer);
 			}
 		}
 
@@ -746,15 +749,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 
 	protected CommuneHome getCommuneHome() {
-		if (communeHome == null) {
+		if (this.communeHome == null) {
 			try {
-				communeHome = (CommuneHome) getIDOHome(Commune.class);
+				this.communeHome = (CommuneHome) getIDOHome(Commune.class);
 			}
 			catch (RemoteException e) {
 				log(e);
 			}
 		}
-		return communeHome;
+		return this.communeHome;
 	}
 
 	/**
@@ -772,7 +775,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	 * @see com.idega.block.importer.business.ImportFileHandler#getFailedRecords()
 	 */
 	public List getFailedRecords() {
-		return failedRecords;
+		return this.failedRecords;
 	}
 
 	private Gender getGenderFromPin(String pin) {
@@ -782,16 +785,16 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		try {
 			GenderHome home = (GenderHome) this.getIDOHome(Gender.class);
 			if (Integer.parseInt(pin.substring(10, 11)) % 2 == 0) {
-				if (female == null) {
-					female = home.getFemaleGender();
+				if (this.female == null) {
+					this.female = home.getFemaleGender();
 				}
-				return female;
+				return this.female;
 			}
 			else {
-				if (male == null) {
-					male = home.getMaleGender();
+				if (this.male == null) {
+					this.male = home.getMaleGender();
 				}
-				return male;
+				return this.male;
 			}
 		}
 		catch (Exception ex) {
@@ -831,21 +834,23 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	}
 
 	protected String getUserProperty(String propertyName) {
-		return (String) userPropertiesMap.get(propertyName);
+		return (String) this.userPropertiesMap.get(propertyName);
 	}
 
 	protected String getUserProperty(String propertyName, String StringToReturnIfNotSet) {
 		String value = getUserProperty(propertyName);
-		if (value == null)
+		if (value == null) {
 			value = StringToReturnIfNotSet;
+		}
 		return value;
 	}
 
 	private boolean isSecretPerson() {
 		String secrecy = getUserProperty(ImportFileFieldConstants.SECRECY_MARKING_COLUMN);
 		String PIN = getUserProperty(ImportFileFieldConstants.PIN_COLUMN);
-		if (secrecy != null && !secrecy.equals(""))
+		if (secrecy != null && !secrecy.equals("")) {
 			log("SECRET PERSON = " + PIN + " Code :" + secrecy + ".");
+		}
 		return "J".equals(secrecy);
 	}
 
@@ -918,8 +923,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		Timer clock = new Timer();
 		clock.start();
 		int count = 0;
-		if (relationsMap != null) {
-			Iterator iter = relationsMap.keySet().iterator();
+		if (this.relationsMap != null) {
+			Iterator iter = this.relationsMap.keySet().iterator();
 			User user;
 			User relative;
 			String relativePIN;
@@ -927,7 +932,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			String relationType;
 			try {
 				// begin transaction
-				transaction2.begin();
+				this.transaction2.begin();
 				while (iter.hasNext()) {
 					++count;
 					if ((count % 250) == 0) {
@@ -936,9 +941,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					}
 					PIN = (String) iter.next();
 					user = null;
-					ArrayList relatives = (ArrayList) relationsMap.get(PIN);
+					ArrayList relatives = (ArrayList) this.relationsMap.get(PIN);
 					if (relatives != null) {
-						user = home.findByPersonalID(PIN);
+						user = this.home.findByPersonalID(PIN);
 						boolean secretPerson = false;
 						String relationStatus;
 						secretPerson = "secret".equals(user.getDescription());
@@ -959,7 +964,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 								if (relativePIN != null) {
 									try {
 										if (relationType != null) {
-											relative = home.findByPersonalID(relativePIN);
+											relative = this.home.findByPersonalID(relativePIN);
 											secretPerson = "secret".equals(relative.getDescription());
 											if (!secretPerson) {
 												if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_CHILD)) {
@@ -968,7 +973,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 													parentRelations.put(user.getPrimaryKey(), relative.getPrimaryKey());
 												}
 												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_SPOUSE)) {
-													relationBiz.setAsSpouseFor(relative, user);
+													this.relationBiz.setAsSpouseFor(relative, user);
 												}
 												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_FATHER)) {
 													// relationBiz.setAsChildFor(user,relative);
@@ -983,10 +988,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 														System.out.println("removing custody relation ("
 																+ user.getPersonalID() + ", "
 																+ relative.getPersonalID() + ")");
-														relationBiz.removeAsCustodianFor(user, relative);
+														this.relationBiz.removeAsCustodianFor(user, relative);
 													}
 													else {
-														relationBiz.setAsCustodianFor(user, relative);
+														this.relationBiz.setAsCustodianFor(user, relative);
 													}
 												}
 												else if (relationType.equals(ImportFileFieldConstants.RELATION_TYPE_CUSTODY2)) { // custody
@@ -994,10 +999,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 														System.out.println("removing (reverse) custody relation ("
 																+ user.getPersonalID() + ", "
 																+ relative.getPersonalID() + ")");
-														relationBiz.removeAsCustodianFor(relative, user); // backwards
+														this.relationBiz.removeAsCustodianFor(relative, user); // backwards
 													}
 													else {
-														relationBiz.setAsCustodianFor(relative, user); // backwards
+														this.relationBiz.setAsCustodianFor(relative, user); // backwards
 													}
 												}
 											}
@@ -1046,7 +1051,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				} // end while iter
 				handleCustodyAndChildRelations(parentRelations);
 				// success commit
-				transaction2.commit();
+				this.transaction2.commit();
 				Iterator err = errors.iterator();
 				while (err.hasNext()) {
 					String item = (String) err.next();
@@ -1062,7 +1067,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 							+ ") not found in database must be an incomplete database");
 					log("NackaImporter : Rollbacking");
 					try {
-						transaction2.rollback();
+						this.transaction2.rollback();
 					}
 					catch (SystemException ec) {
 						ec.printStackTrace();
@@ -1081,8 +1086,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		clock.start();
 		log("NackaImportFileHandler [STARTING - DECEASED RELATIONS] (without transaction) time: "
 				+ IWTimestamp.getTimestampRightNow().toString());
-		if (deceasedMap != null) {
-			Iterator iter = deceasedMap.keySet().iterator();
+		if (this.deceasedMap != null) {
+			Iterator iter = this.deceasedMap.keySet().iterator();
 			User user;
 			IWTimestamp dateOfDeactivation = null;
 			String PIN;
@@ -1095,15 +1100,15 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 								+ IWTimestamp.getTimestampRightNow().toString());
 					}
 					PIN = (String) iter.next();
-					dateOfDeactivation = (IWTimestamp) deceasedMap.get(PIN);
-					user = home.findByPersonalID(PIN);
+					dateOfDeactivation = (IWTimestamp) this.deceasedMap.get(PIN);
+					user = this.home.findByPersonalID(PIN);
 					// log("NackaImportFileHandler - setUserAsDeceased (
 					// "+user.getPrimaryKey()+" )");
 					if (dateOfDeactivation != null) {
-						comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), dateOfDeactivation.getDate());
+						this.comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), dateOfDeactivation.getDate());
 					}
 					else {
-						comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), IWTimestamp.RightNow().getDate());
+						this.comUserBiz.setUserAsDeceased(((Integer) user.getPrimaryKey()), IWTimestamp.RightNow().getDate());
 					}
 				}
 				log("NackaImportFileHandler stored deceased relations : Total = [" + count + "] time: "
@@ -1174,22 +1179,22 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		String coAddressLine = getUserProperty(ImportFileFieldConstants.CO_ADDRESS_COLUMN);
 		String foreignAddressLine1 = getUserProperty(ImportFileFieldConstants.FOREIGN_ADDRESS_1_COLUMN);
 		String addressKeyCode = getUserProperty(ImportFileFieldConstants.ADDRESS_KEY_CODE);
-		if ((addressLine != null) && importAddresses) {
+		if ((addressLine != null) && this.importAddresses) {
 			try {
-				String streetName = addressBiz.getStreetNameFromAddressString(addressLine);
-				String streetNumber = addressBiz.getStreetNumberFromAddressString(addressLine);
+				String streetName = this.addressBiz.getStreetNameFromAddressString(addressLine);
+				String streetNumber = this.addressBiz.getStreetNumberFromAddressString(addressLine);
 				String postalCode = getUserProperty(ImportFileFieldConstants.POSTAL_CODE_COLUMN);
 				String postalName = getUserProperty(ImportFileFieldConstants.POSTAL_NAME_COLUMN);
-				Address address = comUserBiz.getUsersMainAddress(user);
+				Address address = this.comUserBiz.getUsersMainAddress(user);
 				Country sweden = ((CountryHome) getIDOHome(Country.class)).findByIsoAbbreviation("SE");
 				PostalCode code = null;
 				if (postalName != null) {
-					code = addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode, postalName, sweden);
+					code = this.addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode, postalName, sweden);
 				}
 				boolean addAddress = false;
 				/** @todo is this necessary?* */
 				if (address == null) {
-					AddressHome addressHome = addressBiz.getAddressHome();
+					AddressHome addressHome = this.addressBiz.getAddressHome();
 					address = addressHome.create();
 					AddressType mainAddressType = addressHome.getAddressType1();
 					address.setAddressType(mainAddressType);
@@ -1222,21 +1227,21 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				return false;
 			}
 		}
-		else if (coAddressLine != null && importAddresses) {
+		else if (coAddressLine != null && this.importAddresses) {
 			try {
 				// String addressName = getUserProperty(CO_ADDRESS_NAME_COLUMN);
 				// // Not used
-				String streetName = addressBiz.getStreetNameFromAddressString(coAddressLine);
-				String streetNumber = addressBiz.getStreetNumberFromAddressString(coAddressLine);
+				String streetName = this.addressBiz.getStreetNameFromAddressString(coAddressLine);
+				String streetNumber = this.addressBiz.getStreetNumberFromAddressString(coAddressLine);
 				String postalCode = getUserProperty(ImportFileFieldConstants.CO_POSTAL_CODE_COLUMN);
 				String postalName = getUserProperty(ImportFileFieldConstants.CO_POSTAL_NAME_COLUMN);
-				Address address = comUserBiz.getUsersCoAddress(user);
+				Address address = this.comUserBiz.getUsersCoAddress(user);
 				Country sweden = ((CountryHome) getIDOHome(Country.class)).findByIsoAbbreviation("SE");
-				PostalCode code = addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode, postalName, sweden);
+				PostalCode code = this.addressBiz.getPostalCodeAndCreateIfDoesNotExist(postalCode, postalName, sweden);
 				boolean addAddress = false;
 				/** @todo is this necessary?* */
 				if (address == null) {
-					AddressHome addressHome = addressBiz.getAddressHome();
+					AddressHome addressHome = this.addressBiz.getAddressHome();
 					address = addressHome.create();
 					AddressType coAddressType = addressHome.getAddressType2();
 					address.setAddressType(coAddressType);
@@ -1273,11 +1278,11 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					foreignAddressLine3).append(space).append(foreignAddressCountry);
 			try {
 				String streetName = TextSoap.findAndReplace(addressBuf.toString(), "  ", " ");
-				Address address = comUserBiz.getUsersMainAddress(user);
+				Address address = this.comUserBiz.getUsersMainAddress(user);
 				boolean addAddress = false;
 				/** @todo is this necessary?* */
 				if (address == null) {
-					AddressHome addressHome = addressBiz.getAddressHome();
+					AddressHome addressHome = this.addressBiz.getAddressHome();
 					address = addressHome.create();
 					AddressType mainAddressType = addressHome.getAddressType1();
 					address.setAddressType(mainAddressType);
@@ -1301,9 +1306,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 
 	private AddressCoordinate getAddressCoordinate(String addressKeyCode) throws IDOLookupException {
 		if (addressKeyCode != null) {
-			if (coordinateMap.containsKey(addressKeyCode)) {
+			if (this.coordinateMap.containsKey(addressKeyCode)) {
 				// Can return null
-				return (AddressCoordinate) coordinateMap.get(addressKeyCode);
+				return (AddressCoordinate) this.coordinateMap.get(addressKeyCode);
 			}
 			else {
 				AddressCoordinateHome ach = (AddressCoordinateHome) IDOLookup.getHome(AddressCoordinate.class);
@@ -1315,7 +1320,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					System.out.println("[NackaImportFileHandlreBean] Address Coordinate not found (possibly not imported yet : "
 							+ addressKeyCode + ")");
 				}
-				coordinateMap.put(addressKeyCode, ac);
+				this.coordinateMap.put(addressKeyCode, ac);
 				return ac;
 			}
 		}
@@ -1332,8 +1337,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					Iterator colIt = coll.iterator();
 					while (colIt.hasNext()) {
 						Integer childId = (Integer) colIt.next();
-						User parent = comUserBiz.getUser(parentId);
-						User child = comUserBiz.getUser(childId);
+						User parent = this.comUserBiz.getUser(parentId);
+						User child = this.comUserBiz.getUser(childId);
 						// Collection custodians =
 						// parent.getRelatedBy(relationBiz.getCustodianRelationType()
 						// );
@@ -1341,9 +1346,9 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 							// and as custodian
 							parent.addUniqueRelation(
 									((Integer) (this.convertUserToGroup(child).getPrimaryKey())).intValue(),
-									relationBiz.getCustodianRelationType());
+									this.relationBiz.getCustodianRelationType());
 						}
-						relationBiz.setAsParentFor(parent, child);
+						this.relationBiz.setAsParentFor(parent, child);
 					}
 				}
 			}
@@ -1383,8 +1388,8 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 			// (countyNumber+communeNumber) not found in database");
 		}
 		boolean isMovingFromHomeCommune = false;
-		if (commune != null && homeCommune != null) {
-			if (!commune.equals(homeCommune)) {
+		if (commune != null && this.homeCommune != null) {
+			if (!commune.equals(this.homeCommune)) {
 				isMovingFromHomeCommune = true;
 			}
 		}
@@ -1396,7 +1401,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		}
 		if (isMovingFromHomeCommune) {
 			// this will force a new record in the relation table
-			if (fix) {
+			if (this.fix) {
 				// this will force a new record in the relation table
 				try {
 					// try to get the current user
@@ -1407,7 +1412,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					catch (Exception ex) {
 						currentUser = null;
 					}
-					comUserBiz.getRootOtherCommuneCitizensGroup().removeUser(user, currentUser);
+					this.comUserBiz.getRootOtherCommuneCitizensGroup().removeUser(user, currentUser);
 				}
 				catch (Exception e) {
 				}
@@ -1418,14 +1423,14 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				dateOfDeactivation = getDateFromString(dateOfActionString);
 			}
 			if (dateOfDeactivation != null) {
-				comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), performer);
+				this.comUserBiz.moveCitizenFromCommune(user, dateOfDeactivation.getTimestamp(), this.performer);
 			}
 			else {
-				comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), performer);
+				this.comUserBiz.moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), this.performer);
 			}
 		}
 		else {
-			if (fix) {
+			if (this.fix) {
 				// this will force a new record in the relation table
 				try {
 					// try to get the current user
@@ -1436,7 +1441,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 					catch (Exception ex) {
 						currentUser = null;
 					}
-					comUserBiz.getRootCitizenGroup().removeUser(user, currentUser);
+					this.comUserBiz.getRootCitizenGroup().removeUser(user, currentUser);
 				}
 				catch (Exception e) {
 				}
@@ -1447,10 +1452,10 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				dateOfRegistration = getDateFromString(dateOfRegistrationString);
 			}
 			if (dateOfRegistration != null) {
-				comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), performer);
+				this.comUserBiz.moveCitizenToCommune(user, dateOfRegistration.getTimestamp(), this.performer);
 			}
 			else {
-				comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), performer);
+				this.comUserBiz.moveCitizenToCommune(user, IWTimestamp.getTimestampRightNow(), this.performer);
 			}
 		}
 		return true;
@@ -1480,7 +1485,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 	private void handleSecretPerson(User user) throws RemoteException {
 		user.setDescription("secret");
 		// remove family ties!
-		relationBiz.removeAllFamilyRelationsForUser(user);
+		this.relationBiz.removeAllFamilyRelationsForUser(user);
 		// remove address
 		try {
 			user.removeAllAddresses();
@@ -1488,7 +1493,7 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 		catch (IDORemoveRelationshipException e) {
 			// e.printStackTrace();
 		}
-		if (fix) {
+		if (this.fix) {
 			// this will force a new record in the relation table
 			try {
 				// try to get the current user
@@ -1499,12 +1504,12 @@ public class NackaImportFileHandlerBean extends IBOServiceBean implements NackaI
 				catch (Exception ex) {
 					currentUser = null;
 				}
-				comUserBiz.getRootProtectedCitizenGroup().removeUser(user, currentUser);
+				this.comUserBiz.getRootProtectedCitizenGroup().removeUser(user, currentUser);
 			}
 			catch (Exception e) {
 			}
 		}
-		comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), performer);
+		this.comUserBiz.moveCitizenToProtectedCitizenGroup(user, IWTimestamp.getTimestampRightNow(), this.performer);
 	}
 
 	// /////////////////////////////////////////////////
