@@ -465,21 +465,27 @@ implements ImportFileHandler
 			Iterator oldClasses = classMembers.iterator();
 			while (oldClasses.hasNext()) {
 				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
-				if(!temp.getSchoolClass().getSchoolClassName().equals(groupName))
-				{
-					report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
-					if (!isDBV)
-						throw new AlreadyCreatedException();
-				} else {
-					report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
+				
+				if (! temp.getRemovedDate().before(sDateT.getTimestamp())) { //added by Malin's request by Dainis 27-apr-2006
+				
+					if(!temp.getSchoolClass().getSchoolClassName().equals(groupName))
+					{
+						this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
+						if (!isDBV) {
+							throw new AlreadyCreatedException();
+						}
+					} else {
+						this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
+					}
+	//				try {
+	//					temp.remove();
+	//				} catch (RemoveException e) {
+	//					report.append("problem removing old placement for the child "+e.toString());
+	//					e.printStackTrace();
+	//					return false;
+	//				}
+				
 				}
-//				try {
-//					temp.remove();
-//				} catch (RemoveException e) {
-//					report.append("problem removing old placement for the child "+e.toString());
-//					e.printStackTrace();
-//					return false;
-//				}
 			}
 		} catch (FinderException f) {
 		}
