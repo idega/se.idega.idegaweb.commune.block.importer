@@ -465,28 +465,35 @@ implements ImportFileHandler
 			Iterator oldClasses = classMembers.iterator();
 			while (oldClasses.hasNext()) {
 				SchoolClassMember temp = (SchoolClassMember) oldClasses.next();
-				
-				if (! temp.getRemovedDate().before(sDateT.getTimestamp())) { //added by Malin's request by Dainis 27-apr-2006
-				
-					if(!temp.getSchoolClass().getSchoolClassName().equals(groupName))
-					{
-						this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
-						if (!isDBV) {
-							throw new AlreadyCreatedException();
-						}
-					} else {
-						this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
-					}
-	//				try {
-	//					temp.remove();
-	//				} catch (RemoveException e) {
-	//					report.append("problem removing old placement for the child "+e.toString());
-	//					e.printStackTrace();
-	//					return false;
-	//				}
-				
+			    
+			    if(!temp.getSchoolClass().getSchoolClassName().equals(groupName)) {      
+			    	if (!isDBV) { // it's always false BTW
+			    		if (temp.getRemovedDate() == null) {
+			    			this.report.append("No end date set:" + child.getName()+" is already in childcare " + 
+			    					temp.getSchoolClass().getSchoolClassName()+" at " + 
+			    					temp.getSchoolClass().getSchool().getName() + " but no end date set");
+			    			throw new AlreadyCreatedException();
+			    		}       
+			      
+			    		if (! temp.getRemovedDate().before(sDateT.getTimestamp())) { // added request by Dainis 27-apr-2006
+			    			this.report.append("Start date is before existing end date" + child.getName()+
+			    	    		" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+
+			    	    		" at "+temp.getSchoolClass().getSchool().getName());
+			    			throw new AlreadyCreatedException(); 
+			    		}
+			    	}
+				} else {
+					this.report.append(child.getName()+" is already in childcare "+temp.getSchoolClass().getSchoolClassName()+" at "+temp.getSchoolClass().getSchool().getName());
 				}
-			}
+				// try {
+				// temp.remove();
+				// } catch (RemoveException e) {
+				// report.append("problem removing old placement for the child "+e.toString());
+				// e.printStackTrace();
+				// return false;
+				// }
+			}	
+			
 		} catch (FinderException f) {
 		}
 //		report.append("School cls member not found creating...");
