@@ -531,7 +531,7 @@ implements ImportFileHandler
 			int schoolID = Integer.parseInt(school.getPrimaryKey().toString());
 			int classID = Integer.parseInt(sClass.getPrimaryKey().toString());
 			boolean importDone = cc.importChildToProvider(-1, ((Integer)child.getPrimaryKey()).intValue(), schoolID, classID, hours, -1, this.schoolTypeID, null, sDateT, eDateT,
-				this.locale, parent, this.performer);
+				this.locale, parent, this.performer, true);
 			if (importDone) {
 				try {
 					SchoolClassMember member = cc.getLatestPlacement(((Integer)child.getPrimaryKey()).intValue(), schoolID);
