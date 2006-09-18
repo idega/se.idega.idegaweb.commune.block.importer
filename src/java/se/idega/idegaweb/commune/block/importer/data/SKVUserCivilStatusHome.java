@@ -1,19 +1,14 @@
-/**
- * 
- */
 package se.idega.idegaweb.commune.block.importer.data;
 
 
+import javax.ejb.CreateException;
 import com.idega.data.IDOHome;
+import javax.ejb.FinderException;
 
-/**
- * @author bluebottle
- *
- */
 public interface SKVUserCivilStatusHome extends IDOHome {
-	public SKVUserCivilStatus create() throws javax.ejb.CreateException;
+	public SKVUserCivilStatus create() throws CreateException;
 
-	public SKVUserCivilStatus findByPrimaryKey(Object pk)
-			throws javax.ejb.FinderException;
+	public SKVUserCivilStatus findByPrimaryKey(Object pk) throws FinderException;
 
+	public SKVUserCivilStatus findByStatusCode(String code) throws FinderException;
 }

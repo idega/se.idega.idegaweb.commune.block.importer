@@ -1,15 +1,8 @@
-/**
- * 
- */
 package se.idega.idegaweb.commune.block.importer.data;
 
 
 import com.idega.data.IDOEntity;
 
-/**
- * @author bluebottle
- *
- */
 public interface SKVUserCivilStatus extends IDOEntity {
 	/**
 	 * @see se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatusBMPBean#setStatusCode
@@ -30,5 +23,4 @@ public interface SKVUserCivilStatus extends IDOEntity {
 	 * @see se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatusBMPBean#getLocalizedKey
 	 */
 	public String getLocalizedKey();
-
 }

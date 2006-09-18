@@ -20,6 +20,10 @@ import javax.ejb.FinderException;
 
 import se.idega.idegaweb.commune.block.importer.business.SKVEntryHolder.SKVRelativeEntryHolder;
 import se.idega.idegaweb.commune.block.importer.data.SKVImportFile;
+import se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatus;
+import se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatusHome;
+import se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfo;
+import se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfoHome;
 import se.idega.idegaweb.commune.business.CommuneUserBusiness;
 
 import com.idega.block.importer.business.ImportFileHandler;
@@ -35,6 +39,7 @@ import com.idega.core.location.data.AddressCoordinate;
 import com.idega.core.location.data.AddressCoordinateHome;
 import com.idega.core.location.data.AddressHome;
 import com.idega.core.location.data.AddressType;
+import com.idega.core.location.data.AddressTypeHome;
 import com.idega.core.location.data.Commune;
 import com.idega.core.location.data.Country;
 import com.idega.core.location.data.CountryHome;
@@ -53,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/09/18 11:31:19 $ by $Author: palli $
+ * Last modified: $Date: 2006/09/18 16:57:23 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.1 $
+ * @version $Revision: 1.1.2.2 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -72,7 +77,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 	private List failedRecords = null;
 
 	private Collection TFlist = null;
-	
+
 	private Map coordinateMap = null;
 
 	public SKVImportFileHandlerBean() {
@@ -232,7 +237,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		}
 
 		if (!entryHolder.isEmpty()) {
-			//System.out.println("entry = " + entryHolder.toString());
+			// System.out.println("entry = " + entryHolder.toString());
 			processEntry(entryHolder);
 		} else {
 			System.out.println("Entry is empty");
@@ -293,7 +298,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 			return handleSecretPerson(user);
 		}
-		
+
 		if (deceased) {
 			return handleDeceased(user);
 		}
@@ -313,29 +318,104 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			return false;
 		}
 
-		
-		if (!handleAddress(user, entry)) { 
-			return false; 
-		} 
+		if (!handleAddress(user, entry)) {
+			return false;
+		}
 
 		try {
 			if (movingFromCommune) {
 				if (entry.getDeactivationCode() != null) {
-					getCommuneUserBusiness().moveCitizenFromCommune(user, getDateFromString(entry.getDeactivationCode()).getTimestamp(), performer);
+					getCommuneUserBusiness().moveCitizenFromCommune(
+							user,
+							getDateFromString(entry.getDeactivationCode())
+									.getTimestamp(), performer);
 				} else {
-					getCommuneUserBusiness().moveCitizenFromCommune(user, IWTimestamp.getTimestampRightNow(), performer);				
+					getCommuneUserBusiness().moveCitizenFromCommune(user,
+							IWTimestamp.getTimestampRightNow(), performer);
 				}
 			} else {
-				
+
 			}
 		} catch (Exception e) {
-			
+
 		}
-		
+
 		if (!handleRelations(user, entry)) {
 			return false;
 		}
-		
+
+		if (!handleExtraInfo(user, entry)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean handleExtraInfo(User user, SKVEntryHolder entry) {
+		try {
+			SKVUserExtraInfoHome ueih = (SKVUserExtraInfoHome) IDOLookup
+					.getHome(SKVUserExtraInfo.class);
+			SKVUserExtraInfo info = null;
+			try {
+				info = ueih.findByUser(user);
+			} catch (FinderException e) {
+				try {
+					info = ueih.create();
+				} catch (CreateException e1) {
+					return false;
+				}
+			}
+
+			if (entry.getBirthParish() != null) {
+				info.setBirthParish(entry.getBirthParish());
+			}
+			
+			if (entry.getBirthCounty() != null) {
+				info.setBirthCounty(Integer.parseInt(entry.getBirthCounty()));
+			}
+			
+			if (entry.getCitizenshipCode() != null) {
+				info.setCitizenshipCode(entry.getCitizenshipCode());
+			}
+			
+			if (entry.getCitizenshipDate() != null) {
+				info.setCitizenshipDate(getDateFromString(entry.getCitizenshipDate()).getDate());
+			}
+			
+			if (entry.getCivilStatusDate() != null) {
+				info.setCivilStatusDate(getDateFromString(entry.getCivilStatusDate()).getDate());
+			}
+			
+			if (entry.getCivilStatusCode() != null) {
+				try {
+					SKVUserCivilStatusHome ucsh = (SKVUserCivilStatusHome) IDOLookup.getHome(SKVUserCivilStatus.class);
+					SKVUserCivilStatus status = ucsh.findByStatusCode(entry.getCivilStatusCode());
+					info.setUserCivilStatus(status);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			if (entry.getForeignBirthCity() != null) {
+				info.setForeignBirthCity(entry.getForeignBirthCity());
+			}
+			
+			if (entry.getForeignBirthCountry() != null) {
+				info.setForeignBirthCountry(entry.getForeignBirthCountry());
+			}
+			
+			if (entry.getImmigrationDate() != null) {
+				info.setImigrationDate(getDateFromString(entry.getImmigrationDate()).getDate());
+			}
+			
+			info.setUser(user);
+			
+			
+			info.store();
+		} catch (IDOLookupException e) {
+			e.printStackTrace();
+		}
+
 		return true;
 	}
 
@@ -345,41 +425,49 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			if (entry.getRelatives() != null && !entry.getRelatives().isEmpty()) {
 				Iterator it = entry.getRelatives().iterator();
 				while (it.hasNext()) {
-					SKVRelativeEntryHolder holder = (SKVRelativeEntryHolder) it.next();
+					SKVRelativeEntryHolder holder = (SKVRelativeEntryHolder) it
+							.next();
 					User relative = null;
 					try {
-						relative = getCommuneUserBusiness().getUser(holder.getRelativePin());
+						relative = getCommuneUserBusiness().getUser(
+								holder.getRelativePin());
 					} catch (FinderException e) {
-						relative = getCommuneUserBusiness().createCitizen(holder.getRelativeFirstName(), holder.getRelativeMiddleName(), holder.getRelativeLastName(), holder.getRelativePin());
+						relative = getCommuneUserBusiness().createCitizen(
+								holder.getRelativeFirstName(),
+								holder.getRelativeMiddleName(),
+								holder.getRelativeLastName(),
+								holder.getRelativePin());
 					}
-					if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CHILD)) {
+					if (holder.getRelativeType().equals(
+							SKVConstants.RELATION_TYPE_CHILD)) {
 						getFamilyLogic().setAsParentFor(user, relative);
 						getFamilyLogic().setAsCustodianFor(user, relative);
-					}
-					else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_SPOUSE)) {
+					} else if (holder.getRelativeType().equals(
+							SKVConstants.RELATION_TYPE_SPOUSE)) {
 						getFamilyLogic().setAsSpouseFor(user, relative);
-					}
-					else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_FATHER)) {
-						// relationBiz.setAsChildFor(user,relative);
+					} else if (holder.getRelativeType().equals(
+							SKVConstants.RELATION_TYPE_FATHER)) {
 						getFamilyLogic().setAsChildFor(user, relative);
 						getFamilyLogic().setAsCustodianFor(relative, user);
-					}
-					else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_MOTHER)) {
-						// relationBiz.setAsChildFor(user,relative);
+					} else if (holder.getRelativeType().equals(
+							SKVConstants.RELATION_TYPE_MOTHER)) {
 						getFamilyLogic().setAsChildFor(user, relative);
 						getFamilyLogic().setAsCustodianFor(relative, user);
-					}				}
+					} else if (holder.getRelativeType().equals(
+							SKVConstants.RELATION_TYPE_PARTNER)) {
+						// getFamilyLogic().setAs, child);
+					}
+				}
 			}
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (CreateException e) {
 			e.printStackTrace();
 		}
-		
+
 		return true;
 	}
-	
-	
+
 	private boolean handleSecretPerson(User user) {
 		try {
 			user.removeAllAddresses();
@@ -489,7 +577,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 		return true;
 	}
-	
+
 	/**
 	 * @param user
 	 * @param countyNumber
@@ -509,30 +597,30 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		// country id 187 name Sweden isoabr: SE
 		Country sweden = null;
 		try {
-			sweden = ((CountryHome) getIDOHome(Country.class)).findByIsoAbbreviation("SE");
+			sweden = ((CountryHome) getIDOHome(Country.class))
+					.findByIsoAbbreviation("SE");
 		} catch (RemoteException e1) {
 			e1.printStackTrace();
 		} catch (FinderException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		StringBuffer addressLine = new StringBuffer();
 		boolean addressLineHasPreviousEntry = false;
 		if (entry.getCoAddress() != null && !"".equals(entry.getCoAddress())) {
 			addressLine.append(entry.getCoAddress());
 			addressLineHasPreviousEntry = true;
 		}
-		
+
 		if (entry.getAddress1() != null && !"".equals(entry.getAddress1())) {
 			if (addressLineHasPreviousEntry) {
 				addressLine.append(" ");
-			}
-			else {
+			} else {
 				addressLineHasPreviousEntry = true;
 			}
 			addressLine.append(entry.getAddress1());
 		}
-		
+
 		if (entry.getAddress2() != null && !"".equals(entry.getAddress2())) {
 			if (addressLineHasPreviousEntry) {
 				addressLine.append(" ");
@@ -540,20 +628,28 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 			addressLine.append(entry.getAddress2());
 		}
-		
+
 		// main address
 		if (addressLine.length() != 0) {
 			try {
-				String streetName = getAddressBusiness().getStreetNameFromAddressString(addressLine.toString());
-				String streetNumber = getAddressBusiness().getStreetNumberFromAddressString(addressLine.toString());
-				Address address = getCommuneUserBusiness().getUsersMainAddress(user);
+				String streetName = getAddressBusiness()
+						.getStreetNameFromAddressString(addressLine.toString());
+				String streetNumber = getAddressBusiness()
+						.getStreetNumberFromAddressString(
+								addressLine.toString());
+				Address address = getCommuneUserBusiness().getUsersMainAddress(
+						user);
 				PostalCode code = null;
 				if (entry.getPostalName() != null) {
-					code = getAddressBusiness().getPostalCodeAndCreateIfDoesNotExist(entry.getPostalCode(), entry.getPostalName(), sweden);
+					code = getAddressBusiness()
+							.getPostalCodeAndCreateIfDoesNotExist(
+									entry.getPostalCode(),
+									entry.getPostalName(), sweden);
 				}
 				boolean addAddress = false;
 				if (address == null) {
-					AddressHome addressHome = getAddressBusiness().getAddressHome();
+					AddressHome addressHome = getAddressBusiness()
+							.getAddressHome();
 					address = addressHome.create();
 					AddressType mainAddressType = addressHome.getAddressType1();
 					address.setAddressType(mainAddressType);
@@ -570,40 +666,42 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 				}
 				address.setStreetName(streetName);
 				address.setStreetNumber(streetNumber);
-				AddressCoordinate ac = getAddressCoordinate(entry.getAddressCoordinate());
+				AddressCoordinate ac = getAddressCoordinate(entry
+						.getAddressCoordinate(), commune);
 				if (ac != null) {
 					address.setCoordinate(ac);
 				}
-				//address.setco
+				address.setCoordinateDate(entry.getRegistrationDate());
 				address.store();
 				if (addAddress) {
 					user.addAddress(address);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				return false;
 			}
-		} 
+		}
 
 		StringBuffer extraAddressLine = new StringBuffer();
 		boolean extraAddressLineHasPreviousEntry = false;
-		if (entry.getExtraCoAddress() != null && !"".equals(entry.getExtraCoAddress())) {
+		if (entry.getExtraCoAddress() != null
+				&& !"".equals(entry.getExtraCoAddress())) {
 			extraAddressLine.append(entry.getExtraCoAddress());
 			extraAddressLineHasPreviousEntry = true;
 		}
-		
-		if (entry.getExtraAddress1() != null && !"".equals(entry.getExtraAddress1())) {
+
+		if (entry.getExtraAddress1() != null
+				&& !"".equals(entry.getExtraAddress1())) {
 			if (extraAddressLineHasPreviousEntry) {
 				extraAddressLine.append(" ");
-			}
-			else {
+			} else {
 				extraAddressLineHasPreviousEntry = true;
 			}
 			extraAddressLine.append(entry.getExtraAddress1());
 		}
-		
-		if (entry.getExtraAddress2() != null && !"".equals(entry.getExtraAddress2())) {
+
+		if (entry.getExtraAddress2() != null
+				&& !"".equals(entry.getExtraAddress2())) {
 			if (extraAddressLineHasPreviousEntry) {
 				extraAddressLine.append(" ");
 			}
@@ -613,18 +711,40 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 		if (extraAddressLine.length() != 0) {
 			try {
-				String streetName = getAddressBusiness().getStreetNameFromAddressString(extraAddressLine.toString());
-				String streetNumber = getAddressBusiness().getStreetNumberFromAddressString(extraAddressLine.toString());
+				String streetName = getAddressBusiness()
+						.getStreetNameFromAddressString(
+								extraAddressLine.toString());
+				String streetNumber = getAddressBusiness()
+						.getStreetNumberFromAddressString(
+								extraAddressLine.toString());
 
-				Address address = getCommuneUserBusiness().getUsersCoAddress(user);
-				
-				PostalCode code = getAddressBusiness().getPostalCodeAndCreateIfDoesNotExist(entry.getExtraPostalCode(), entry.getExtraPostalName(), sweden);
+				AddressTypeHome ath = (AddressTypeHome) IDOLookup
+						.getHome(AddressType.class);
+				AddressType at = null;
+				try {
+					at = ath.findByUniqueName("ic_user_address_3");
+				} catch (FinderException e) {
+					at = ath.create();
+					at.setDescription("Special");
+					at.setName("Special");
+					at.setUniqueName("ic_user_address_3");
+					at.store();
+				}
+
+				Address address = getCommuneUserBusiness()
+						.getUserAddressByAddressType(
+								((Integer) user.getPrimaryKey()).intValue(), at);
+
+				PostalCode code = getAddressBusiness()
+						.getPostalCodeAndCreateIfDoesNotExist(
+								entry.getExtraPostalCode(),
+								entry.getExtraPostalName(), sweden);
 				boolean addAddress = false;
 				if (address == null) {
-					AddressHome addressHome = getAddressBusiness().getAddressHome();
+					AddressHome addressHome = getAddressBusiness()
+							.getAddressHome();
 					address = addressHome.create();
-					AddressType coAddressType = addressHome.getAddressType2();
-					address.setAddressType(coAddressType);
+					address.setAddressType(at);
 					addAddress = true;
 				}
 				address.setCountry(sweden);
@@ -640,8 +760,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 				if (addAddress) {
 					user.addAddress(address);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				return false;
 			}
@@ -649,50 +768,68 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 		StringBuffer foreignAddressLine = new StringBuffer();
 		boolean foreignAddressLineHasPreviousEntry = false;
-		if (entry.getForeignAddress1() != null && !"".equals(entry.getForeignAddress1())) {
+		if (entry.getForeignAddress1() != null
+				&& !"".equals(entry.getForeignAddress1())) {
 			foreignAddressLine.append(entry.getForeignAddress1());
 			foreignAddressLineHasPreviousEntry = true;
 		}
-		
-		if (entry.getForeignAddress2() != null && !"".equals(entry.getForeignAddress2())) {
+
+		if (entry.getForeignAddress2() != null
+				&& !"".equals(entry.getForeignAddress2())) {
 			if (foreignAddressLineHasPreviousEntry) {
 				foreignAddressLine.append(" ");
-			}
-			else {
+			} else {
 				foreignAddressLineHasPreviousEntry = true;
 			}
 			foreignAddressLine.append(entry.getForeignAddress2());
 		}
-		
-		if (entry.getForeignAddress3() != null && !"".equals(entry.getForeignAddress3())) {
+
+		if (entry.getForeignAddress3() != null
+				&& !"".equals(entry.getForeignAddress3())) {
 			if (foreignAddressLineHasPreviousEntry) {
 				foreignAddressLine.append(" ");
-			}
-			else {
+			} else {
 				foreignAddressLineHasPreviousEntry = true;
 			}
 
 			foreignAddressLine.append(entry.getForeignAddress3());
 		}
 
-		if (entry.getForeignAddressCountry() != null && !"".equals(entry.getForeignAddressCountry())) {
+		if (entry.getForeignAddressCountry() != null
+				&& !"".equals(entry.getForeignAddressCountry())) {
 			if (foreignAddressLineHasPreviousEntry) {
 				foreignAddressLine.append(" ");
 			}
 
 			foreignAddressLine.append(entry.getForeignAddressCountry());
 		}
-		
+
 		if (foreignAddressLine.length() != 0) {
 			try {
 				String streetName = foreignAddressLine.toString();
-				Address address = getCommuneUserBusiness().getUsersMainAddress(user);
+				AddressTypeHome ath = (AddressTypeHome) IDOLookup
+						.getHome(AddressType.class);
+				AddressType at = null;
+				try {
+					at = ath.findByUniqueName("ic_user_address_4");
+				} catch (FinderException e) {
+					at = ath.create();
+					at.setDescription("Foreign");
+					at.setName("Foreign");
+					at.setUniqueName("ic_user_address_4");
+					at.store();
+				}
+
+				Address address = getCommuneUserBusiness()
+						.getUserAddressByAddressType(
+								((Integer) user.getPrimaryKey()).intValue(), at);
+
 				boolean addAddress = false;
 				if (address == null) {
-					AddressHome addressHome = getAddressBusiness().getAddressHome();
+					AddressHome addressHome = getAddressBusiness()
+							.getAddressHome();
 					address = addressHome.create();
-					AddressType mainAddressType = addressHome.getAddressType1();
-					address.setAddressType(mainAddressType);
+					address.setAddressType(at);
 					addAddress = true;
 				}
 				address.setStreetName(streetName);
@@ -702,17 +839,17 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 				if (addAddress) {
 					user.addAddress(address);
 				}
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
-	private AddressCoordinate getAddressCoordinate(String addressKeyCode) throws IDOLookupException {
+	private AddressCoordinate getAddressCoordinate(String addressKeyCode,
+			Commune commune) throws IDOLookupException {
 		if (coordinateMap == null) {
 			coordinateMap = new HashMap();
 		}
@@ -721,16 +858,21 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			if (coordinateMap.containsKey(addressKeyCode)) {
 				// Can return null
 				return (AddressCoordinate) coordinateMap.get(addressKeyCode);
-			}
-			else {
-				AddressCoordinateHome ach = (AddressCoordinateHome) IDOLookup.getHome(AddressCoordinate.class);
+			} else {
+				AddressCoordinateHome ach = (AddressCoordinateHome) IDOLookup
+						.getHome(AddressCoordinate.class);
 				AddressCoordinate ac = null;
 				try {
 					ac = ach.findByCoordinate(addressKeyCode);
-				}
-				catch (FinderException f) {
-					System.out.println("[SKVImportFileHandlreBean] Address Coordinate not found (possibly not imported yet : "
-							+ addressKeyCode + ")");
+				} catch (FinderException f) {
+					try {
+						ac = ach.create();
+						ac.setCommune(commune);
+						ac.setCoordinate(addressKeyCode);
+						ac.store();
+					} catch (CreateException e) {
+						return null;
+					}
 				}
 				coordinateMap.put(addressKeyCode, ac);
 				return ac;
@@ -738,7 +880,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		}
 		return null;
 	}
-	
+
 	private Gender getGenderFromPin(String pin) {
 		// pin format = 190010221208 second last number is the gender
 		// even number = female
@@ -821,7 +963,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 	public void setRootGroup(Group rootGroup) throws RemoteException {
 	}
-	
+
 	private IWTimestamp getDateFromString(String dateOfRegistrationString) {
 		int year = Integer.parseInt(dateOfRegistrationString.substring(0, 4));
 		int month = Integer.parseInt(dateOfRegistrationString.substring(4, 6));

@@ -1,18 +1,10 @@
-/**
- * 
- */
 package se.idega.idegaweb.commune.block.importer.data;
 
+
 import java.sql.Date;
-
-
-import com.idega.data.IDOEntity;
 import com.idega.user.data.User;
+import com.idega.data.IDOEntity;
 
-/**
- * @author bluebottle
- *
- */
 public interface SKVUserExtraInfo extends IDOEntity {
 	/**
 	 * @see se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfoBMPBean#setUserID
@@ -130,8 +122,7 @@ public interface SKVUserExtraInfo extends IDOEntity {
 	public String getCitizenshipCode();
 
 	/**
-	 * @see se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfoBMPBean#setCitizenshipDate
+	 * @see se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfoBMPBean#getCitizenshipDate
 	 */
-	public Date setCitizenshipDate();
-
+	public Date getCitizenshipDate();
 }

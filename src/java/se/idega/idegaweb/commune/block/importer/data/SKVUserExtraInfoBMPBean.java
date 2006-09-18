@@ -148,7 +148,7 @@ public class SKVUserExtraInfoBMPBean extends GenericEntity implements
 		return getStringColumnValue(COLUMN_CITIZENSHIP_CODE);
 	}
 
-	public Date setCitizenshipDate() {
+	public Date getCitizenshipDate() {
 		return getDateColumnValue(COLUMN_CITIZENSHIP_DATE);
 	}
 

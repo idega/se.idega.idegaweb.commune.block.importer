@@ -1,7 +1,10 @@
 package se.idega.idegaweb.commune.block.importer.data;
 
+import javax.ejb.FinderException;
+
 import com.idega.data.GenericEntity;
 import com.idega.data.IDOLookup;
+import com.idega.data.IDOQuery;
 
 public class SKVUserCivilStatusBMPBean extends GenericEntity implements
 		SKVUserCivilStatus {
@@ -53,5 +56,13 @@ public class SKVUserCivilStatusBMPBean extends GenericEntity implements
 	
 	public String getLocalizedKey() {
 		return getStringColumnValue(COLUMN_LOCALIZED_KEY);
+	}
+	
+	//ejb
+	public Object ejbFindByStatusCode(String code) throws FinderException {
+		IDOQuery query = this.idoQueryGetSelect();
+		query.appendWhereEquals(COLUMN_STATUS_CODE, code);
+
+		return idoFindOnePKByQuery(query);
 	}
 }
