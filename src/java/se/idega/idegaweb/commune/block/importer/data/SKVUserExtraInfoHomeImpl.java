@@ -1,45 +1,36 @@
-/**
- * 
- */
 package se.idega.idegaweb.commune.block.importer.data;
 
 
+import javax.ejb.CreateException;
 import javax.ejb.FinderException;
-
-import com.idega.data.IDOFactory;
 import com.idega.user.data.User;
+import com.idega.data.IDOEntity;
+import com.idega.data.IDOFactory;
 
-/**
- * @author bluebottle
- *
- */
-public class SKVUserExtraInfoHomeImpl extends IDOFactory implements
-		SKVUserExtraInfoHome {
-	protected Class getEntityInterfaceClass() {
+public class SKVUserExtraInfoHomeImpl extends IDOFactory implements SKVUserExtraInfoHome {
+	public Class getEntityInterfaceClass() {
 		return SKVUserExtraInfo.class;
 	}
 
-	public SKVUserExtraInfo create() throws javax.ejb.CreateException {
+	public SKVUserExtraInfo create() throws CreateException {
 		return (SKVUserExtraInfo) super.createIDO();
 	}
 
-	public SKVUserExtraInfo findByPrimaryKey(Object pk)
-			throws javax.ejb.FinderException {
+	public SKVUserExtraInfo findByPrimaryKey(Object pk) throws FinderException {
 		return (SKVUserExtraInfo) super.findByPrimaryKeyIDO(pk);
 	}
 
 	public SKVUserExtraInfo findByUser(User user) throws FinderException {
-		com.idega.data.IDOEntity entity = this.idoCheckOutPooledEntity();
+		IDOEntity entity = this.idoCheckOutPooledEntity();
 		Object pk = ((SKVUserExtraInfoBMPBean) entity).ejbFindByUser(user);
 		this.idoCheckInPooledEntity(entity);
 		return this.findByPrimaryKey(pk);
 	}
 
 	public SKVUserExtraInfo findByUserID(int userID) throws FinderException {
-		com.idega.data.IDOEntity entity = this.idoCheckOutPooledEntity();
+		IDOEntity entity = this.idoCheckOutPooledEntity();
 		Object pk = ((SKVUserExtraInfoBMPBean) entity).ejbFindByUserID(userID);
 		this.idoCheckInPooledEntity(entity);
 		return this.findByPrimaryKey(pk);
 	}
-
 }

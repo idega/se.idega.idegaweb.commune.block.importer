@@ -61,7 +61,7 @@ public class SKVUserCivilStatusBMPBean extends GenericEntity implements
 	//ejb
 	public Object ejbFindByStatusCode(String code) throws FinderException {
 		IDOQuery query = this.idoQueryGetSelect();
-		query.appendWhereEquals(COLUMN_STATUS_CODE, code);
+		query.appendWhereEqualsQuoted(COLUMN_STATUS_CODE, code);
 
 		return idoFindOnePKByQuery(query);
 	}
