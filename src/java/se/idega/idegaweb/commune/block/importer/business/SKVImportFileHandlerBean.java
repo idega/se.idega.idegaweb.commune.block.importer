@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/09/18 16:57:23 $ by $Author: palli $
+ * Last modified: $Date: 2006/09/26 11:53:06 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.2 $
+ * @version $Revision: 1.1.2.3 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -287,7 +287,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		}
 
 		String secrecyCode = entry.getSecrecy();
-		if (secrecyCode != null && !"J".equals(secrecyCode)) {
+		if (secrecyCode != null && "J".equals(secrecyCode)) {
 			Collection coll = new Vector();
 			coll.add(entry.getPin() + "\t(secret person)");
 			TFlist.add(coll);
@@ -300,7 +300,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		}
 
 		if (deceased) {
-			return handleDeceased(user);
+			return handleDeceased(user, entry.getDeactivationDate());
 		}
 
 		Gender gender = getGenderFromPin(entry.getPin());
@@ -310,9 +310,12 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			user = getCommuneUserBusiness().createOrUpdateCitizenByPersonalID(
 					entry.getFirstName(), entry.getFirstPartOfLastName(),
 					entry.getLastName(), entry.getPin(), gender, dateOfBirth);
-			user = getImportBusiness().handleNames(user, user.getFirstName(),
-					user.getMiddleName(), user.getLastName(),
-					entry.getPreferredFirstNameIndex(), false);
+			user = getImportBusiness().handleNames(user, entry.getFirstName(),
+					entry.getFirstPartOfLastName(), entry.getLastName(),
+					entry.getPreferredFirstNameIndex(), true);
+			if (entry.getDisplayName() != null && !"".equals(entry.getDisplayName().trim())) {
+				user.setDisplayName(entry.getDisplayName());
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
@@ -324,17 +327,25 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 		try {
 			if (movingFromCommune) {
-				if (entry.getDeactivationCode() != null) {
+				if (entry.getDeactivationDate() != null) {
 					getCommuneUserBusiness().moveCitizenFromCommune(
 							user,
-							getDateFromString(entry.getDeactivationCode())
+							getDateFromString(entry.getDeactivationDate())
 									.getTimestamp(), performer);
 				} else {
 					getCommuneUserBusiness().moveCitizenFromCommune(user,
 							IWTimestamp.getTimestampRightNow(), performer);
 				}
 			} else {
-
+				if (entry.getDeactivationDate() != null) {
+					getCommuneUserBusiness().moveCitizenToCommune(
+							user,
+							getDateFromString(entry.getDeactivationDate())
+									.getTimestamp(), performer);
+				} else {
+					getCommuneUserBusiness().moveCitizenToCommune(user,
+							IWTimestamp.getTimestampRightNow(), performer);
+				}
 			}
 		} catch (Exception e) {
 
@@ -441,21 +452,22 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 					if (holder.getRelativeType().equals(
 							SKVConstants.RELATION_TYPE_CHILD)) {
 						getFamilyLogic().setAsParentFor(user, relative);
-						getFamilyLogic().setAsCustodianFor(user, relative);
 					} else if (holder.getRelativeType().equals(
 							SKVConstants.RELATION_TYPE_SPOUSE)) {
 						getFamilyLogic().setAsSpouseFor(user, relative);
 					} else if (holder.getRelativeType().equals(
 							SKVConstants.RELATION_TYPE_FATHER)) {
 						getFamilyLogic().setAsChildFor(user, relative);
-						getFamilyLogic().setAsCustodianFor(relative, user);
 					} else if (holder.getRelativeType().equals(
 							SKVConstants.RELATION_TYPE_MOTHER)) {
 						getFamilyLogic().setAsChildFor(user, relative);
-						getFamilyLogic().setAsCustodianFor(relative, user);
 					} else if (holder.getRelativeType().equals(
 							SKVConstants.RELATION_TYPE_PARTNER)) {
 						// getFamilyLogic().setAs, child);
+					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
+						getFamilyLogic().setAsCustodianFor(user, relative);
+					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
+						getFamilyLogic().setAsCustodianFor(relative, user);						
 					}
 				}
 			}
@@ -523,9 +535,9 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		return true;
 	}
 
-	private boolean handleDeceased(User user) {
+	private boolean handleDeceased(User user, String date) {
 		try {
-			user.removeAllAddresses();
+			/*user.removeAllAddresses();
 			user.removeAllEmails();
 			user.removeAllPhones();
 
@@ -535,42 +547,15 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			while (it.hasNext()) {
 				Group parent = (Group) it.next();
 				parent.removeGroup(user);
+			}*/
+
+
+			if (date != null) {
+				getCommuneUserBusiness().setUserAsDeceased((Integer) user.getPrimaryKey(), getDateFromString(date).getDate());				
+			} else {
+				getCommuneUserBusiness().setUserAsDeceased((Integer) user.getPrimaryKey(), IWTimestamp.RightNow().getDate());
 			}
 
-			getCommuneUserBusiness().moveCitizenToProtectedCitizenGroup(user,
-					IWTimestamp.getTimestampRightNow(), performer);
-
-			boolean updated = false;
-
-			while (!updated) {
-				StringBuffer pinString = new StringBuffer(user.getPersonalID()
-						.substring(0, 8));
-				pinString.append("SP");
-				pinString.append((int) Math.floor(Math.random() * 100.0d));
-				try {
-					User tmpUser = getCommuneUserBusiness().getUser(
-							pinString.toString());
-					if (tmpUser == null) {
-						user.setDescription("Secret");
-						user.setPersonalID(pinString.toString());
-						user.store();
-						updated = true;
-					}
-				} catch (FinderException e) {
-					user.setDescription("Secret");
-					user.setPersonalID(pinString.toString());
-					user.store();
-					updated = true;
-				} catch (RemoteException e) {
-					e.printStackTrace();
-
-					return false;
-				}
-
-			}
-
-		} catch (IDORemoveRelationshipException e) {
-			e.printStackTrace();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

@@ -72,6 +72,10 @@ public class SKVEntryHolder {
 		return (String) propertiesMap.get(SKVConstants.COLUMN_DEACTIVATION_CODE);
 	}
 
+	public String getDeactivationDate() {
+		return (String) propertiesMap.get(SKVConstants.COLUMN_DEACTIVATION_DATE);
+	}
+
 	public String getDisplayName() {
 		return (String) propertiesMap.get(SKVConstants.COLUMN_DISPLAY_NAME);
 	}
