@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/09/26 11:53:06 $ by $Author: palli $
+ * Last modified: $Date: 2006/09/28 13:33:34 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.3 $
+ * @version $Revision: 1.1.2.4 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -465,9 +465,9 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 							SKVConstants.RELATION_TYPE_PARTNER)) {
 						// getFamilyLogic().setAs, child);
 					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
-						getFamilyLogic().setAsCustodianFor(user, relative);
+						getFamilyLogic().setAsCustodianFor(relative, user);
 					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
-						getFamilyLogic().setAsCustodianFor(relative, user);						
+						getFamilyLogic().setAsCustodianFor(user, relative);
 					}
 				}
 			}
