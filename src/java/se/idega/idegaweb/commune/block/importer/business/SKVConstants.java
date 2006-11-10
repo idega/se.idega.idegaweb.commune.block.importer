@@ -123,5 +123,11 @@ public class SKVConstants {
 
 	protected static final String DEACTIVATION_CODE_OTHER = "AN";
 	
+	protected static final String DEACTIVATION_CODE_OTHER2 = "OB";
+
+	protected static final String DEACTIVATION_CODE_OTHER3 = "TA";
+
+	protected static final String DEACTIVATION_CODE_OTHER4 = "AS";
+
 	protected static final String ENTRY_START = "#UP ";
 }

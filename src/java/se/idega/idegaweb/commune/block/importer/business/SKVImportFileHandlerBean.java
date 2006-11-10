@@ -2,7 +2,6 @@ package se.idega.idegaweb.commune.block.importer.business;
 
 import is.idega.block.family.business.FamilyLogic;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
@@ -16,10 +15,11 @@ import java.util.Map;
 import java.util.Vector;
 
 import javax.ejb.CreateException;
+import javax.ejb.EJBException;
 import javax.ejb.FinderException;
+import javax.ejb.RemoveException;
 
 import se.idega.idegaweb.commune.block.importer.business.SKVEntryHolder.SKVRelativeEntryHolder;
-import se.idega.idegaweb.commune.block.importer.data.SKVImportFile;
 import se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatus;
 import se.idega.idegaweb.commune.block.importer.data.SKVUserCivilStatusHome;
 import se.idega.idegaweb.commune.block.importer.data.SKVUserExtraInfo;
@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/09/28 13:33:34 $ by $Author: palli $
+ * Last modified: $Date: 2006/11/10 14:28:51 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.4 $
+ * @version $Revision: 1.1.2.5 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -84,16 +84,17 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 	}
 
 	public static void main(String args[]) {
-		File file = new File("/Users/bluebottle/kiw0182.stoffe6.txt");
-		SKVImportFileHandlerBean bean = new SKVImportFileHandlerBean();
-		ImportFile iFile = new SKVImportFile(file);
-		String item;
-		while (!(item = (String) iFile.getNextRecord()).equals("")) {
-			try {
-				bean.processRecord(item);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		/*
+		 * File file = new File("/Users/bluebottle/kiw0182.stoffe6.txt");
+		 * SKVImportFileHandlerBean bean = new SKVImportFileHandlerBean();
+		 * ImportFile iFile = new SKVImportFile(file); String item; while
+		 * (!(item = (String) iFile.getNextRecord()).equals("")) { try {
+		 * bean.processRecord(item); } catch (IOException e) {
+		 * e.printStackTrace(); } }
+		 */
+
+		for (int i = 0; i < 10000; i++) {
+			System.out.println((int) Math.floor(Math.random() * 90.0d + 10.0d));
 		}
 	}
 
@@ -248,6 +249,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 	private boolean processEntry(SKVEntryHolder entry) {
 		boolean movingFromCommune = false;
+		boolean movingFromCountry = false;
+		boolean isDisabled = false;
 		boolean deceased = false;
 		boolean pinChanged = false;
 		boolean newPerson = false;
@@ -262,10 +265,19 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 					.equals(SKVConstants.DEACTIVATION_CODE_OLD_PIN)) {
 				pinChanged = true;
 			} else if (deactivationCode
-					.equals(SKVConstants.DEACTIVATION_CODE_EMIGRATED)
-					|| deactivationCode
-							.equals(SKVConstants.DEACTIVATION_CODE_OTHER)) {
+					.equals(SKVConstants.DEACTIVATION_CODE_EMIGRATED)) {
+				movingFromCountry = true;
 				movingFromCommune = true;
+			} else if (deactivationCode
+					.equals(SKVConstants.DEACTIVATION_CODE_OTHER)
+					|| deactivationCode
+							.equals(SKVConstants.DEACTIVATION_CODE_OTHER2)
+					|| deactivationCode
+							.equals(SKVConstants.DEACTIVATION_CODE_OTHER3)
+					|| deactivationCode
+							.equals(SKVConstants.DEACTIVATION_CODE_OTHER4)) {
+				movingFromCommune = true;
+				isDisabled = true;
 			}
 		}
 
@@ -296,11 +308,27 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 				return true;
 			}
 
-			return handleSecretPerson(user);
+			handleCitizenGroup(user, movingFromCommune, entry);
+
+			return handleSecretPerson(user, entry);
 		}
 
 		if (deceased) {
+			if (newPerson) {
+				return true;
+			}
+
 			return handleDeceased(user, entry.getDeactivationDate());
+		}
+
+		if (isDisabled) {
+			if (newPerson) {
+				return true;
+			}
+
+			handleCitizenGroup(user, movingFromCommune, entry);
+
+			return handleDisabled(user);
 		}
 
 		Gender gender = getGenderFromPin(entry.getPin());
@@ -313,7 +341,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			user = getImportBusiness().handleNames(user, entry.getFirstName(),
 					entry.getFirstPartOfLastName(), entry.getLastName(),
 					entry.getPreferredFirstNameIndex(), true);
-			if (entry.getDisplayName() != null && !"".equals(entry.getDisplayName().trim())) {
+			if (entry.getDisplayName() != null
+					&& !"".equals(entry.getDisplayName().trim())) {
 				user.setDisplayName(entry.getDisplayName());
 			}
 		} catch (Exception e) {
@@ -321,10 +350,25 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			return false;
 		}
 
-		if (!handleAddress(user, entry)) {
+		handleCitizenGroup(user, movingFromCommune, entry);
+
+		if (!handleAddress(user, entry, movingFromCountry)) {
 			return false;
 		}
 
+		if (!handleRelations(user, entry)) {
+			return false;
+		}
+
+		if (!handleExtraInfo(user, entry)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private void handleCitizenGroup(User user, boolean movingFromCommune,
+			SKVEntryHolder entry) {
 		try {
 			if (movingFromCommune) {
 				if (entry.getDeactivationDate() != null) {
@@ -350,16 +394,6 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		} catch (Exception e) {
 
 		}
-
-		if (!handleRelations(user, entry)) {
-			return false;
-		}
-
-		if (!handleExtraInfo(user, entry)) {
-			return false;
-		}
-
-		return true;
 	}
 
 	private boolean handleExtraInfo(User user, SKVEntryHolder entry) {
@@ -380,48 +414,52 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			if (entry.getBirthParish() != null) {
 				info.setBirthParish(entry.getBirthParish());
 			}
-			
+
 			if (entry.getBirthCounty() != null) {
 				info.setBirthCounty(Integer.parseInt(entry.getBirthCounty()));
 			}
-			
+
 			if (entry.getCitizenshipCode() != null) {
 				info.setCitizenshipCode(entry.getCitizenshipCode());
 			}
-			
+
 			if (entry.getCitizenshipDate() != null) {
-				info.setCitizenshipDate(getDateFromString(entry.getCitizenshipDate()).getDate());
+				info.setCitizenshipDate(getDateFromString(
+						entry.getCitizenshipDate()).getDate());
 			}
-			
+
 			if (entry.getCivilStatusDate() != null) {
-				info.setCivilStatusDate(getDateFromString(entry.getCivilStatusDate()).getDate());
+				info.setCivilStatusDate(getDateFromString(
+						entry.getCivilStatusDate()).getDate());
 			}
-			
+
 			if (entry.getCivilStatusCode() != null) {
 				try {
-					SKVUserCivilStatusHome ucsh = (SKVUserCivilStatusHome) IDOLookup.getHome(SKVUserCivilStatus.class);
-					SKVUserCivilStatus status = ucsh.findByStatusCode(entry.getCivilStatusCode());
+					SKVUserCivilStatusHome ucsh = (SKVUserCivilStatusHome) IDOLookup
+							.getHome(SKVUserCivilStatus.class);
+					SKVUserCivilStatus status = ucsh.findByStatusCode(entry
+							.getCivilStatusCode());
 					info.setUserCivilStatus(status);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
-			
+
 			if (entry.getForeignBirthCity() != null) {
 				info.setForeignBirthCity(entry.getForeignBirthCity());
 			}
-			
+
 			if (entry.getForeignBirthCountry() != null) {
 				info.setForeignBirthCountry(entry.getForeignBirthCountry());
 			}
-			
+
 			if (entry.getImmigrationDate() != null) {
-				info.setImigrationDate(getDateFromString(entry.getImmigrationDate()).getDate());
+				info.setImigrationDate(getDateFromString(
+						entry.getImmigrationDate()).getDate());
 			}
-			
+
 			info.setUser(user);
-			
-			
+
 			info.store();
 		} catch (IDOLookupException e) {
 			e.printStackTrace();
@@ -439,35 +477,43 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 					SKVRelativeEntryHolder holder = (SKVRelativeEntryHolder) it
 							.next();
 					User relative = null;
-					try {
-						relative = getCommuneUserBusiness().getUser(
-								holder.getRelativePin());
-					} catch (FinderException e) {
-						relative = getCommuneUserBusiness().createCitizen(
-								holder.getRelativeFirstName(),
-								holder.getRelativeMiddleName(),
-								holder.getRelativeLastName(),
-								holder.getRelativePin());
+					String pin = holder.getRelativePin();
+					if (pin == null || "".equals(pin.trim())) {
+						pin = holder.getRelativeAlternativePin();
 					}
-					if (holder.getRelativeType().equals(
-							SKVConstants.RELATION_TYPE_CHILD)) {
-						getFamilyLogic().setAsParentFor(user, relative);
-					} else if (holder.getRelativeType().equals(
-							SKVConstants.RELATION_TYPE_SPOUSE)) {
-						getFamilyLogic().setAsSpouseFor(user, relative);
-					} else if (holder.getRelativeType().equals(
-							SKVConstants.RELATION_TYPE_FATHER)) {
-						getFamilyLogic().setAsChildFor(user, relative);
-					} else if (holder.getRelativeType().equals(
-							SKVConstants.RELATION_TYPE_MOTHER)) {
-						getFamilyLogic().setAsChildFor(user, relative);
-					} else if (holder.getRelativeType().equals(
-							SKVConstants.RELATION_TYPE_PARTNER)) {
-						// getFamilyLogic().setAs, child);
-					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
-						getFamilyLogic().setAsCustodianFor(relative, user);
-					} else if (holder.getRelativeType().equals(SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
-						getFamilyLogic().setAsCustodianFor(user, relative);
+
+					if (pin != null && !"".equals(pin.trim())) {
+						try {
+							relative = getCommuneUserBusiness().getUser(pin);
+						} catch (Exception e) {
+							relative = getCommuneUserBusiness().createCitizen(
+									holder.getRelativeFirstName(),
+									holder.getRelativeMiddleName(),
+									holder.getRelativeLastName(), pin);
+						}
+
+						if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_CHILD)) {
+							getFamilyLogic().setAsParentFor(user, relative);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_SPOUSE)) {
+							getFamilyLogic().setAsSpouseFor(user, relative);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_FATHER)) {
+							getFamilyLogic().setAsChildFor(user, relative);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_MOTHER)) {
+							getFamilyLogic().setAsChildFor(user, relative);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_PARTNER)) {
+							// getFamilyLogic().setAs, child);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
+							getFamilyLogic().setAsCustodianFor(relative, user);
+						} else if (holder.getRelativeType().equals(
+								SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
+							getFamilyLogic().setAsCustodianFor(user, relative);
+						}
 					}
 				}
 			}
@@ -480,18 +526,32 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		return true;
 	}
 
-	private boolean handleSecretPerson(User user) {
+	private boolean handleSecretPerson(User user, SKVEntryHolder entry) {
 		try {
 			user.removeAllAddresses();
 			user.removeAllEmails();
 			user.removeAllPhones();
 
-			getFamilyLogic().removeAllFamilyRelationsForUser(user);
+			SKVUserExtraInfoHome ueih = (SKVUserExtraInfoHome) IDOLookup
+					.getHome(SKVUserExtraInfo.class);
+			try {
+				SKVUserExtraInfo info = ueih.findByUser(user);
+				info.remove();
+			} catch (FinderException e1) {
+				e1.printStackTrace();
+			} catch (EJBException e) {
+				e.printStackTrace();
+			} catch (RemoveException e) {
+				e.printStackTrace();
+			}
+
+			// getFamilyLogic().removeAllFamilyRelationsForUser(user);
 			List parents = user.getParentGroups();
 			Iterator it = parents.iterator();
 			while (it.hasNext()) {
 				Group parent = (Group) it.next();
-				parent.removeGroup(user);
+				parent.removeGroup(((Integer) user.getPrimaryKey()).intValue(),
+						performer, false);
 			}
 
 			getCommuneUserBusiness().moveCitizenToProtectedCitizenGroup(user,
@@ -499,11 +559,14 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 			boolean updated = false;
 
+			handleRelations(user, entry);
+
 			while (!updated) {
 				StringBuffer pinString = new StringBuffer(user.getPersonalID()
 						.substring(0, 8));
 				pinString.append("SP");
-				pinString.append((int) Math.floor(Math.random() * 100.0d));
+				pinString.append((int) Math
+						.floor(Math.random() * 90.0d + 10.0d));
 				try {
 					User tmpUser = getCommuneUserBusiness().getUser(
 							pinString.toString());
@@ -537,7 +600,36 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 	private boolean handleDeceased(User user, String date) {
 		try {
-			/*user.removeAllAddresses();
+			/*
+			 * user.removeAllAddresses(); user.removeAllEmails();
+			 * user.removeAllPhones();
+			 * 
+			 * getFamilyLogic().removeAllFamilyRelationsForUser(user); List
+			 * parents = user.getParentGroups(); Iterator it =
+			 * parents.iterator(); while (it.hasNext()) { Group parent = (Group)
+			 * it.next(); parent.removeGroup(user); }
+			 */
+
+			if (date != null) {
+				getCommuneUserBusiness().setUserAsDeceased(
+						(Integer) user.getPrimaryKey(),
+						getDateFromString(date).getDate());
+			} else {
+				getCommuneUserBusiness().setUserAsDeceased(
+						(Integer) user.getPrimaryKey(),
+						IWTimestamp.RightNow().getDate());
+			}
+
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+
+		return true;
+	}
+
+	private boolean handleDisabled(User user) {
+		try {
+			user.removeAllAddresses();
 			user.removeAllEmails();
 			user.removeAllPhones();
 
@@ -547,16 +639,10 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			while (it.hasNext()) {
 				Group parent = (Group) it.next();
 				parent.removeGroup(user);
-			}*/
-
-
-			if (date != null) {
-				getCommuneUserBusiness().setUserAsDeceased((Integer) user.getPrimaryKey(), getDateFromString(date).getDate());				
-			} else {
-				getCommuneUserBusiness().setUserAsDeceased((Integer) user.getPrimaryKey(), IWTimestamp.RightNow().getDate());
 			}
-
 		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (IDORemoveRelationshipException e) {
 			e.printStackTrace();
 		}
 
@@ -569,7 +655,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 	 * @param commune
 	 * @return
 	 */
-	private boolean handleAddress(User user, SKVEntryHolder entry) {
+	private boolean handleAddress(User user, SKVEntryHolder entry,
+			boolean movingFromCountry) {
 		String communeCode = entry.getCountyCode() + entry.getCommuneCode();
 		Commune commune = null;
 		try {
@@ -590,243 +677,269 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			e1.printStackTrace();
 		}
 
-		StringBuffer addressLine = new StringBuffer();
-		boolean addressLineHasPreviousEntry = false;
-		if (entry.getCoAddress() != null && !"".equals(entry.getCoAddress())) {
-			addressLine.append(entry.getCoAddress());
-			addressLineHasPreviousEntry = true;
-		}
-
-		if (entry.getAddress1() != null && !"".equals(entry.getAddress1())) {
-			if (addressLineHasPreviousEntry) {
-				addressLine.append(" ");
-			} else {
+		if (!movingFromCountry) {
+			StringBuffer addressLine = new StringBuffer();
+			boolean addressLineHasPreviousEntry = false;
+			if (entry.getCoAddress() != null
+					&& !"".equals(entry.getCoAddress())) {
+				addressLine.append(entry.getCoAddress());
 				addressLineHasPreviousEntry = true;
 			}
-			addressLine.append(entry.getAddress1());
-		}
 
-		if (entry.getAddress2() != null && !"".equals(entry.getAddress2())) {
-			if (addressLineHasPreviousEntry) {
-				addressLine.append(" ");
+			if (entry.getAddress1() != null && !"".equals(entry.getAddress1())) {
+				if (addressLineHasPreviousEntry) {
+					addressLine.append(" ");
+				} else {
+					addressLineHasPreviousEntry = true;
+				}
+				addressLine.append(entry.getAddress1());
 			}
 
-			addressLine.append(entry.getAddress2());
-		}
+			if (entry.getAddress2() != null && !"".equals(entry.getAddress2())) {
+				if (addressLineHasPreviousEntry) {
+					addressLine.append(" ");
+				}
 
-		// main address
-		if (addressLine.length() != 0) {
-			try {
-				String streetName = getAddressBusiness()
-						.getStreetNameFromAddressString(addressLine.toString());
-				String streetNumber = getAddressBusiness()
-						.getStreetNumberFromAddressString(
-								addressLine.toString());
-				Address address = getCommuneUserBusiness().getUsersMainAddress(
-						user);
-				PostalCode code = null;
-				if (entry.getPostalName() != null) {
-					code = getAddressBusiness()
-							.getPostalCodeAndCreateIfDoesNotExist(
-									entry.getPostalCode(),
-									entry.getPostalName(), sweden);
-				}
-				boolean addAddress = false;
-				if (address == null) {
-					AddressHome addressHome = getAddressBusiness()
-							.getAddressHome();
-					address = addressHome.create();
-					AddressType mainAddressType = addressHome.getAddressType1();
-					address.setAddressType(mainAddressType);
-					addAddress = true;
-				}
-				address.setCountry(sweden);
-				if (code != null) {
-					address.setPostalCode(code);
-				}
-				address.setProvince(entry.getCountyCode());
-				if (commune != null) {
-					address.setCity(commune.getCommuneName());
-					address.setCommune(commune);
-				}
-				address.setStreetName(streetName);
-				address.setStreetNumber(streetNumber);
-				AddressCoordinate ac = getAddressCoordinate(entry
-						.getAddressCoordinate(), commune);
-				if (ac != null) {
-					address.setCoordinate(ac);
-				}
-				address.setCoordinateDate(entry.getRegistrationDate());
-				address.store();
-				if (addAddress) {
-					user.addAddress(address);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				return false;
+				addressLine.append(entry.getAddress2());
 			}
-		}
 
-		StringBuffer extraAddressLine = new StringBuffer();
-		boolean extraAddressLineHasPreviousEntry = false;
-		if (entry.getExtraCoAddress() != null
-				&& !"".equals(entry.getExtraCoAddress())) {
-			extraAddressLine.append(entry.getExtraCoAddress());
-			extraAddressLineHasPreviousEntry = true;
-		}
+			// main address
+			if (addressLine.length() != 0) {
+				try {
+					String streetName = getAddressBusiness()
+							.getStreetNameFromAddressString(
+									addressLine.toString());
+					String streetNumber = getAddressBusiness()
+							.getStreetNumberFromAddressString(
+									addressLine.toString());
+					Address address = getCommuneUserBusiness()
+							.getUsersMainAddress(user);
 
-		if (entry.getExtraAddress1() != null
-				&& !"".equals(entry.getExtraAddress1())) {
-			if (extraAddressLineHasPreviousEntry) {
-				extraAddressLine.append(" ");
-			} else {
+					if (address != null) {
+						int count = address.getUserCountForAddress();
+						if (count > 1) {
+							address = null;
+						}
+
+						/*
+						 * if count == 0 then something strange is happening.
+						 * Should never happen...
+						 */
+					}
+
+					PostalCode code = null;
+					if (entry.getPostalName() != null) {
+						code = getAddressBusiness()
+								.getPostalCodeAndCreateIfDoesNotExist(
+										entry.getPostalCode(),
+										entry.getPostalName(), sweden);
+					}
+					boolean addAddress = false;
+					if (address == null) {
+						AddressHome addressHome = getAddressBusiness()
+								.getAddressHome();
+						address = addressHome.create();
+						AddressType mainAddressType = addressHome
+								.getAddressType1();
+						address.setAddressType(mainAddressType);
+						addAddress = true;
+					}
+					address.setCountry(sweden);
+					if (code != null) {
+						address.setPostalCode(code);
+					}
+					address.setProvince(entry.getCountyCode());
+					if (commune != null) {
+						address.setCity(commune.getCommuneName());
+						address.setCommune(commune);
+					}
+					address.setStreetName(streetName);
+					address.setStreetNumber(streetNumber);
+					AddressCoordinate ac = getAddressCoordinate(entry
+							.getAddressCoordinate(), commune);
+					if (ac != null) {
+						address.setCoordinate(ac);
+					}
+					address.setCoordinateDate(entry.getRegistrationDate());
+					address.store();
+					if (addAddress) {
+						user.addAddress(address);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+
+			StringBuffer extraAddressLine = new StringBuffer();
+			boolean extraAddressLineHasPreviousEntry = false;
+			if (entry.getExtraCoAddress() != null
+					&& !"".equals(entry.getExtraCoAddress())) {
+				extraAddressLine.append(entry.getExtraCoAddress());
 				extraAddressLineHasPreviousEntry = true;
 			}
-			extraAddressLine.append(entry.getExtraAddress1());
-		}
 
-		if (entry.getExtraAddress2() != null
-				&& !"".equals(entry.getExtraAddress2())) {
-			if (extraAddressLineHasPreviousEntry) {
-				extraAddressLine.append(" ");
+			if (entry.getExtraAddress1() != null
+					&& !"".equals(entry.getExtraAddress1())) {
+				if (extraAddressLineHasPreviousEntry) {
+					extraAddressLine.append(" ");
+				} else {
+					extraAddressLineHasPreviousEntry = true;
+				}
+				extraAddressLine.append(entry.getExtraAddress1());
 			}
 
-			extraAddressLine.append(entry.getExtraAddress2());
-		}
+			if (entry.getExtraAddress2() != null
+					&& !"".equals(entry.getExtraAddress2())) {
+				if (extraAddressLineHasPreviousEntry) {
+					extraAddressLine.append(" ");
+				}
 
-		if (extraAddressLine.length() != 0) {
-			try {
-				String streetName = getAddressBusiness()
-						.getStreetNameFromAddressString(
-								extraAddressLine.toString());
-				String streetNumber = getAddressBusiness()
-						.getStreetNumberFromAddressString(
-								extraAddressLine.toString());
+				extraAddressLine.append(entry.getExtraAddress2());
+			}
 
-				AddressTypeHome ath = (AddressTypeHome) IDOLookup
-						.getHome(AddressType.class);
-				AddressType at = null;
+			if (extraAddressLine.length() != 0) {
 				try {
-					at = ath.findByUniqueName("ic_user_address_3");
-				} catch (FinderException e) {
-					at = ath.create();
-					at.setDescription("Special");
-					at.setName("Special");
-					at.setUniqueName("ic_user_address_3");
-					at.store();
-				}
+					String streetName = getAddressBusiness()
+							.getStreetNameFromAddressString(
+									extraAddressLine.toString());
+					String streetNumber = getAddressBusiness()
+							.getStreetNumberFromAddressString(
+									extraAddressLine.toString());
 
-				Address address = getCommuneUserBusiness()
-						.getUserAddressByAddressType(
-								((Integer) user.getPrimaryKey()).intValue(), at);
+					AddressTypeHome ath = (AddressTypeHome) IDOLookup
+							.getHome(AddressType.class);
+					AddressType at = null;
+					try {
+						at = ath.findByUniqueName("ic_user_address_3");
+					} catch (FinderException e) {
+						e.printStackTrace();
+						at = ath.create();
+						at.setDescription("Special");
+						at.setName("Special");
+						at.setUniqueName("ic_user_address_3");
+						at.store();
+					}
 
-				PostalCode code = getAddressBusiness()
-						.getPostalCodeAndCreateIfDoesNotExist(
-								entry.getExtraPostalCode(),
-								entry.getExtraPostalName(), sweden);
-				boolean addAddress = false;
-				if (address == null) {
-					AddressHome addressHome = getAddressBusiness()
-							.getAddressHome();
-					address = addressHome.create();
-					address.setAddressType(at);
-					addAddress = true;
+					Address address = getCommuneUserBusiness()
+							.getUserAddressByAddressType(
+									((Integer) user.getPrimaryKey()).intValue(),
+									at);
+
+					PostalCode code = getAddressBusiness()
+							.getPostalCodeAndCreateIfDoesNotExist(
+									entry.getExtraPostalCode(),
+									entry.getExtraPostalName(), sweden);
+					boolean addAddress = false;
+					if (address == null) {
+						AddressHome addressHome = getAddressBusiness()
+								.getAddressHome();
+						address = addressHome.create();
+						address.setAddressType(at);
+						addAddress = true;
+					}
+					address.setCountry(sweden);
+					address.setPostalCode(code);
+					address.setProvince(entry.getCountyCode());
+					if (commune != null) {
+						address.setCity(commune.getCommuneName());
+						address.setCommune(commune);
+					}
+					address.setStreetName(streetName);
+					address.setStreetNumber(streetNumber);
+					address.store();
+					if (addAddress) {
+						user.addAddress(address);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
 				}
-				address.setCountry(sweden);
-				address.setPostalCode(code);
-				address.setProvince(entry.getCountyCode());
-				if (commune != null) {
-					address.setCity(commune.getCommuneName());
-					address.setCommune(commune);
-				}
-				address.setStreetName(streetName);
-				address.setStreetNumber(streetNumber);
-				address.store();
-				if (addAddress) {
-					user.addAddress(address);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				return false;
 			}
-		}
-
-		StringBuffer foreignAddressLine = new StringBuffer();
-		boolean foreignAddressLineHasPreviousEntry = false;
-		if (entry.getForeignAddress1() != null
-				&& !"".equals(entry.getForeignAddress1())) {
-			foreignAddressLine.append(entry.getForeignAddress1());
-			foreignAddressLineHasPreviousEntry = true;
-		}
-
-		if (entry.getForeignAddress2() != null
-				&& !"".equals(entry.getForeignAddress2())) {
-			if (foreignAddressLineHasPreviousEntry) {
-				foreignAddressLine.append(" ");
-			} else {
-				foreignAddressLineHasPreviousEntry = true;
+		} else {
+			try {
+				user.removeAllAddresses();
+			} catch (IDORemoveRelationshipException e1) {
+				e1.printStackTrace();
 			}
-			foreignAddressLine.append(entry.getForeignAddress2());
-		}
-
-		if (entry.getForeignAddress3() != null
-				&& !"".equals(entry.getForeignAddress3())) {
-			if (foreignAddressLineHasPreviousEntry) {
-				foreignAddressLine.append(" ");
-			} else {
+			StringBuffer foreignAddressLine = new StringBuffer();
+			boolean foreignAddressLineHasPreviousEntry = false;
+			if (entry.getForeignAddress1() != null
+					&& !"".equals(entry.getForeignAddress1())) {
+				foreignAddressLine.append(entry.getForeignAddress1());
 				foreignAddressLineHasPreviousEntry = true;
 			}
 
-			foreignAddressLine.append(entry.getForeignAddress3());
-		}
-
-		if (entry.getForeignAddressCountry() != null
-				&& !"".equals(entry.getForeignAddressCountry())) {
-			if (foreignAddressLineHasPreviousEntry) {
-				foreignAddressLine.append(" ");
+			if (entry.getForeignAddress2() != null
+					&& !"".equals(entry.getForeignAddress2())) {
+				if (foreignAddressLineHasPreviousEntry) {
+					foreignAddressLine.append(" ");
+				} else {
+					foreignAddressLineHasPreviousEntry = true;
+				}
+				foreignAddressLine.append(entry.getForeignAddress2());
 			}
 
-			foreignAddressLine.append(entry.getForeignAddressCountry());
-		}
+			if (entry.getForeignAddress3() != null
+					&& !"".equals(entry.getForeignAddress3())) {
+				if (foreignAddressLineHasPreviousEntry) {
+					foreignAddressLine.append(" ");
+				} else {
+					foreignAddressLineHasPreviousEntry = true;
+				}
 
-		if (foreignAddressLine.length() != 0) {
-			try {
-				String streetName = foreignAddressLine.toString();
-				AddressTypeHome ath = (AddressTypeHome) IDOLookup
-						.getHome(AddressType.class);
-				AddressType at = null;
+				foreignAddressLine.append(entry.getForeignAddress3());
+			}
+
+			if (entry.getForeignAddressCountry() != null
+					&& !"".equals(entry.getForeignAddressCountry())) {
+				if (foreignAddressLineHasPreviousEntry) {
+					foreignAddressLine.append(" ");
+				}
+
+				foreignAddressLine.append(entry.getForeignAddressCountry());
+			}
+
+			if (foreignAddressLine.length() != 0) {
 				try {
-					at = ath.findByUniqueName("ic_user_address_4");
-				} catch (FinderException e) {
-					at = ath.create();
-					at.setDescription("Foreign");
-					at.setName("Foreign");
-					at.setUniqueName("ic_user_address_4");
-					at.store();
-				}
+					String streetName = foreignAddressLine.toString();
+					AddressTypeHome ath = (AddressTypeHome) IDOLookup
+							.getHome(AddressType.class);
+					AddressType at = null;
+					try {
+						at = ath.findByUniqueName("ic_user_address_4");
+					} catch (FinderException e) {
+						at = ath.create();
+						at.setDescription("Foreign");
+						at.setName("Foreign");
+						at.setUniqueName("ic_user_address_4");
+						at.store();
+					}
 
-				Address address = getCommuneUserBusiness()
-						.getUserAddressByAddressType(
-								((Integer) user.getPrimaryKey()).intValue(), at);
+					Address address = getCommuneUserBusiness()
+							.getUserAddressByAddressType(
+									((Integer) user.getPrimaryKey()).intValue(),
+									at);
 
-				boolean addAddress = false;
-				if (address == null) {
-					AddressHome addressHome = getAddressBusiness()
-							.getAddressHome();
-					address = addressHome.create();
-					address.setAddressType(at);
-					addAddress = true;
+					boolean addAddress = false;
+					if (address == null) {
+						AddressHome addressHome = getAddressBusiness()
+								.getAddressHome();
+						address = addressHome.create();
+						address.setAddressType(at);
+						addAddress = true;
+					}
+					address.setStreetName(streetName);
+					address.setStreetNumber("");
+					address.setCommune(null);
+					address.store();
+					if (addAddress) {
+						user.addAddress(address);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					return false;
 				}
-				address.setStreetName(streetName);
-				address.setStreetNumber("");
-				address.setCommune(null);
-				address.store();
-				if (addAddress) {
-					user.addAddress(address);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				return false;
 			}
 		}
 
