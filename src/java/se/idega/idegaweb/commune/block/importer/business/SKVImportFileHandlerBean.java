@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/11/10 14:28:51 $ by $Author: palli $
+ * Last modified: $Date: 2006/11/19 20:44:53 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.5 $
+ * @version $Revision: 1.1.2.6 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -350,6 +350,10 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			return false;
 		}
 
+		if (!movingFromCommune) {
+			movingFromCommune = !isHomeCommune(entry);
+		}
+		
 		handleCitizenGroup(user, movingFromCommune, entry);
 
 		if (!handleAddress(user, entry, movingFromCountry)) {
@@ -649,6 +653,24 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		return true;
 	}
 
+	private boolean isHomeCommune(SKVEntryHolder entry) {
+		String communeCode = entry.getCountyCode() + entry.getCommuneCode();
+		Commune commune = null;
+		try {
+			commune = getCommuneBusiness().getCommuneByCode(communeCode);
+			Commune defaultCommune = getCommuneBusiness().getDefaultCommune();
+			
+			if (defaultCommune.getCommuneCode().equals(commune.getCommuneCode())) {
+				return true;
+			}
+		} catch (RemoteException e1) {
+			logDebug("Commune with code:" + communeCode
+					+ " (countyNumber+communeNumber) not found in database");
+		}
+		
+		return false;
+	}
+	
 	/**
 	 * @param user
 	 * @param countyNumber
@@ -715,9 +737,21 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 					Address address = getCommuneUserBusiness()
 							.getUsersMainAddress(user);
 
+					log("finding address for user = " + user.getName());
+					if (address == null) {
+						log("address is null");
+					} else {
+						log("address is = " + address.getPrimaryKey().toString());						
+					}
 					if (address != null) {
 						int count = address.getUserCountForAddress();
+						log("count = " + count);
 						if (count > 1) {
+							try {
+								user.removeAllAddresses();
+							} catch (IDORemoveRelationshipException e1) {
+								e1.printStackTrace();
+							}
 							address = null;
 						}
 
