@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/11/19 20:44:53 $ by $Author: palli $
+ * Last modified: $Date: 2006/11/21 15:07:49 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.6 $
+ * @version $Revision: 1.1.2.7 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -659,6 +659,18 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		try {
 			commune = getCommuneBusiness().getCommuneByCode(communeCode);
 			Commune defaultCommune = getCommuneBusiness().getDefaultCommune();
+			
+			if (commune == null) {
+				return false;
+			}
+			
+			if (defaultCommune == null) {
+				return false;
+			}
+			
+			if (defaultCommune.getCommuneCode() == null || commune.getCommuneCode() == null) {
+				return false;
+			}
 			
 			if (defaultCommune.getCommuneCode().equals(commune.getCommuneCode())) {
 				return true;
