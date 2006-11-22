@@ -13,10 +13,10 @@ import com.idega.user.data.User;
 public class SKVImportBusinessBean extends ImportBusinessBean implements
 		SKVImportBusiness {
 
-	private ArrayList getNameArray(String name) {
+	private ArrayList getNameArray(String name, String delimeter) {
 		ArrayList nameArray = new ArrayList();
 
-		StringTokenizer tokens = new StringTokenizer(name, " -", true);
+		StringTokenizer tokens = new StringTokenizer(name, delimeter, true);
 		String value = null;
 		while (tokens.hasMoreTokens()) {
 			value = tokens.nextToken();
@@ -62,8 +62,11 @@ public class SKVImportBusinessBean extends ImportBusinessBean implements
 			}
 		}
 
+		String delimeter = " -";
+		
 		if (preferredNameIndex == null) {
 			preferredNameIndex = "10";
+			delimeter = " ";
 		}
 
 		StringBuffer fullname = new StringBuffer();
@@ -74,7 +77,7 @@ public class SKVImportBusinessBean extends ImportBusinessBean implements
 		int refName1 = index / 10;
 		int refName2 = index % 10;
 
-		ArrayList nameList = getNameArray(fullname.toString());
+		ArrayList nameList = getNameArray(fullname.toString(), delimeter);
 
 		firstName = "";
 		middleName = "";
