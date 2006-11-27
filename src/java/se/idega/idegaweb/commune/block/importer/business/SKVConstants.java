@@ -90,6 +90,10 @@ public class SKVConstants {
 	protected static final String COLUMN_RELATIVE_MIDDLE_NAME = "02006";
 
 	protected static final String COLUMN_RELATIVE_LAST_NAME = "02007";
+	
+	protected static final String COLUMN_RELATIVE_DEACTIVATION_CODE = "02010";
+	
+	protected static final String COLUMN_RELATIVE_DEACTIVATION_DATE = "02011";
 
 	protected static final String COLUMN_RELATIONAL_SECTION_ENDS = "02999";
 

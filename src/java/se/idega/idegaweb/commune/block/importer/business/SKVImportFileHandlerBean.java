@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/11/21 15:07:49 $ by $Author: palli $
+ * Last modified: $Date: 2006/11/27 11:48:24 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.7 $
+ * @version $Revision: 1.1.2.8 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -164,6 +164,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		String relFirstName = null;
 		String relMiddleName = null;
 		String relLastName = null;
+		String relDeactivationCode = null;
+		String relDeactivationDate = null;
 
 		while ((line = lnr.readLine()) != null) {
 			if (line.length() > 4) {
@@ -190,6 +192,10 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 								.setRelativeMiddleName(relMiddleName);
 						relativeEntryHolder.setRelativePin(relPin);
 						relativeEntryHolder.setRelativeType(relType);
+						relativeEntryHolder
+								.setRelativeDeactivationCode(relDeactivationCode);
+						relativeEntryHolder
+								.setRelativeDeactivationDate(relDeactivationDate);
 
 						entryHolder.addRelative(relativeEntryHolder);
 					} else if (actionString
@@ -203,7 +209,11 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 							|| actionString
 									.equals(SKVConstants.COLUMN_RELATIVE_MIDDLE_NAME)
 							|| actionString
-									.equals(SKVConstants.COLUMN_RELATIVE_TYPE)) {
+									.equals(SKVConstants.COLUMN_RELATIVE_TYPE)
+							|| actionString
+									.equals(SKVConstants.COLUMN_RELATIVE_DEACTIVATION_CODE)
+							|| actionString
+									.equals(SKVConstants.COLUMN_RELATIVE_DEACTIVATION_DATE)) {
 						String value = line.substring(10);
 						if (actionString
 								.equals(SKVConstants.COLUMN_RELATIVE_PIN)) {
@@ -223,6 +233,12 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 						} else if (actionString
 								.equals(SKVConstants.COLUMN_RELATIVE_TYPE)) {
 							relType = value;
+						} else if (actionString
+								.equals(SKVConstants.COLUMN_RELATIVE_DEACTIVATION_CODE)) {
+							relDeactivationCode = value;
+						} else if (actionString
+								.equals(SKVConstants.COLUMN_RELATIVE_DEACTIVATION_DATE)) {
+							relDeactivationDate = value;
 						}
 					} else if (!actionString
 							.equals(SKVConstants.COLUMN_CITIZEN_INFO_SECTION_STARTS)
@@ -281,8 +297,16 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			}
 		}
 
+		if (!pinChanged) {
+			if (entry.getReferencePin() != null
+					&& !entry.getReferencePin().equals("")) {
+				pinChanged = true;
+			}
+		}
+
 		try {
 			if (pinChanged) {
+				checkForEmptyNewUser(entry.getPin());
 				user = getCommuneUserBusiness()
 						.getUser(entry.getReferencePin());
 				user.setPersonalID(entry.getPin());
@@ -353,7 +377,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		if (!movingFromCommune) {
 			movingFromCommune = !isHomeCommune(entry);
 		}
-		
+
 		handleCitizenGroup(user, movingFromCommune, entry);
 
 		if (!handleAddress(user, entry, movingFromCountry)) {
@@ -369,6 +393,18 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		}
 
 		return true;
+	}
+
+	private void checkForEmptyNewUser(String pin) {
+		try {
+			User user = getCommuneUserBusiness().getUser(pin);
+			getFamilyLogic().removeAllFamilyRelationsForUser(user);
+			user.setPersonalID(pin + "REPL");
+			user.store();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		} catch (FinderException e) {
+		}
 	}
 
 	private void handleCitizenGroup(User user, boolean movingFromCommune,
@@ -396,7 +432,6 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 				}
 			}
 		} catch (Exception e) {
-
 		}
 	}
 
@@ -486,37 +521,57 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 						pin = holder.getRelativeAlternativePin();
 					}
 
+					boolean isDeceased = false;
+					if (holder.getRelativeDeactivationDate() != null) {
+						if (holder.getRelativeDeactivationCode().equals(
+								SKVConstants.DEACTIVATION_CODE_DEATH)) {
+							isDeceased = true;
+						}
+					}
+
 					if (pin != null && !"".equals(pin.trim())) {
 						try {
 							relative = getCommuneUserBusiness().getUser(pin);
 						} catch (Exception e) {
-							relative = getCommuneUserBusiness().createCitizen(
-									holder.getRelativeFirstName(),
-									holder.getRelativeMiddleName(),
-									holder.getRelativeLastName(), pin);
+							if (!isDeceased) {
+								relative = getCommuneUserBusiness()
+										.createCitizen(
+												holder.getRelativeFirstName(),
+												holder.getRelativeMiddleName(),
+												holder.getRelativeLastName(),
+												pin);
+							}
 						}
 
-						if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_CHILD)) {
-							getFamilyLogic().setAsParentFor(user, relative);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_SPOUSE)) {
-							getFamilyLogic().setAsSpouseFor(user, relative);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_FATHER)) {
-							getFamilyLogic().setAsChildFor(user, relative);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_MOTHER)) {
-							getFamilyLogic().setAsChildFor(user, relative);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_PARTNER)) {
-							// getFamilyLogic().setAs, child);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
-							getFamilyLogic().setAsCustodianFor(relative, user);
-						} else if (holder.getRelativeType().equals(
-								SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
-							getFamilyLogic().setAsCustodianFor(user, relative);
+						if (!isDeceased) {
+							if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_CHILD)) {
+								getFamilyLogic().setAsParentFor(user, relative);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_SPOUSE)) {
+								getFamilyLogic().setAsSpouseFor(user, relative);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_FATHER)) {
+								getFamilyLogic().setAsChildFor(user, relative);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_MOTHER)) {
+								getFamilyLogic().setAsChildFor(user, relative);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_PARTNER)) {
+								// getFamilyLogic().setAs, child);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
+								getFamilyLogic().setAsCustodianFor(relative,
+										user);
+							} else if (holder.getRelativeType().equals(
+									SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
+								getFamilyLogic().setAsCustodianFor(user,
+										relative);
+							}
+						} else {
+							if (relative != null) {
+								handleDeceased(relative, holder.getRelativeDeactivationDate());
+							}
 						}
 					}
 				}
@@ -659,30 +714,32 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		try {
 			commune = getCommuneBusiness().getCommuneByCode(communeCode);
 			Commune defaultCommune = getCommuneBusiness().getDefaultCommune();
-			
+
 			if (commune == null) {
 				return false;
 			}
-			
+
 			if (defaultCommune == null) {
 				return false;
 			}
-			
-			if (defaultCommune.getCommuneCode() == null || commune.getCommuneCode() == null) {
+
+			if (defaultCommune.getCommuneCode() == null
+					|| commune.getCommuneCode() == null) {
 				return false;
 			}
-			
-			if (defaultCommune.getCommuneCode().equals(commune.getCommuneCode())) {
+
+			if (defaultCommune.getCommuneCode()
+					.equals(commune.getCommuneCode())) {
 				return true;
 			}
 		} catch (RemoteException e1) {
 			logDebug("Commune with code:" + communeCode
 					+ " (countyNumber+communeNumber) not found in database");
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * @param user
 	 * @param countyNumber
@@ -753,7 +810,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 					if (address == null) {
 						log("address is null");
 					} else {
-						log("address is = " + address.getPrimaryKey().toString());						
+						log("address is = "
+								+ address.getPrimaryKey().toString());
 					}
 					if (address != null) {
 						int count = address.getUserCountForAddress();

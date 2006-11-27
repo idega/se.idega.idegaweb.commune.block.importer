@@ -210,13 +210,19 @@ public class SKVEntryHolder {
 		
 		private String relativeLastName = null;
 		
-		public SKVRelativeEntryHolder(String pin, String alternativePin, String type, String firstName, String middleName, String lastName) {
+		private String relativeDeactivationCode = null;
+		
+		private String relativeDeactivationDate = null;
+		
+		public SKVRelativeEntryHolder(String pin, String alternativePin, String type, String firstName, String middleName, String lastName, String deactivationCode, String deactivationDate) {
 			relativePin = pin;
 			relativeAlternativePin = alternativePin;
 			relativeType = type;
 			relativeFirstName = firstName;
 			relativeMiddleName = middleName;
 			relativeLastName = lastName;
+			relativeDeactivationCode = deactivationCode;
+			relativeDeactivationDate = deactivationDate;
 		}
 
 		public String getRelativeAlternativePin() {
@@ -242,6 +248,14 @@ public class SKVEntryHolder {
 		public String getRelativeType() {
 			return relativeType;
 		}
+		
+		public String getRelativeDeactivationCode() {
+			return relativeDeactivationCode;
+		}
+		
+		public String getRelativeDeactivationDate() {
+			return relativeDeactivationDate;
+		}
 
 		public void setRelativeAlternativePin(String relativeAlternativePin) {
 			this.relativeAlternativePin = relativeAlternativePin;
@@ -265,6 +279,14 @@ public class SKVEntryHolder {
 
 		public void setRelativeType(String relativeType) {
 			this.relativeType = relativeType;
+		}
+		
+		public void setRelativeDeactivationCode(String relativeDeactivationCode) {
+			this.relativeDeactivationCode = relativeDeactivationCode;
+		}
+		
+		public void setRelativeDeactivationDate(String relativeDeactivationDate) {
+			this.relativeDeactivationDate = relativeDeactivationDate;
 		}
 	}
 
