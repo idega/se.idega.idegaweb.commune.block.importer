@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/11/27 11:48:24 $ by $Author: palli $
+ * Last modified: $Date: 2006/11/29 15:20:56 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.8 $
+ * @version $Revision: 1.1.2.9 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -182,6 +182,8 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 						relFirstName = null;
 						relMiddleName = null;
 						relLastName = null;
+						relDeactivationDate = null;
+						relDeactivationCode = null;
 					} else if (actionString
 							.equals(SKVConstants.COLUMN_RELATIONAL_SECTION_ENDS)) {
 						relativeEntryHolder
@@ -399,7 +401,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		try {
 			User user = getCommuneUserBusiness().getUser(pin);
 			getFamilyLogic().removeAllFamilyRelationsForUser(user);
-			user.setPersonalID(pin + "REPL");
+			user.setPersonalID(pin.substring(0, 8) + "REPL");
 			user.store();
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -533,38 +535,54 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 						try {
 							relative = getCommuneUserBusiness().getUser(pin);
 						} catch (Exception e) {
-							if (!isDeceased) {
-								relative = getCommuneUserBusiness()
-										.createCitizen(
-												holder.getRelativeFirstName(),
-												holder.getRelativeMiddleName(),
-												holder.getRelativeLastName(),
-												pin);
-							}
 						}
 
 						if (!isDeceased) {
 							if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_CHILD)) {
-								getFamilyLogic().setAsParentFor(user, relative);
+								if (relative != null) {
+									getFamilyLogic().setAsParentFor(user, relative);
+								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_SPOUSE)) {
-								getFamilyLogic().setAsSpouseFor(user, relative);
+								if (relative != null) {
+									getFamilyLogic().setAsSpouseFor(user, relative);
+								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_FATHER)) {
-								getFamilyLogic().setAsChildFor(user, relative);
+								if (relative != null) {
+									getFamilyLogic().setAsChildFor(user, relative);
+								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_MOTHER)) {
-								getFamilyLogic().setAsChildFor(user, relative);
+								if (relative != null) {
+									getFamilyLogic().setAsChildFor(user, relative);
+								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_PARTNER)) {
 								// getFamilyLogic().setAs, child);
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
+								if (relative == null) {
+									relative = getCommuneUserBusiness()
+									.createCitizen(
+											holder.getRelativeFirstName(),
+											holder.getRelativeMiddleName(),
+											holder.getRelativeLastName(),
+											pin);
+								}
 								getFamilyLogic().setAsCustodianFor(relative,
 										user);
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
+								if (relative == null) {
+									relative = getCommuneUserBusiness()
+									.createCitizen(
+											holder.getRelativeFirstName(),
+											holder.getRelativeMiddleName(),
+											holder.getRelativeLastName(),
+											pin);
+								}
 								getFamilyLogic().setAsCustodianFor(user,
 										relative);
 							}
