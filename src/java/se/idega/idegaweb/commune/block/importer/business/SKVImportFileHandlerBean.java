@@ -58,10 +58,10 @@ import com.idega.util.Timer;
 /**
  * SKVImportFileHandlerBean
  * 
- * Last modified: $Date: 2006/11/29 15:20:56 $ by $Author: palli $
+ * Last modified: $Date: 2006/12/14 12:09:32 $ by $Author: palli $
  * 
  * @author <a href="mailto:palli@idega.com">palli</a>
- * @version $Revision: 1.1.2.9 $
+ * @version $Revision: 1.1.2.10 $
  */
 public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		SKVImportFileHandler, ImportFileHandler {
@@ -308,11 +308,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 
 		try {
 			if (pinChanged) {
-				checkForEmptyNewUser(entry.getPin());
-				user = getCommuneUserBusiness()
-						.getUser(entry.getReferencePin());
-				user.setPersonalID(entry.getPin());
-				user.store();
+				user = handlePinChanged(entry);
 			} else {
 				user = getCommuneUserBusiness().getUser(entry.getPin());
 			}
@@ -397,23 +393,76 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 		return true;
 	}
 
-	private void checkForEmptyNewUser(String pin) {
+	private User handlePinChanged(SKVEntryHolder entry) throws RemoteException,
+			FinderException {
+		User emptyUser = getEmptyNewUser(entry.getPin());
+		boolean returnEmptyUser = false;
+
+		if (emptyUser != null) {
+			IWTimestamp creationDate = new IWTimestamp(emptyUser.getCreated());
+			creationDate.setAsDate();
+			IWTimestamp now = IWTimestamp.RightNow();
+			now.setAsDate();
+			if (now.equals(creationDate)) {
+				try {
+					getCommuneUserBusiness().getUser(entry.getReferencePin());
+					deleteEmptyUser(emptyUser);
+				} catch (FinderException e) {
+					returnEmptyUser = true;
+				}
+			} else {
+				returnEmptyUser = true;
+				try {
+					User newUser = getCommuneUserBusiness().getUser(entry.getReferencePin());
+					deleteEmptyUser(newUser);
+				} catch (FinderException e) {
+				}
+			}
+		}
+		
+		User user = null;
+		if (returnEmptyUser) {
+			user = emptyUser;
+		} else {
+			user = getCommuneUserBusiness().getUser(entry.getReferencePin());
+
+		}
+		user.setPersonalID(entry.getPin());
+		user.store();
+
+		return user;
+	}
+
+	private void deleteEmptyUser(User user) {
 		try {
-			User user = getCommuneUserBusiness().getUser(pin);
 			getFamilyLogic().removeAllFamilyRelationsForUser(user);
-			user.setPersonalID(pin.substring(0, 8) + "REPL");
-			user.store();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		user.setPersonalID(user.getPersonalID().substring(0, 8) + "REPL");
+		user.setDeleted(true);
+		user.setDeletedBy(((Integer) performer.getPrimaryKey()).intValue());
+		user.setDeletedWhen(IWTimestamp.getTimestampRightNow());
+		user.store();
+	}
+
+	private User getEmptyNewUser(String pin) {
+		User user = null;
+		try {
+			user = getCommuneUserBusiness().getUser(pin);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (FinderException e) {
 		}
+
+		return user;
 	}
 
 	private void handleCitizenGroup(User user, boolean movingFromCommune,
 			SKVEntryHolder entry) {
 		try {
 			if (movingFromCommune) {
-				if (entry.getDeactivationDate() != null) {
+				if (entry != null && entry.getDeactivationDate() != null) {
 					getCommuneUserBusiness().moveCitizenFromCommune(
 							user,
 							getDateFromString(entry.getDeactivationDate())
@@ -423,7 +472,7 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 							IWTimestamp.getTimestampRightNow(), performer);
 				}
 			} else {
-				if (entry.getDeactivationDate() != null) {
+				if (entry != null && entry.getDeactivationDate() != null) {
 					getCommuneUserBusiness().moveCitizenToCommune(
 							user,
 							getDateFromString(entry.getDeactivationDate())
@@ -541,22 +590,26 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 							if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_CHILD)) {
 								if (relative != null) {
-									getFamilyLogic().setAsParentFor(user, relative);
+									getFamilyLogic().setAsParentFor(user,
+											relative);
 								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_SPOUSE)) {
 								if (relative != null) {
-									getFamilyLogic().setAsSpouseFor(user, relative);
+									getFamilyLogic().setAsSpouseFor(user,
+											relative);
 								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_FATHER)) {
 								if (relative != null) {
-									getFamilyLogic().setAsChildFor(user, relative);
+									getFamilyLogic().setAsChildFor(user,
+											relative);
 								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_MOTHER)) {
 								if (relative != null) {
-									getFamilyLogic().setAsChildFor(user, relative);
+									getFamilyLogic().setAsChildFor(user,
+											relative);
 								}
 							} else if (holder.getRelativeType().equals(
 									SKVConstants.RELATION_TYPE_PARTNER)) {
@@ -565,11 +618,15 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 									SKVConstants.RELATION_TYPE_CUSTODIAN1)) {
 								if (relative == null) {
 									relative = getCommuneUserBusiness()
-									.createCitizen(
-											holder.getRelativeFirstName(),
-											holder.getRelativeMiddleName(),
-											holder.getRelativeLastName(),
-											pin);
+											.createCitizen(
+													holder
+															.getRelativeFirstName(),
+													holder
+															.getRelativeMiddleName(),
+													holder
+															.getRelativeLastName(),
+													pin);
+									handleCitizenGroup(relative, true, null);
 								}
 								getFamilyLogic().setAsCustodianFor(relative,
 										user);
@@ -577,18 +634,23 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 									SKVConstants.RELATION_TYPE_CUSTODIAN2)) {
 								if (relative == null) {
 									relative = getCommuneUserBusiness()
-									.createCitizen(
-											holder.getRelativeFirstName(),
-											holder.getRelativeMiddleName(),
-											holder.getRelativeLastName(),
-											pin);
+											.createCitizen(
+													holder
+															.getRelativeFirstName(),
+													holder
+															.getRelativeMiddleName(),
+													holder
+															.getRelativeLastName(),
+													pin);
+									handleCitizenGroup(relative, true, null);
 								}
 								getFamilyLogic().setAsCustodianFor(user,
 										relative);
 							}
 						} else {
 							if (relative != null) {
-								handleDeceased(relative, holder.getRelativeDeactivationDate());
+								handleDeceased(relative, holder
+										.getRelativeDeactivationDate());
 							}
 						}
 					}
@@ -634,38 +696,31 @@ public class SKVImportFileHandlerBean extends IBOServiceBean implements
 			getCommuneUserBusiness().moveCitizenToProtectedCitizenGroup(user,
 					IWTimestamp.getTimestampRightNow(), performer);
 
-			boolean updated = false;
+			// boolean updated = false;
 
 			handleRelations(user, entry);
 
-			while (!updated) {
-				StringBuffer pinString = new StringBuffer(user.getPersonalID()
-						.substring(0, 8));
-				pinString.append("SP");
-				pinString.append((int) Math
-						.floor(Math.random() * 90.0d + 10.0d));
-				try {
-					User tmpUser = getCommuneUserBusiness().getUser(
-							pinString.toString());
-					if (tmpUser == null) {
-						user.setDescription("Secret");
-						user.setPersonalID(pinString.toString());
-						user.store();
-						updated = true;
-					}
-				} catch (FinderException e) {
-					user.setDescription("Secret");
-					user.setPersonalID(pinString.toString());
-					user.store();
-					updated = true;
-				} catch (RemoteException e) {
-					e.printStackTrace();
-
-					return false;
-				}
-
-			}
-
+			/*
+			 * while (!updated) { StringBuffer pinString = new
+			 * StringBuffer(user.getPersonalID() .substring(0, 8));
+			 * pinString.append("SP"); pinString.append((int) Math
+			 * .floor(Math.random() * 90.0d + 10.0d)); try { User tmpUser =
+			 * getCommuneUserBusiness().getUser( pinString.toString()); if
+			 * (tmpUser == null) { user.setDescription("Secret");
+			 * user.setPersonalID(pinString.toString()); user.store(); updated =
+			 * true; } } catch (FinderException e) {
+			 * user.setDescription("Secret");
+			 * user.setPersonalID(pinString.toString()); user.store(); updated =
+			 * true; } catch (RemoteException e) { e.printStackTrace();
+			 * 
+			 * return false; }
+			 *  }
+			 */
+			user.setDescription("Secret");
+			user.setFirstName("skyddad");
+			user.setMiddleName("skyddad");
+			user.setLastName("skyddad");
+			user.store();
 		} catch (IDORemoveRelationshipException e) {
 			e.printStackTrace();
 		} catch (RemoteException e) {
